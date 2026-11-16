@@ -58384,3 +58384,160 @@ a.va-btn-primary:hover {
         padding: 10px !important;
     }
 }
+
+/* ==========================================================================
+   DOCTOR DASHBOARD — COLLAPSED SIDEBAR POLISH (TASK 2)
+   Fixes the 72px icon rail so icons sit dead-centre, hides the submenu chevron
+   that was pushing some icons 18px to the left, keeps the active row readable,
+   and stops `overflow-x: clip` from slicing the wide registry tables.
+   Desktop only (>=1025px); the mobile drawer is untouched.
+   ========================================================================== */
+@media (min-width: 1025px) {
+
+    /* 1. Rail geometry: one predictable button size, no leftover flex gap.
+       `.grp` is given a fixed inner width so `width: 100%` on the buttons
+       resolves even though the parent is a flex/grid item. */
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        overflow: visible !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .grp {
+        display: block !important;
+        width: 56px !important;
+        min-width: 56px !important;
+        max-width: 56px !important;
+        padding: 6px 0 !important;
+        gap: 0 !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-item.has-submenu {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn,
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-doc-collapse-btn {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 11px 0 !important;
+        margin: 0 0 4px 0 !important;
+        text-align: center !important;
+    }
+
+    /* The icon is the only visible child, so it defines the centre line. */
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn > i:first-of-type,
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-doc-collapse-btn > i:first-of-type {
+        margin: 0 auto !important;
+        width: 24px !important;
+        min-width: 24px !important;
+        max-width: 24px !important;
+        font-size: 18px !important;
+        line-height: 1 !important;
+        text-align: center !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* 2. Submenu chevron must disappear *and* stop reserving space. The earlier
+       `i { width: 24px }` rule beat its `width: 0`, which shifted the icon. */
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn .submenu-icon {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        flex: 0 0 0 !important;
+    }
+
+    /* 3. Active / hover row: a soft translucent pill instead of a solid white
+       block, so the white glyph stays readable in the rail. */
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn.active {
+        background: rgba(255, 255, 255, 0.16) !important;
+        color: #FFFFFF !important;
+        border-radius: 10px !important;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn.active i,
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn.active svg,
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn.active span {
+        color: #FFFFFF !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn:hover {
+        background: rgba(255, 255, 255, 0.12) !important;
+        transform: none !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn:hover i,
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn:hover svg {
+        color: #FFFFFF !important;
+    }
+
+    /* 4. Rail icons keep a consistent weight/colour. */
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn i,
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn svg {
+        color: #FFFFFF !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-doc-collapse-btn {
+        margin-top: 12px !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.14) !important;
+        padding-top: 12px !important;
+    }
+}
+
+/* 5. Wide registries scroll inside their card instead of being clipped.
+   `overflow-x: clip` on `.dior-main-content` has no scrollbar, so any table
+   wider than the viewport was silently cut off on the right. Containing the
+   scroll in the table wrapper keeps the page itself free of sideways scroll. */
+@media (min-width: 1025px) {
+    .dior-doctor-wrap .dior-main-content {
+        overflow-x: clip !important;
+    }
+
+    .dior-doctor-wrap .dior-main-content .pr-table-wrapper,
+    .dior-doctor-wrap .dior-main-content .va-table-wrapper {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        max-width: 100% !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+    }
+
+    .dior-doctor-wrap .dior-main-content .pr-table-wrapper::-webkit-scrollbar,
+    .dior-doctor-wrap .dior-main-content .va-table-wrapper::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .dior-doctor-wrap .dior-main-content .pr-table-wrapper::-webkit-scrollbar-thumb,
+    .dior-doctor-wrap .dior-main-content .va-table-wrapper::-webkit-scrollbar-thumb {
+        background: rgba(100, 116, 139, 0.4);
+        border-radius: 8px;
+    }
+
+    .dior-doctor-wrap .dior-main-content .pr-table-wrapper::-webkit-scrollbar-track,
+    .dior-doctor-wrap .dior-main-content .va-table-wrapper::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    /* Never let a wide table push the page into horizontal scroll. */
+    .dior-doctor-wrap #dior-doc-content > .dior-tab-panel {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+}

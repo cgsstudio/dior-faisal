@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Doctor Dashboard — Collapsed Sidebar Fix (before / after)</title>
+    <style>
+        :root {
+            --ink: #0F172A;
+            --muted: #64748B;
+            --line: #E2E8F0;
+            --navy: #00346C;
+            --bg: #F8FAFC;
+            --ok: #0F7B47;
+            --bad: #B91C1C;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 32px 20px 64px;
+            background: var(--bg);
+            color: var(--ink);
+            font: 15px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .wrap { max-width: 1080px; margin: 0 auto; }
+
+        h1 { font-size: 26px; line-height: 1.25; margin: 0 0 6px; color: var(--navy); }
+        h2 { font-size: 18px; margin: 36px 0 12px; color: var(--navy); }
+        .sub { color: var(--muted); margin: 0 0 26px; }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin: 0 0 18px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+        }
+
+        .shot { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); }
+
+        ul { margin: 8px 0 0; padding-left: 20px; }
+        li { margin: 0 0 8px; }
+
+        code {
+            background: #F1F5F9;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            padding: 1px 5px;
+            font-size: 12.5px;
+            word-break: break-word;
+        }
+
+        .pill {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            padding: 3px 9px;
+            border-radius: 999px;
+        }
+
+        .pill.bad { background: #FEE2E2; color: var(--bad); }
+        .pill.ok { background: #DCFCE7; color: var(--ok); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+        th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+        td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+        .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+        .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 8px; }
+        .label.bad { color: var(--bad); }
+        .label.ok { color: var(--ok); }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <h1>Doctor Dashboard — collapsed sidebar fix</h1>
+        <p class="sub">
+            Screenshot me jo 72px collapsed rail tha, uske teen concrete bugs fix kiye gaye hain.
+            Sirf <code>assets/css/dior-custom.css</code> badla hai — koi PHP/JS change nahi.
+        </p>
+
+        <h2>1. Before / after</h2>
+        <div class="card">
+            <img class="shot" src="screenshots/collapsed-sidebar-before-after.png"
+                alt="Collapsed sidebar before and after comparison">
+            <p style="margin:12px 0 0;color:#64748B;font-size:13px">
+                Left = pehle, right = ab. Browser me 1440px desktop, collapsed state, Digital Prescriptions tab.
+            </p>
+        </div>
+
+        <h2>2. Kya galat tha, kyun galat tha</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Bug</th>
+                    <th>Root cause</th>
+                    <th>Fix</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="pill bad">Icon shift</span><br>Appointments / Patients / Accounts /
+                        Consultations / Pharmacy / Documents / Telemedicine — in 7 rows ka icon 72px rail ke centre se
+                        <strong>~18px baayein</strong> chipka hua tha. Baaki rows theek the.</td>
+                    <td>Jin buttons ka submenu hai unke andar ek teesra child hai —
+                        <code>&lt;i class="fas fa-minus submenu-icon"&gt;</code>. Aapki collapsed CSS me
+                        <code>.nav-label</code> aur <code>.grp-title</code> hide the par <code>.submenu-icon</code>
+                        ki width <code>0</code> set karne wali rule
+                        <code>.dior-side-nav .dior-nav-btn i { width: 24px }</code> se <em>haar</em> gayi. Chevron
+                        invisible tha par <strong>24px + 12px gap</strong> jagah kha raha tha, isliye
+                        <code>justify-content:center</code> ke bawajood icon left me chala gaya.</td>
+                    <td>Collapsed mode me <code>.submenu-icon</code> ko <code>display:none</code> + zero
+                        <code>width/margin/flex-basis</code>. Saath hi <code>.grp</code> ko fixed 56px inner width di,
+                        buttons ko <code>gap:0</code>, aur visible icon ko <code>margin: 0 auto</code> — ab har glyph
+                        rail ke exact centre (x=36) par hai.</td>
+                </tr>
+                <tr>
+                    <td><span class="pill bad">Table cut</span><br>Digital Prescriptions / Appointments jaise wide
+                        registries ka right side (Status, Actions) screen se bahar kat raha tha.</td>
+                    <td><code>.dior-doctor-wrap .dior-main-content { overflow-x: clip }</code> — clip me scrollbar
+                        nahi banta, isliye overflow hone par content <em>silently</em> kaat diya jaata tha. Table ka
+                        natural width ~1396px hai, wrapper sirf ~1218px.</td>
+                    <td>Wrapper (<code>.pr-table-wrapper</code>, <code>.va-table-wrapper</code>) me
+                        <code>overflow-x: auto</code> + patla custom scrollbar. Page par sideways scroll nahi aata,
+                        table apne card ke andar scroll hoti hai.</td>
+                </tr>
+                <tr>
+                    <td><span class="pill bad">Active row</span><br>Selected menu item solid white block tha — us par
+                        white icon almost invisible.</td>
+                    <td>Base rule <code>.dior-side-nav .dior-nav-btn.active { background:#FFFFFF }</code> collapsed rail
+                        me bhi lagu tha.</td>
+                    <td>Collapsed mode me translucent white pill
+                        (<code>rgba(255,255,255,.16)</code> + hairline ring) aur white icon
+                        <code>#FFFFFF</code> force kiya; hover bhi wahi treatment.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>3. Measured result (Chromium, collapsed state)</h2>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Check</th>
+                        <th>Before</th>
+                        <th>After</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Icon centre in rail</td>
+                        <td class="num">17.5px / 35.5px (mixed)</td>
+                        <td class="num">36px on all 13 rows</td>
+                    </tr>
+                    <tr>
+                        <td>Chevron reserved space</td>
+                        <td class="num">24px + 12px gap</td>
+                        <td class="num">0px</td>
+                    </tr>
+                    <tr>
+                        <td>Table wrapper overflow</td>
+                        <td class="num"><code>clip</code> (no scroll)</td>
+                        <td class="num"><code>auto</code> (scrollable)</td>
+                    </tr>
+                    <tr>
+                        <td>Table right edge vs card right edge (1440px)</td>
+                        <td class="num">1543px vs 1365px — 178px clipped</td>
+                        <td class="num">1543px vs 1365px — scroll ke andar reachable</td>
+                    </tr>
+                    <tr>
+                        <td>Page horizontal scroll</td>
+                        <td class="num">none</td>
+                        <td class="num">none</td>
+                    </tr>
+                    <tr>
+                        <td>Sidebar width / content offset (1025 → 1920px)</td>
+                        <td class="num">72px / 72px (correct)</td>
+                        <td class="num">72px / 72px (unchanged)</td>
+                    </tr>
+                    <tr>
+                        <td>Mobile (&lt;1025px) drawer</td>
+                        <td class="num">offscreen, translate -100%</td>
+                        <td class="num">unchanged — koi regression nahi</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>4. Screenshots</h2>
+        <div class="grid">
+            <div class="card">
+                <p class="label bad">Before — 1440px collapsed</p>
+                <img class="shot" src="screenshots/collapsed-sidebar-before.png" alt="Before: collapsed rail">
+            </div>
+            <div class="card">
+                <p class="label ok">After — 1440px collapsed</p>
+                <img class="shot" src="screenshots/collapsed-sidebar-after.png" alt="After: collapsed rail">
+            </div>
+            <div class="card">
+                <p class="label">Submenu flyout (hover) still works</p>
+                <img class="shot" src="screenshots/collapsed-sidebar-flyout.png" alt="Collapsed submenu flyout">
+            </div>
+            <div class="card">
+                <p class="label">390px phone — drawer still off-canvas</p>
+                <img class="shot" src="screenshots/mobile-390-check.png" alt="Mobile 390px check">
+            </div>
+        </div>
+
+        <h2>5. FTP par kya upload karna hai</h2>
+        <div class="card">
+            <ul>
+                <li><strong>Sirf 1 file:</strong> <code>wp-content/plugins/dior-medical/assets/css/dior-custom.css</code></li>
+                <li>File ke end me naya block hai:
+                    <code>DOCTOR DASHBOARD — COLLAPSED SIDEBAR POLISH (TASK 2)</code> — poora block ek saath append hota
+                    hai, kisi purane rule ko chheda nahi gaya.</li>
+                <li>Ye block sirf <code>@media (min-width: 1025px)</code> ke andar hai, isliye mobile drawer par koi
+                    asar nahi.</li>
+                <li>CSS <code>filemtime()</code> se version hoti hai, to upload ke baad browser cache apne aap bust ho
+                    jaayega — bas hard refresh (Ctrl/Cmd + Shift + R) kar lena.</li>
+                <li>PHP templates ya JS me koi change nahi hai, isliye wo files dobara upload karne ki zarurat nahi.</li>
+            </ul>
+        </div>
+
+        <h2>6. Verify kaise karein</h2>
+        <div class="card">
+            <ul>
+                <li>Desktop (1025px se bada) par sidebar collapse karein — har icon rail ke beech me hona chahiye.</li>
+                <li>Submenu waale items (Appointments, Patients, Accounts, Consultations, Pharmacy, Documents,
+                    Telemedicine) par hover karein — flyout menu pehle jaisa 64px par khulega.</li>
+                <li>Digital Prescriptions / View Appointment kholen — table ke neeche patla horizontal scrollbar
+                    dikhega, Status aur Actions tak scroll ho jaayega. Page khud sideways scroll nahi hoga.</li>
+                <li>Phone width par sidebar collapse button chhupa hua hai aur drawer pehle jaisa slide hota hai.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>
