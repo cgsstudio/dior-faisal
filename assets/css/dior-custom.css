@@ -57737,3 +57737,221 @@ a.va-btn-primary:hover {
         padding: 10px !important;
     }
 }
+
+
+/* ==========================================================================
+   DIOR DOCTOR DASHBOARD - FIXED HEADER & COLLAPSIBLE SIDEBAR (TASK 1)
+   ========================================================================== */
+
+/* 1. Fixed Header (Sticky at top of screen for Doctor Dashboard) */
+.dior-doctor-wrap {
+    overflow: visible !important;
+}
+
+.dior-doctor-wrap .dior-app {
+    overflow-x: clip !important;
+    overflow-y: visible !important;
+}
+
+.dior-doctor-wrap .dior-main-content {
+    overflow-x: clip !important;
+    overflow-y: visible !important;
+    position: relative !important;
+    min-width: 0 !important;
+}
+
+.dior-doctor-wrap .dior-topbar {
+    position: sticky !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 1001 !important;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    box-shadow: 0 2px 10px rgba(11, 16, 48, 0.06) !important;
+    border-bottom: 1px solid rgba(44, 108, 177, 0.12) !important;
+}
+
+/* 2. Base Collapse Button Styling */
+.dior-doctor-wrap .dior-doc-collapse-btn {
+    margin-top: 14px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+    padding-top: 10px !important;
+    color: rgba(255, 255, 255, 0.75) !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    background: transparent !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+.dior-doctor-wrap .dior-doc-collapse-btn:hover {
+    color: #FFFFFF !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dior-doctor-wrap .dior-doc-collapse-btn i {
+    width: 20px !important;
+    text-align: center !important;
+    font-size: 15px !important;
+    transition: transform 0.25s ease !important;
+}
+
+/* 3. Desktop Collapsible Sidebar (ChatGPT / Cloud / WordPress style) */
+@media (min-width: 1025px) {
+    /* Smooth width and margin transitions */
+    .dior-doctor-wrap .dior-side,
+    .dior-doctor-wrap .dior-main-content {
+        transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                    min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                    max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                    margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
+    /* Collapsed sidebar layout */
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side {
+        width: 72px !important;
+        min-width: 72px !important;
+        max-width: 72px !important;
+        overflow: visible !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-main-content {
+        margin-left: 72px !important;
+        width: calc(100% - 72px) !important;
+        max-width: calc(100% - 72px) !important;
+    }
+
+    /* Collapsed Brand Header */
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-header {
+        padding: 12px 6px !important;
+        justify-content: center !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-header .brand {
+        text-align: center !important;
+        width: 100% !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-header .brand-logo {
+        max-width: 42px !important;
+        max-height: 42px !important;
+        object-fit: contain !important;
+        margin: 0 auto !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-header span {
+        display: none !important;
+    }
+
+    /* Hide text labels, section headers, and submenu arrows */
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .nav-label,
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .grp-title,
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .submenu-icon {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        width: 0 !important;
+    }
+
+    /* Center navigation icons in collapsed mode */
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .grp {
+        padding: 6px 6px !important;
+        overflow: visible !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn {
+        justify-content: center !important;
+        padding: 11px 0 !important;
+        width: 100% !important;
+        margin-bottom: 4px !important;
+        border-radius: 8px !important;
+        text-align: center !important;
+        position: relative !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn i {
+        margin: 0 !important;
+        width: 24px !important;
+        font-size: 18px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Collapse button in collapsed mode */
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-doc-collapse-btn {
+        justify-content: center !important;
+        padding: 11px 0 !important;
+        margin-top: 10px !important;
+    }
+
+    /* Submenus: Elegant Flyout on hover in collapsed mode */
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu {
+        position: relative !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu > .dior-submenu {
+        display: none !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover > .dior-submenu {
+        display: flex !important;
+        flex-direction: column !important;
+        position: absolute !important;
+        left: 64px !important;
+        top: 0 !important;
+        min-width: 215px !important;
+        background: #002752 !important;
+        background-color: #002752 !important;
+        padding: 8px 8px !important;
+        border-radius: 0 10px 10px 0 !important;
+        box-shadow: 6px 6px 22px rgba(0, 0, 0, 0.35) !important;
+        z-index: 10005 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-left: none !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover > .dior-submenu .nav-label {
+        display: inline-block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        width: auto !important;
+        color: #FFFFFF !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover > .dior-submenu .submenu-btn {
+        justify-content: flex-start !important;
+        padding: 8px 12px !important;
+        width: 100% !important;
+        text-align: left !important;
+        gap: 10px !important;
+        border-radius: 6px !important;
+        margin-bottom: 2px !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover > .dior-submenu .submenu-btn:hover {
+        background: rgba(255, 255, 255, 0.12) !important;
+        color: #FFFFFF !important;
+    }
+
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover > .dior-submenu .submenu-btn i {
+        width: 16px !important;
+        font-size: 13px !important;
+        margin: 0 !important;
+    }
+}
+
+/* 4. Hide Collapse Toggle Button on Tablets / Mobile Screens (< 1025px) */
+@media (max-width: 1024.98px) {
+    .dior-doctor-wrap .dior-doc-collapse-btn {
+        display: none !important;
+    }
+}

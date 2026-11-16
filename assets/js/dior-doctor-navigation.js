@@ -373,3 +373,76 @@
     else window.setTimeout(sync, 0);
     window.addEventListener('hashchange', sync);
 })();
+
+/* Dior Doctor Sidebar Collapse Controller (ChatGPT / WordPress style) */
+window.diorToggleDoctorSidebarCollapse = window.diorToggleDoctorSidebarCollapse || function (e) {
+    if (e) {
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+    }
+    var app = document.getElementById('dior-doctor-app') || document.querySelector('.dior-doctor-wrap');
+    if (!app) return;
+
+    var isCollapsed = app.classList.toggle('dior-sidebar-collapsed');
+    var icon = document.getElementById('dior-doc-collapse-icon');
+    var btn = document.getElementById('dior-doc-sidebar-toggle');
+
+    if (icon) {
+        if (isCollapsed) {
+            icon.classList.remove('fa-angles-left');
+            icon.classList.add('fa-angles-right');
+        } else {
+            icon.classList.remove('fa-angles-right');
+            icon.classList.add('fa-angles-left');
+        }
+    }
+    if (btn) {
+        var label = btn.querySelector('.nav-label');
+        if (isCollapsed) {
+            btn.setAttribute('title', 'Expand Menu');
+            if (label) label.textContent = 'Expand Menu';
+        } else {
+            btn.setAttribute('title', 'Collapse Menu');
+            if (label) label.textContent = 'Collapse Menu';
+        }
+    }
+
+    try {
+        localStorage.setItem('dior_doctor_sidebar_collapsed', isCollapsed ? '1' : '0');
+    } catch (err) {}
+
+    setTimeout(function () {
+        window.dispatchEvent(new Event('resize'));
+    }, 280);
+};
+
+// Auto-restore saved collapsed state on DOMContentLoaded
+(function () {
+    function restoreState() {
+        try {
+            if (localStorage.getItem('dior_doctor_sidebar_collapsed') === '1' && window.innerWidth >= 1025) {
+                var app = document.getElementById('dior-doctor-app') || document.querySelector('.dior-doctor-wrap');
+                if (app) {
+                    app.classList.add('dior-sidebar-collapsed');
+                    var icon = document.getElementById('dior-doc-collapse-icon');
+                    var btn = document.getElementById('dior-doc-sidebar-toggle');
+                    if (icon) {
+                        icon.classList.remove('fa-angles-left');
+                        icon.classList.add('fa-angles-right');
+                    }
+                    if (btn) {
+                        btn.setAttribute('title', 'Expand Menu');
+                        var label = btn.querySelector('.nav-label');
+                        if (label) label.textContent = 'Expand Menu';
+                    }
+                }
+            }
+        } catch (e) {}
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', restoreState, { once: true });
+    } else {
+        restoreState();
+    }
+})();
+

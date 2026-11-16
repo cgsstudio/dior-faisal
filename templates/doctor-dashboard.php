@@ -29,12 +29,12 @@
                 <div class="grp">
                     <span class="grp-title">PROVIDER MENU</span>
 
-                    <button type="button" class="dior-nav-btn active btn" data-tab="doc-overview"><i
+                    <button type="button" class="dior-nav-btn active btn" data-tab="doc-overview" title="Dashboard"><i
                             class="fas fa-gauge-high"></i><span class="nav-label">Dashboard</span></button>
 
                     <div class="dior-nav-item has-submenu" id="appointments-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'appointments-menu-item')">
+                            onclick="diorToggleSubmenu(event, 'appointments-menu-item')" title="Appointments">
                             <i class="far fa-calendar"></i><span class="nav-label">Appointments</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -55,7 +55,7 @@
                     </div>
                     <div class="dior-nav-item has-submenu" id="patients-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'patients-menu-item')">
+                            onclick="diorToggleSubmenu(event, 'patients-menu-item')" title="Patients">
                             <i class="fas fa-users"></i><span class="nav-label">Patients</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -78,11 +78,11 @@
                         </div>
                     </div>
                     
-                    <button type="button" class="dior-nav-btn btn" data-tab="doc-analytics"><i
+                    <button type="button" class="dior-nav-btn btn" data-tab="doc-analytics" title="Analytics"><i
                             class="fas fa-chart-line"></i><span class="nav-label">Analytics</span></button>
                     <div class="dior-nav-item has-submenu" id="accounts-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'accounts-menu-item')">
+                            onclick="diorToggleSubmenu(event, 'accounts-menu-item')" title="Accounts">
                             <i class="fas fa-wallet"></i><span class="nav-label">Accounts</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -108,15 +108,15 @@
                             </button>
                         </div>
                     </div>
-                    <button type="button" class="dior-nav-btn btn" data-tab="doc-consultation-notes"><i
+                    <button type="button" class="dior-nav-btn btn" data-tab="doc-consultation-notes" title="Consultations Notes"><i
                             class="fas fa-notes-medical"></i><span class="nav-label">Consultations
                             Notes</span></button>
-                    <button type="button" class="dior-nav-btn btn" data-tab="doc-e-prescriptions"><i
+                    <button type="button" class="dior-nav-btn btn" data-tab="doc-e-prescriptions" title="E - Prescriptions"><i
                             class="fas fa-prescription-bottle-medical"></i><span class="nav-label">E -
                             Prescriptions</span></button>
                     <div class="dior-nav-item has-submenu" id="pharmacy-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'pharmacy-menu-item')">
+                            onclick="diorToggleSubmenu(event, 'pharmacy-menu-item')" title="Pharmacy">
                             <i class="fas fa-pills"></i><span class="nav-label">Pharmacy</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -131,7 +131,7 @@
                     </div>
                     <div class="dior-nav-item has-submenu" id="documents-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'documents-menu-item')">
+                            onclick="diorToggleSubmenu(event, 'documents-menu-item')" title="Documents & Report">
                             <i class="fas fa-file-medical"></i><span class="nav-label">Documents & Report</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -150,7 +150,7 @@
                     </div>
                     <div class="dior-nav-item has-submenu" id="telemedicine-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'telemedicine-menu-item')">
+                            onclick="diorToggleSubmenu(event, 'telemedicine-menu-item')" title="Telemedicine">
                             <i class="fas fa-video"></i><span class="nav-label">Telemedicine</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -163,13 +163,20 @@
                             </button>
                         </div>
                     </div>
-                    <button type="button" class="dior-nav-btn btn" data-tab="doc-patient-review"><i
+                    <button type="button" class="dior-nav-btn btn" data-tab="doc-patient-review" title="Feedback & Reviews"><i
                             class="fas fa-star"></i><span class="nav-label">Feedback &amp; Reviews</span></button>
-                    <button type="button" class="dior-nav-btn btn" data-tab="doc-notifications-system">
+                    <button type="button" class="dior-nav-btn btn" data-tab="doc-notifications-system" title="Notifications">
                         <i class="fas fa-bell"></i><span class="nav-label">Notifications</span>
                     </button>
-                    <button type="button" class="dior-nav-btn btn" data-tab="doc-settings"><i
+                    <button type="button" class="dior-nav-btn btn" data-tab="doc-settings" title="Settings"><i
                             class="fas fa-gear"></i><span class="nav-label">Settings</span></button>
+
+                    <!-- Collapse / Expand Sidebar Toggle (ChatGPT, Cloud, WordPress style) -->
+                    <button type="button" class="dior-nav-btn dior-doc-collapse-btn btn" id="dior-doc-sidebar-toggle"
+                        onclick="diorToggleDoctorSidebarCollapse(event)" title="Collapse Menu">
+                        <i class="fas fa-angles-left collapse-icon" id="dior-doc-collapse-icon"></i>
+                        <span class="nav-label">Collapse Menu</span>
+                    </button>
                 </div>
             </nav>
             <script>
@@ -202,6 +209,71 @@
                         }
                     }
                 }
+
+                function diorToggleDoctorSidebarCollapse(e) {
+                    if (e) {
+                        if (e.preventDefault) e.preventDefault();
+                        if (e.stopPropagation) e.stopPropagation();
+                    }
+                    var app = document.getElementById('dior-doctor-app');
+                    if (!app) return;
+
+                    var isCollapsed = app.classList.toggle('dior-sidebar-collapsed');
+                    var icon = document.getElementById('dior-doc-collapse-icon');
+                    var btn = document.getElementById('dior-doc-sidebar-toggle');
+
+                    if (icon) {
+                        if (isCollapsed) {
+                            icon.classList.remove('fa-angles-left');
+                            icon.classList.add('fa-angles-right');
+                        } else {
+                            icon.classList.remove('fa-angles-right');
+                            icon.classList.add('fa-angles-left');
+                        }
+                    }
+                    if (btn) {
+                        var label = btn.querySelector('.nav-label');
+                        if (isCollapsed) {
+                            btn.setAttribute('title', 'Expand Menu');
+                            if (label) label.textContent = 'Expand Menu';
+                        } else {
+                            btn.setAttribute('title', 'Collapse Menu');
+                            if (label) label.textContent = 'Collapse Menu';
+                        }
+                    }
+
+                    try {
+                        localStorage.setItem('dior_doctor_sidebar_collapsed', isCollapsed ? '1' : '0');
+                    } catch (err) {}
+
+                    // Trigger resize so responsive tables and charts re-fit smoothly
+                    setTimeout(function () {
+                        window.dispatchEvent(new Event('resize'));
+                    }, 280);
+                }
+
+                // Restore saved sidebar collapsed state on load
+                (function () {
+                    try {
+                        if (localStorage.getItem('dior_doctor_sidebar_collapsed') === '1' && window.innerWidth >= 1025) {
+                            var app = document.getElementById('dior-doctor-app');
+                            if (app) {
+                                app.classList.add('dior-sidebar-collapsed');
+                                var icon = document.getElementById('dior-doc-collapse-icon');
+                                var btn = document.getElementById('dior-doc-sidebar-toggle');
+                                if (icon) {
+                                    icon.classList.remove('fa-angles-left');
+                                    icon.classList.add('fa-angles-right');
+                                }
+                                if (btn) {
+                                    btn.setAttribute('title', 'Expand Menu');
+                                    var label = btn.querySelector('.nav-label');
+                                    if (label) label.textContent = 'Expand Menu';
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                })();
             </script>
         </aside>
 
