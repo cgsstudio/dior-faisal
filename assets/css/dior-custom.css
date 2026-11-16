@@ -57955,3 +57955,432 @@ a.va-btn-primary:hover {
         display: none !important;
     }
 }
+/* ==========================================================================
+   DIGITAL PRESCRIPTIONS — mobile card layout
+   Mirrors the Consultation Notes treatment ("CONSULTATION NOTES — compact
+   mobile layout with table rows converted to cards"): the desktop table stays
+   semantic, and at <=991.98px each prescription row becomes a labelled card
+   with the same tokens, radii and shadows used by every other sub-page.
+   ========================================================================== */
+
+/* Desktop: 12 columns need breathing room, so tighten padding and let the
+   multi-drug cells wrap instead of forcing a wide min-width. */
+#dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .pr-table-wrapper {
+    overflow-x: auto;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table.va-table {
+    min-width: 960px;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody td {
+    white-space: nowrap;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody td.pr-multi-cell,
+#dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody td[data-label="Title"],
+#dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody td[data-label="Doctor"] {
+    white-space: normal;
+    min-width: 96px;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table thead th,
+#dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody td {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+}
+
+@media (max-width: 991.98px) {
+    /* Recover the horizontal space consumed by the shared sub-page padding. */
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions.dior-prescriptions-screen {
+        box-sizing: border-box !important;
+        width: calc(100% + 36px) !important;
+        max-width: calc(100% + 36px) !important;
+        margin-left: -18px !important;
+        margin-right: -18px !important;
+        padding: 12px 8px 24px !important;
+        min-width: 0 !important;
+        overflow-x: clip !important;
+    }
+
+    /* Page heading: title on top, breadcrumb underneath. */
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .pr-page-heading {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        gap: 5px !important;
+        padding: 0 2px !important;
+        margin-bottom: 14px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .pr-page-title {
+        font-size: 19px !important;
+        line-height: 1.25 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .pr-page-sub {
+        margin: 4px 0 0 !important;
+        font-size: 12px !important;
+        line-height: 1.45 !important;
+        color: var(--dior-color-text-muted, #64748B) !important;
+    }
+
+    /* Card header stacks: title, then search, then the action buttons. */
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .va-header-container {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding: 14px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .va-title-box h2 {
+        font-size: 17px !important;
+        line-height: 1.3 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .pr-toolbar-actions {
+        display: grid !important;
+        grid-template-columns: repeat(3, 40px) !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .pr-search-wrap {
+        grid-column: 1 / -1 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-search {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: 40px !important;
+        font-size: 13px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-add-btn,
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-export-btn,
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-refresh-btn {
+        width: 40px !important;
+        min-width: 40px !important;
+        height: 40px !important;
+        padding: 0 !important;
+        justify-self: start !important;
+    }
+
+    /* The table itself stops being a table: no clipping, no sideways scroll. */
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .pr-table-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 10px !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+        border: 0 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table.pr-responsive-table {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+        border: 0 !important;
+        overflow: visible !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table thead {
+        display: none !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id] {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-template-rows: auto !important;
+        gap: 0 12px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 12px !important;
+        border: 1px solid var(--dior-color-border, #E2E8F0) !important;
+        border-radius: 14px !important;
+        background: #FFFFFF !important;
+        box-shadow: 0 3px 12px rgba(15, 23, 42, .045) !important;
+        overflow: hidden !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: center !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        padding: 8px 4px !important;
+        border: 0 !important;
+        border-bottom: 1px solid #EEF2F7 !important;
+        background: transparent !important;
+        color: var(--dior-color-text, #334155) !important;
+        font-size: 12px !important;
+        line-height: 1.45 !important;
+        text-align: left !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        overflow-wrap: anywhere !important;
+        box-shadow: none !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td::before {
+        content: attr(data-label);
+        display: block !important;
+        margin-bottom: 5px !important;
+        color: var(--dior-color-text-muted, #64748B) !important;
+        font-size: 9px !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        letter-spacing: .055em !important;
+        text-transform: uppercase !important;
+    }
+
+    /* Ordering: toolbar → id → title → patient → date → medication grid. */
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>.pr-select-cell {
+        grid-column: 1 / -1 !important;
+        grid-row: 1 !important;
+        align-items: flex-end !important;
+        padding: 0 0 5px !important;
+        border-bottom: 0 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table .pr-select-cell::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table .pr-select-cell .form-check-input {
+        margin: 0 !important;
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td:nth-child(2) {
+        grid-column: 1 / -1 !important;
+        grid-row: 2 !important;
+        padding-top: 2px !important;
+        color: var(--dior-color-text-muted, #64748B) !important;
+        font-size: 11px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td:nth-child(3) {
+        grid-column: 1 / -1 !important;
+        grid-row: 3 !important;
+        padding-top: 10px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td:nth-child(4) {
+        grid-column: 1 / -1 !important;
+        grid-row: 4 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table .pr-patient-profile {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 10px !important;
+        width: 100% !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table .pr-patient-avatar {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 36px !important;
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 50% !important;
+        background: #E8F0F9 !important;
+        color: #1A528E !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table .va-user-name {
+        color: var(--dior-color-text, #0F172A) !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td:nth-child(5) {
+        grid-column: 1 / -1 !important;
+        grid-row: 5 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td:nth-child(6) {
+        grid-column: 1 / -1 !important;
+        grid-row: 6 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td:nth-child(7) {
+        grid-column: 1 / 2 !important;
+        grid-row: 7 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td:nth-child(8) {
+        grid-column: 2 / 3 !important;
+        grid-row: 7 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td:nth-child(9) {
+        grid-column: 1 / -1 !important;
+        grid-row: 8 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td:nth-child(10) {
+        grid-column: 1 / 2 !important;
+        grid-row: 9 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>td:nth-child(11) {
+        grid-column: 2 / 3 !important;
+        grid-row: 9 !important;
+        align-items: flex-start !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id]>.pr-actions-cell {
+        grid-column: 1 / -1 !important;
+        grid-row: 10 !important;
+        align-items: center !important;
+        padding-top: 10px !important;
+        border-bottom: 0 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table .pr-actions-cell::before {
+        align-self: flex-start !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table .va-row-actions {
+        display: flex !important;
+        justify-content: flex-end !important;
+        width: 100% !important;
+        gap: 8px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table .va-action-btn-sm {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        padding: 0 !important;
+        border-radius: 9px !important;
+    }
+
+    /* Medication / dosage / frequency / duration keep their per-line rhythm. */
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table .pr-multi-line {
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+        color: var(--dior-color-text, #0F172A) !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table .pr-multi-line+.pr-multi-line {
+        margin-top: 2px !important;
+    }
+
+    /* Status badge stays a pill and never overflows the card. */
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table .va-badge {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    /* Empty state becomes a dashed card, matching the other registries. */
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table #pr-empty-row {
+        display: block !important;
+        width: 100% !important;
+        padding: 14px !important;
+        border: 1px dashed var(--dior-color-border, #E2E8F0) !important;
+        border-radius: 12px !important;
+        background: #FFFFFF !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table #pr-empty-row td {
+        display: block !important;
+        width: 100% !important;
+        padding: 16px 8px !important;
+        border: 0 !important;
+        text-align: center !important;
+        white-space: normal !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table #pr-empty-row td::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    /* Pagination generated by dior-static-table-interactions.js wraps cleanly. */
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .va-footer,
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .dior-table-pagination-wrap,
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .dior-static-pagination,
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .dataTables_wrapper,
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .dataTables_paginate {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+        padding: 12px 8px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .dior-pagination-count,
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .va-pagination-text {
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions.dior-prescriptions-screen {
+        width: calc(100% + 20px) !important;
+        max-width: calc(100% + 20px) !important;
+        margin-left: -10px !important;
+        margin-right: -10px !important;
+        padding: 10px 5px 22px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions.dior-prescriptions-screen {
+        width: calc(100% + 16px) !important;
+        max-width: calc(100% + 16px) !important;
+        margin-left: -8px !important;
+        margin-right: -8px !important;
+        padding: 10px 4px 20px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .pr-page-title {
+        font-size: 18px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .va-header-container {
+        padding: 12px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions .pr-table-wrapper {
+        padding: 8px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions #pr-table tbody tr[data-id] {
+        padding: 10px !important;
+    }
+}

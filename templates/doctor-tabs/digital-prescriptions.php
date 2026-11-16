@@ -20,7 +20,11 @@ foreach ($patients_query as $pq) {
 ?>
 
 <style>
-    /* ── Digital Prescriptions Icon & Table Consistency ───────────────────────── */
+    /* ── Digital Prescriptions — desktop chrome ─────────────────────────────────
+       Colours, borders, radii and shadows come from the shared sub-page design
+       system in dior-custom.css (§12). Only sizing specific to this registry is
+       declared here; the mobile card layout lives in the stylesheet under
+       "DIGITAL PRESCRIPTIONS — mobile card layout".                            */
     #tab-doc-e-prescriptions .va-icon-btn {
         width: 40px !important;
         height: 40px !important;
@@ -29,9 +33,10 @@ foreach ($patients_query as $pq) {
         align-items: center !important;
         justify-content: center !important;
         font-size: 18px !important;
-        transition: transform 0.2s ease, box-shadow 0.2s ease !important;
         cursor: pointer !important;
         border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
 
     #tab-doc-e-prescriptions .va-icon-btn i {
@@ -39,50 +44,17 @@ foreach ($patients_query as $pq) {
         line-height: 1 !important;
     }
 
-    #tab-doc-e-prescriptions .va-btn-primary {
-        background-color: #1A528E !important;
-        color: #ffffff !important;
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25) !important;
-    }
-
-    #tab-doc-e-prescriptions .va-btn-primary:hover {
-        background-color: #1A528E !important;
-        transform: translateY(-2px) !important;
-    }
-
-    #tab-doc-e-prescriptions .va-btn-success {
-        background-color: #10B981 !important;
-        color: #ffffff !important;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
-    }
-
-    #tab-doc-e-prescriptions .va-btn-success:hover {
-        background-color: #059669 !important;
-        transform: translateY(-2px) !important;
-    }
-
-    #tab-doc-e-prescriptions .va-btn-info {
-        background-color: #3B82F6 !important;
-        color: #ffffff !important;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25) !important;
-    }
-
-    #tab-doc-e-prescriptions .va-btn-info:hover {
-        background-color: #2563EB !important;
-        transform: translateY(-2px) !important;
-    }
-
     #tab-doc-e-prescriptions .va-action-btn-sm {
         width: 34px !important;
         height: 34px !important;
-        border-radius: 6px !important;
+        min-width: 34px !important;
+        border-radius: 8px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         font-size: 15px !important;
         border: none !important;
         cursor: pointer !important;
-        transition: transform 0.15s ease, background-color 0.15s ease !important;
     }
 
     #tab-doc-e-prescriptions .va-action-btn-sm i {
@@ -91,7 +63,7 @@ foreach ($patients_query as $pq) {
     }
 
     #tab-doc-e-prescriptions .va-btn-edit {
-        background: rgba(79, 70, 229, 0.1) !important;
+        background: rgba(26, 82, 142, 0.1) !important;
         color: #1A528E !important;
     }
 
@@ -110,207 +82,282 @@ foreach ($patients_query as $pq) {
         color: #ffffff !important;
     }
 
-    #tab-doc-e-prescriptions .va-search-box i {
-        font-size: 15px !important;
-        color: #94A3B8 !important;
+    #tab-doc-e-prescriptions .va-btn-view {
+        background: rgba(44, 108, 177, 0.1) !important;
+        color: #2C6CB1 !important;
     }
 
-    #tab-doc-e-prescriptions .va-breadcrumb-list i {
+    #tab-doc-e-prescriptions .va-btn-view:hover {
+        background: #2C6CB1 !important;
+        color: #ffffff !important;
+    }
+
+    /* Prescription registry cell presentation (desktop). */
+    #tab-doc-e-prescriptions .pr-rx-title {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        color: #0F172A !important;
+        font-weight: 700 !important;
+    }
+
+    #tab-doc-e-prescriptions .pr-rx-title i {
+        color: #C5A059 !important;
+        font-size: 12px !important;
+    }
+
+    #tab-doc-e-prescriptions .pr-multi-line {
+        white-space: normal !important;
+        line-height: 1.45 !important;
+    }
+
+    #tab-doc-e-prescriptions .pr-patient-profile {
+        gap: 10px !important;
+    }
+
+    #tab-doc-e-prescriptions .pr-patient-avatar {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 30px !important;
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 50% !important;
+        background: #E8F0F9 !important;
+        color: #1A528E !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+    }
+
+    #tab-doc-e-prescriptions .pr-empty-cell {
+        text-align: center !important;
+        padding: 40px 16px !important;
+        color: #64748B !important;
+    }
+
+    #tab-doc-e-prescriptions .pr-empty-icon {
+        display: block !important;
+        font-size: 26px !important;
+        color: #CBD5E1 !important;
+        margin-bottom: 10px !important;
+    }
+
+    #tab-doc-e-prescriptions .pr-empty-cell strong {
+        display: block !important;
         font-size: 15px !important;
+        color: #0F172A !important;
+        font-weight: 700 !important;
+        margin-bottom: 4px !important;
+    }
+
+    #tab-doc-e-prescriptions .pr-empty-cell span {
+        display: block !important;
+        font-size: 13px !important;
     }
 </style>
 
-<section class="dior-tab-panel" id="tab-doc-e-prescriptions" style="display: none;">
-    <!-- Breadcrumb Header -->
-    <div class="mb-4" style="display: flex; justify-content: space-between; align-items: center;">
+<section class="dior-tab-panel dior-prescriptions-screen" id="tab-doc-e-prescriptions" style="display: none;">
+    <!-- Page Heading -->
+    <div class="mb-4 pr-page-heading">
         <div>
-            <h4 class="mb-0 text-dark" style="font-size: 20px; font-weight: 700;">Digital Prescriptions</h4>
+            <h4 class="mb-0 text-dark pr-page-title">Digital Prescriptions</h4>
+            <p class="pr-page-sub">Every e-prescription issued from this account, in one registry.</p>
         </div>
         <div>
             <ul class="va-breadcrumb-list">
-                <li><a href="#"><i class="fas fa-house" style="color: #1A528E;"></i></a></li>
-                <li><span style="color: #94A3B8;">/</span></li>
+                <li><a href="#"><i class="fas fa-house"></i></a></li>
+                <li>/</li>
                 <li class="active"><span>Digital Prescriptions</span></li>
             </ul>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="section-body">
-        <div class="view-appointment-card">
-
-            <!-- Table Header -->
-            <div class="va-header-container">
-                <div class="va-title-box">
-                    <h2><i class="fas fa-prescription-bottle-medical text-primary me-2"></i>Digital Prescriptions</h2>
-                    <div class="va-title-line"></div>
-                </div>
-
-                <div class="va-actions-wrapper">
-                    <div class="input-group input-group-sm dior-bs-search-group" style="width: 240px;">
-                        <input type="text" class="form-control border-start-0 ps-0" placeholder="Search records..."
-                            onkeyup="diorFilterPrescriptions(this.value)">
-                    </div>
-                    <div class="va-actions-group">
-                        <button type="button" class="va-icon-btn va-btn-primary btn" aria-label="Add new prescription"
-                            title="Add Medication Prescription (FDA Approved)" onclick="diorOpenFdaPrescriptionModal()">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                        <button type="button" class="va-icon-btn va-btn-success btn" aria-label="Export to Excel"
-                            title="Export CSV" onclick="diorExportPrescriptionsCsv()">
-                            <i class="fas fa-file-arrow-down"></i>
-                        </button>
-                        <button type="button" class="va-icon-btn va-btn-info btn" aria-label="Refresh data"
-                            title="Refresh" onclick="window.location.reload()">
-                            <i class="fas fa-rotate-right"></i>
-                        </button>
-                    </div>
-                </div>
+    <div class="view-appointment-card">
+        <!-- Header -->
+        <div class="va-header-container">
+            <div class="va-title-box">
+                <h2><i class="fas fa-prescription-bottle-medical text-primary me-2"></i>Digital Prescriptions</h2>
+                <div class="va-title-line"></div>
             </div>
+            <div class="va-actions-box pr-toolbar-actions">
+                <div class="input-group input-group-sm dior-bs-search-group pr-search-wrap">
+                    <input type="text" id="pr-search" class="dior-search-input form-control border-start-0 ps-0"
+                        placeholder="Search records..." aria-label="Search prescriptions">
+                </div>
+                <button type="button" class="va-icon-btn va-btn-primary btn" id="pr-add-btn"
+                    title="Add Medication Prescription (FDA Approved)" aria-label="Add new prescription"
+                    onclick="diorOpenFdaPrescriptionModal()">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button type="button" class="va-icon-btn va-btn-success btn" id="pr-export-btn"
+                    title="Export CSV" aria-label="Export prescriptions to CSV"
+                    onclick="diorExportPrescriptionsCsv()">
+                    <i class="fas fa-file-arrow-down"></i>
+                </button>
+                <button type="button" class="va-icon-btn va-btn-info btn" id="pr-refresh-btn" title="Refresh"
+                    aria-label="Refresh" onclick="window.location.reload()">
+                    <i class="fas fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
 
-            <!-- Table Responsive Wrapper -->
-            <div class="va-table-wrapper">
-                <table class="va-table table table-hover">
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;" class="text-center">
-                                <input type="checkbox" class="va-checkbox form-check-input">
-                            </th>
-                            <th>Prescription ID <i class="fas fa-sort"></i></th>
-                            <th>Title <i class="fas fa-sort"></i></th>
-                            <th>Patient Name <i class="fas fa-sort"></i></th>
-                            <th>Date <i class="fas fa-sort"></i></th>
-                            <th>Medications <i class="fas fa-sort"></i></th>
-                            <th>Dosage <i class="fas fa-sort"></i></th>
-                            <th>Frequency <i class="fas fa-sort"></i></th>
-                            <th>Duration <i class="fas fa-sort"></i></th>
-                            <th>Doctor <i class="fas fa-sort"></i></th>
-                            <th>Status <i class="fas fa-sort"></i></th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        // Restrict prescription visibility to the current doctor's records; administrators may view all.
-                        if (current_user_can('manage_options')) {
-                            $prescriptions = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}dior_prescriptions ORDER BY id DESC");
-                        } else {
-                            $prescriptions = $wpdb->get_results($wpdb->prepare(
-                                "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE doctor_id = %d ORDER BY id DESC",
-                                get_current_user_id()
-                            ));
-                        }
+        <!-- Table -->
+        <div class="va-table-wrapper pr-table-wrapper">
+            <table class="va-table table table-hover pr-responsive-table" id="pr-table">
+                <thead>
+                    <tr>
+                        <th class="pr-select-heading"><input type="checkbox" class="va-checkbox form-check-input"
+                                id="pr-select-all" aria-label="Select all prescriptions"></th>
+                        <th>Prescription ID <i class="fas fa-sort"></i></th>
+                        <th>Title <i class="fas fa-sort"></i></th>
+                        <th>Patient Name <i class="fas fa-sort"></i></th>
+                        <th>Date <i class="fas fa-sort"></i></th>
+                        <th>Medications <i class="fas fa-sort"></i></th>
+                        <th>Dosage <i class="fas fa-sort"></i></th>
+                        <th>Frequency <i class="fas fa-sort"></i></th>
+                        <th>Duration <i class="fas fa-sort"></i></th>
+                        <th>Doctor <i class="fas fa-sort"></i></th>
+                        <th>Status <i class="fas fa-sort"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="pr-tbody">
+                    <?php
+                    // Restrict prescription visibility to the current doctor's records; administrators may view all.
+                    if (current_user_can('manage_options')) {
+                        $prescriptions = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}dior_prescriptions ORDER BY id DESC");
+                    } else {
+                        $prescriptions = $wpdb->get_results($wpdb->prepare(
+                            "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE doctor_id = %d ORDER BY id DESC",
+                            get_current_user_id()
+                        ));
+                    }
 
-                        if ($prescriptions && count($prescriptions) > 0) {
-                            foreach ($prescriptions as $p) {
-                                $badge_color = '#059669';
-                                $badge_class = 'col-green';
-                                if (strtolower($p->status) === 'completed') {
-                                    $badge_color = '#2563eb';
-                                    $badge_class = 'col-blue';
-                                } elseif (strtolower($p->status) === 'cancelled') {
-                                    $badge_color = '#dc2626';
-                                    $badge_class = 'col-red';
-                                }
+                    // Split a multi-drug cell into one entry per line so desktop and the mobile
+                    // card layout render an identical medication list.
+                    $pr_split_cell = function ($raw_value, $pattern = '/\|\s*|;\s*|\r\n|\n/') {
+                        $parts = preg_split($pattern, trim((string) $raw_value));
+                        $parts = array_filter(array_map('trim', (array) $parts), function ($part) {
+                            return $part !== '';
+                        });
+                        return !empty($parts) ? array_values($parts) : [trim((string) $raw_value)];
+                    };
 
-                                $view_json = htmlspecialchars(json_encode([
-                                    'id' => $p->prescription_id ?: $p->prescription_uid,
-                                    'title' => !empty($p->title) ? $p->title : 'General Care Prescription',
-                                    'patient_name' => $p->patient_name,
-                                    'date' => date('M d, Y', strtotime($p->prescription_date ?: $p->created_at)),
-                                    'medications' => $p->medications ?: $p->medication,
-                                    'dosage' => $p->dosage,
-                                    'frequency' => $p->frequency,
-                                    'duration' => $p->duration,
-                                    'doctor_name' => $p->doctor_name ?: 'Dr. Marcus Sterling, DO',
-                                    'status' => $p->status,
-                                    'instructions' => $p->instructions ?: '',
-                                    'quantity' => $p->quantity ?: 'As prescribed',
-                                    'refills' => $p->refills ?: 0,
-                                ]), ENT_QUOTES, 'UTF-8');
-
-                                echo '<tr>';
-                                echo '<td class="text-center"><input type="checkbox" class="va-checkbox form-check-input"></td>';
-                                echo '<td><strong>' . esc_html($p->prescription_id ?: $p->prescription_uid) . '</strong></td>';
-                                echo '<td>
-                                        <span class="dior-rx-title-badge" style="font-weight:700; color:#0f172a; display:inline-flex; align-items:center; gap:6px;">
-                                            <i class="fa-solid fa-file-waveform" style="color:#d4af37; font-size:12px;"></i> ' . esc_html(!empty($p->title) ? $p->title : 'General Care') . '
-                                        </span>
-                                      </td>';
-                                echo '<td>
-                                        <div class="va-user-profile">
-                                            <span class="va-user-name">' . esc_html($p->patient_name) . '</span>
-                                        </div>
-                                      </td>';
-                                echo '<td><i class="far fa-calendar va-icon-blue"></i> ' . esc_html(date('M d, Y', strtotime($p->prescription_date ?: $p->created_at))) . '</td>';
-
-                                $med_raw = $p->medications ?: $p->medication;
-                                $med_lines = preg_split('/;\s*|\r\n|\n/', trim($med_raw));
-                                $med_lines = array_filter(array_map('trim', (array) $med_lines));
-                                if (empty($med_lines)) {
-                                    $med_lines = [$med_raw];
-                                }
-                                echo '<td><div style="display:flex; flex-direction:column; gap:3px; font-weight:700; color:#0f172a;">';
-                                foreach ($med_lines as $m_line) {
-                                    echo '<div style="white-space:normal;">' . esc_html($m_line) . '</div>';
-                                }
-                                echo '</div></td>';
-
-                                $dose_lines = preg_split('/\|\s*|;\s*|\r\n|\n/', trim($p->dosage));
-                                $dose_lines = array_filter(array_map('trim', (array) $dose_lines));
-                                if (empty($dose_lines)) {
-                                    $dose_lines = [$p->dosage];
-                                }
-                                echo '<td><div style="display:flex; flex-direction:column; gap:3px;">';
-                                foreach ($dose_lines as $d_line) {
-                                    echo '<div style="white-space:normal;">' . esc_html($d_line) . '</div>';
-                                }
-                                echo '</div></td>';
-
-                                $freq_lines = preg_split('/\|\s*|;\s*|\r\n|\n/', trim($p->frequency));
-                                $freq_lines = array_filter(array_map('trim', (array) $freq_lines));
-                                if (empty($freq_lines)) {
-                                    $freq_lines = [$p->frequency];
-                                }
-                                echo '<td><div style="display:flex; flex-direction:column; gap:3px;">';
-                                foreach ($freq_lines as $f_line) {
-                                    echo '<div style="white-space:normal;">' . esc_html($f_line) . '</div>';
-                                }
-                                echo '</div></td>';
-
-                                $dur_lines = preg_split('/\|\s*|;\s*|\r\n|\n/', trim($p->duration));
-                                $dur_lines = array_filter(array_map('trim', (array) $dur_lines));
-                                if (empty($dur_lines)) {
-                                    $dur_lines = [$p->duration];
-                                }
-                                echo '<td><div style="display:flex; flex-direction:column; gap:3px;">';
-                                foreach ($dur_lines as $du_line) {
-                                    echo '<div style="white-space:normal;">' . esc_html($du_line) . '</div>';
-                                }
-                                echo '</div></td>';
-                                echo '<td>' . esc_html($p->doctor_name ?: 'Dr. Marcus Sterling, DO') . '</td>';
-                                echo '<td><span class="badge-solid ' . $badge_class . '" style="background-color: transparent; color: ' . $badge_color . '; padding: 6px 12px; border-radius: 6px; font-weight: 700;">' . esc_html($p->status) . '</span></td>';
-                                echo '<td>
-                                        <div class="va-row-actions">
-                                            <button type="button" class="va-action-btn-sm va-btn-view btn" title="View Prescription Details" onclick="diorOpenPrescriptionDetailModal(' . $view_json . ')"><i class="fas fa-eye"></i></button>
-                                            <button type="button" class="va-action-btn-sm va-btn-edit btn" title="Edit Prescription" onclick="diorOpenFdaPrescriptionModal()"><i class="fas fa-pen-to-square"></i></button>
-                                            <button type="button" class="va-action-btn-sm va-btn-delete btn" title="Delete Prescription" onclick="diorDeletePrescriptionRow(this)"><i class="fas fa-trash-can"></i></button>
-                                        </div>
-                                      </td>';
-                                echo '</tr>';
+                    if (!empty($prescriptions)):
+                        foreach ($prescriptions as $p):
+                            $badge_class = 'va-badge-completed';
+                            if (strtolower($p->status) === 'completed') {
+                                $badge_class = 'va-badge-confirmed';
+                            } elseif (strtolower($p->status) === 'cancelled') {
+                                $badge_class = 'va-badge-cancelled';
+                            } elseif (strtolower($p->status) === 'pending' || strtolower($p->status) === 'draft') {
+                                $badge_class = 'va-badge-pending';
                             }
-                        } else {
-                            echo '<tr><td colspan="12" class="text-center py-4" style="color:#64748b;">No digital prescriptions found. Click + to add one.</td></tr>';
-                        }
+
+                            $pr_date = !empty($p->prescription_date) ? $p->prescription_date : $p->created_at;
+                            $pr_date_label = $pr_date ? date('M d, Y', strtotime($pr_date)) : '—';
+                            $pr_id = $p->prescription_id ?: $p->prescription_uid;
+                            $pr_title = !empty($p->title) ? $p->title : 'General Care Prescription';
+
+                            $view_json = htmlspecialchars(json_encode([
+                                'id' => $pr_id,
+                                'title' => $pr_title,
+                                'patient_name' => $p->patient_name,
+                                'date' => $pr_date_label,
+                                'medications' => $p->medications ?: $p->medication,
+                                'dosage' => $p->dosage,
+                                'frequency' => $p->frequency,
+                                'duration' => $p->duration,
+                                'doctor_name' => $p->doctor_name ?: 'Dr. Marcus Sterling, DO',
+                                'status' => $p->status,
+                                'instructions' => $p->instructions ?: '',
+                                'quantity' => $p->quantity ?: 'As prescribed',
+                                'refills' => $p->refills ?: 0,
+                            ]), ENT_QUOTES, 'UTF-8');
+
+                            $med_lines = $pr_split_cell($p->medications ?: $p->medication, '/;\s*|\r\n|\n/');
+                            $dose_lines = $pr_split_cell($p->dosage);
+                            $freq_lines = $pr_split_cell($p->frequency);
+                            $dur_lines = $pr_split_cell($p->duration);
+                            ?>
+                            <tr data-id="<?php echo esc_attr($pr_id); ?>">
+                                <td class="pr-select-cell"><input type="checkbox"
+                                        class="va-checkbox pr-row-check form-check-input"
+                                        aria-label="Select prescription"></td>
+                                <td data-label="Prescription ID"><strong><?php echo esc_html($pr_id); ?></strong></td>
+                                <td data-label="Title">
+                                    <span class="pr-rx-title">
+                                        <i class="fa-solid fa-file-waveform"></i> <?php echo esc_html($pr_title); ?>
+                                    </span>
+                                </td>
+                                <td data-label="Patient Name">
+                                    <div class="va-user-profile pr-patient-profile">
+                                        <span class="pr-patient-avatar"><?php echo esc_html(strtoupper(substr(trim((string) $p->patient_name), 0, 1)) ?: 'P'); ?></span>
+                                        <span class="va-user-name"><?php echo esc_html($p->patient_name ?: '—'); ?></span>
+                                    </div>
+                                </td>
+                                <td data-label="Date"><i class="far fa-calendar va-icon-blue"></i> <?php echo esc_html($pr_date_label); ?></td>
+                                <td data-label="Medications" class="pr-multi-cell">
+                                    <?php foreach ($med_lines as $m_line): ?>
+                                        <div class="pr-multi-line"><?php echo esc_html($m_line); ?></div>
+                                    <?php endforeach; ?>
+                                </td>
+                                <td data-label="Dosage" class="pr-multi-cell">
+                                    <?php foreach ($dose_lines as $d_line): ?>
+                                        <div class="pr-multi-line"><?php echo esc_html($d_line); ?></div>
+                                    <?php endforeach; ?>
+                                </td>
+                                <td data-label="Frequency" class="pr-multi-cell">
+                                    <?php foreach ($freq_lines as $f_line): ?>
+                                        <div class="pr-multi-line"><?php echo esc_html($f_line); ?></div>
+                                    <?php endforeach; ?>
+                                </td>
+                                <td data-label="Duration" class="pr-multi-cell">
+                                    <?php foreach ($dur_lines as $du_line): ?>
+                                        <div class="pr-multi-line"><?php echo esc_html($du_line); ?></div>
+                                    <?php endforeach; ?>
+                                </td>
+                                <td data-label="Doctor"><?php echo esc_html($p->doctor_name ?: 'Dr. Marcus Sterling, DO'); ?></td>
+                                <td data-label="Status"><span
+                                        class="va-badge <?php echo esc_attr($badge_class); ?>"><?php echo esc_html(ucfirst($p->status)); ?></span>
+                                </td>
+                                <td data-label="Actions" class="pr-actions-cell">
+                                    <div class="va-row-actions">
+                                        <button type="button" class="va-action-btn-sm va-btn-view pr-view-btn btn"
+                                            title="View Prescription Details"
+                                            onclick="diorOpenPrescriptionDetailModal(<?php echo $view_json; ?>)"><i
+                                                class="fas fa-eye"></i></button>
+                                        <button type="button" class="va-action-btn-sm va-btn-edit pr-edit-btn btn"
+                                            title="Edit Prescription"
+                                            onclick="diorOpenFdaPrescriptionModal()"><i
+                                                class="fas fa-pen-to-square"></i></button>
+                                        <button type="button" class="va-action-btn-sm va-btn-delete pr-delete-btn btn"
+                                            title="Delete Prescription" onclick="diorDeletePrescriptionRow(this)"><i
+                                                class="fas fa-trash-can"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php
+                        endforeach;
+                    else:
                         ?>
-                    </tbody>
-                </table>
-            </div>
+                        <tr id="pr-empty-row">
+                            <td colspan="12" class="pr-empty-cell">
+                                <i class="fa-solid fa-prescription-bottle-medical pr-empty-icon"></i>
+                                <strong>No digital prescriptions yet</strong>
+                                <span>Click the <i class="fas fa-plus"></i> button above to issue the first
+                                    prescription.</span>
+                            </td>
+                        </tr>
+                        <?php
+                    endif;
+                    ?>
+                </tbody>
+            </table>
+        </div>
 
-            <div class="va-footer">
-                <div class="va-pagination-text"><?php echo count($prescriptions ?: []); ?> total prescriptions</div>
-            </div>
-
+        <div class="va-footer pr-footer">
+            <div class="va-pagination-text"><?php echo count($prescriptions ?: []); ?> total prescriptions</div>
         </div>
     </div>
 </section>
@@ -641,13 +688,18 @@ foreach ($patients_query as $pq) {
 </div>
 
 <script>
-    // Filter Prescriptions Table
+    // Filter Prescriptions Table.
+    // The generic table controller (dior-static-table-interactions.js) already
+    // paginates and searches this registry through the shared search field, so
+    // this helper only hides rows when it is called directly from a legacy
+    // caller and never fights the paginator for control of row.style.display.
     function diorFilterPrescriptions(val) {
         var filter = (val || '').toLowerCase();
-        var rows = document.querySelectorAll('#tab-doc-e-prescriptions table.va-table tbody tr');
+        var rows = document.querySelectorAll('#tab-doc-e-prescriptions #pr-table tbody tr');
         rows.forEach(function (row) {
+            if (!row.hasAttribute('data-id')) return; // leave the empty-state row alone
             var txt = (row.textContent || '').toLowerCase();
-            row.style.display = txt.indexOf(filter) !== -1 ? '' : 'none';
+            row.style.display = (!filter || txt.indexOf(filter) !== -1) ? '' : 'none';
         });
     }
 

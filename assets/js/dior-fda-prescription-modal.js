@@ -827,6 +827,11 @@
                    '</div>';
         };
 
+        var escapeInitial = function(name) {
+            var initial = String(name || 'P').trim().charAt(0).toUpperCase();
+            return initial.replace(/[&<>"']/g, '');
+        };
+
         var medsHtml = formatCellLines(p.medications, ';');
         var doseHtml = formatCellLines(p.dosage, '|');
         var freqHtml = formatCellLines(p.frequency, '|');
@@ -834,28 +839,32 @@
 
         var tr = document.createElement('tr');
         tr.style.animation = 'diorFadeIn 0.4s ease';
+        // data-label attributes drive the mobile card layout; data-id keeps the row
+        // addressable by the prescriptions registry (search, select-all, delete).
+        tr.setAttribute('data-id', p.prescription_id || '');
         tr.innerHTML = `
-            <td class="text-center"><input type="checkbox" class="va-checkbox"></td>
-            <td><strong>${p.prescription_id}</strong></td>
-            <td>
-                <span class="dior-rx-title-badge" style="font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-file-waveform" style="color: #d4af37;"></i>
+            <td class="pr-select-cell"><input type="checkbox" class="va-checkbox pr-row-check" aria-label="Select prescription"></td>
+            <td data-label="Prescription ID"><strong>${p.prescription_id}</strong></td>
+            <td data-label="Title">
+                <span class="pr-rx-title">
+                    <i class="fa-solid fa-file-waveform"></i>
                     ${p.title || 'General Care Prescription'}
                 </span>
             </td>
-            <td>
-                <div class="va-user-profile">
+            <td data-label="Patient Name">
+                <div class="va-user-profile pr-patient-profile">
+                    <span class="pr-patient-avatar">${escapeInitial(p.patient_name)}</span>
                     <span class="va-user-name">${p.patient_name}</span>
                 </div>
             </td>
-            <td><i class="far fa-calendar va-icon-blue"></i> ${p.date}</td>
-            <td><div style="font-weight:700;color:#0f172a;">${medsHtml}</div></td>
-            <td>${doseHtml}</td>
-            <td>${freqHtml}</td>
-            <td>${durHtml}</td>
-            <td>${p.doctor}</td>
-            <td><span class="badge-solid col-green" style="background-color:transparent;color:#059669;padding:6px 12px;border-radius:6px;font-weight:700;">${p.status}</span></td>
-            <td>
+            <td data-label="Date"><i class="far fa-calendar va-icon-blue"></i> ${p.date}</td>
+            <td data-label="Medications" class="pr-multi-cell">${medsHtml}</td>
+            <td data-label="Dosage" class="pr-multi-cell">${doseHtml}</td>
+            <td data-label="Frequency" class="pr-multi-cell">${freqHtml}</td>
+            <td data-label="Duration" class="pr-multi-cell">${durHtml}</td>
+            <td data-label="Doctor">${p.doctor}</td>
+            <td data-label="Status"><span class="va-badge va-badge-completed">${p.status}</span></td>
+            <td data-label="Actions" class="pr-actions-cell">
                 <div class="va-row-actions">
                     <button type="button" class="va-action-btn-sm va-btn-view" title="View Prescription Details" onclick="diorOpenPrescriptionDetailModal(${viewDataJson})"><i class="fas fa-eye"></i></button>
                     <button type="button" class="va-action-btn-sm va-btn-edit" title="Edit Prescription" onclick="diorOpenFdaPrescriptionModal()"><i class="fas fa-pen-to-square"></i></button>
