@@ -9394,7 +9394,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
     position: relative;
     overflow: hidden;
 }
@@ -9416,13 +9416,13 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
 }
 
 .dior-patient-portal-wrap .mr-stat-icon.cyan {
-    background: #ECFEFF;
-    color: #06B6D4;
+    background: #F0F9FF;
+    color: #0284C7;
 }
 
 .dior-patient-portal-wrap .mr-stat-icon.purple {
-    background: #F3E8FF;
-    color: #A855F7;
+    background: #F0F6FC;
+    color: #1A528E;
 }
 
 .dior-patient-portal-wrap .mr-stat-icon.green {
@@ -9461,23 +9461,23 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
 }
 
 .dior-patient-portal-wrap .mr-stat-badge.blue {
-    background: #DBEAFE;
+    background: #F0F6FC;
     color: #1E40AF;
 }
 
 .dior-patient-portal-wrap .mr-stat-badge.cyan {
-    background: #CFFAFE;
-    color: #164E63;
+    background: #F0F9FF;
+    color: #0284C7;
 }
 
 .dior-patient-portal-wrap .mr-stat-badge.purple {
-    background: #F3E8FF;
-    color: #6B21A8;
+    background: #F0F6FC;
+    color: #1A528E;
 }
 
 .dior-patient-portal-wrap .mr-stat-badge.green {
-    background: #D1FAE5;
-    color: #065F46;
+    background: #ECFDF5;
+    color: #059669;
 }
 
 /* Filter Bar */
@@ -9490,7 +9490,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     border-radius: 12px;
     padding: 10px 14px;
     margin-bottom: 24px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
 }
 
 .dior-patient-portal-wrap .mr-filter-btns {
@@ -9522,7 +9522,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     background: #3B82F6;
     border-color: #3B82F6;
     color: #FFFFFF;
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
 }
 
 .dior-patient-portal-wrap .mr-filter-search {
@@ -9576,7 +9576,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     border: 1px solid #E2E8F0;
     border-radius: 16px;
     padding: 0;
-    box-shadow: 0 10px 24px -5px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 10px 24px -5px rgba(15, 23, 42, 0.03);
     overflow: hidden;
 }
 
@@ -9682,11 +9682,11 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     color: #FFFFFF;
     font-size: 13px;
     z-index: 2;
-    box-shadow: 0 0 0 4px #FFFFFF, 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 4px #FFFFFF, 0 2px 4px rgba(15, 23, 42, 0.1);
 }
 
 .dior-patient-portal-wrap .mr-tl-node.node-cyan {
-    background: #06B6D4;
+    background: #0284C7;
 }
 
 .dior-patient-portal-wrap .mr-tl-node.node-blue {
@@ -9694,7 +9694,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
 }
 
 .dior-patient-portal-wrap .mr-tl-node.node-purple {
-    background: #A855F7;
+    background: #1A528E;
 }
 
 .dior-patient-portal-wrap .mr-tl-node.node-red {
@@ -9711,7 +9711,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     border: 1px solid #E2E8F0;
     border-radius: 12px;
     padding: 20px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.02);
     position: relative;
 }
 
@@ -9736,18 +9736,18 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
 }
 
 .dior-patient-portal-wrap .type-diagnostic {
-    background: #CFFAFE;
-    color: #164E63;
+    background: #F0F9FF;
+    color: #0284C7;
 }
 
 .dior-patient-portal-wrap .type-consultation {
-    background: #DBEAFE;
+    background: #F0F6FC;
     color: #1E40AF;
 }
 
 .dior-patient-portal-wrap .type-prescription {
-    background: #F3E8FF;
-    color: #6B21A8;
+    background: #F0F6FC;
+    color: #1A528E;
 }
 
 .dior-patient-portal-wrap .type-surgery {
@@ -9756,8 +9756,8 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
 }
 
 .dior-patient-portal-wrap .type-system {
-    background: #D1FAE5;
-    color: #065F46;
+    background: #ECFDF5;
+    color: #059669;
 }
 
 .dior-patient-portal-wrap .mr-card-title h4 {
@@ -9867,8 +9867,8 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
 }
 
 .dior-patient-portal-wrap .mr-rx-block {
-    background: #FAF5FF;
-    border-color: #E9D5FF;
+    background: #F8FAFC;
+    border-color: #E2E8F0;
 }
 
 .dior-patient-portal-wrap .mr-rx-list {
@@ -9880,7 +9880,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
 .dior-patient-portal-wrap .mr-rx-list span {
     font-size: 13px;
     font-weight: 600;
-    color: #6B21A8;
+    color: #1A528E;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -9928,7 +9928,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
 
 .dior-patient-portal-wrap .btn-billing-action:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1);
 }
 
 .dior-patient-portal-wrap .btn-billing-action.sm {
@@ -9984,7 +9984,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
 }
 
 .dior-patient-portal-wrap .dior-appt-sidebar-btn {
@@ -10064,31 +10064,31 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     .dior-patient-portal-wrap .medidash-page-header h2 {
         font-size: 20px;
         font-weight: 500;
-        color: #212529;
+        color: #0F172A;
         margin: 0;
     }
 
     .dior-patient-portal-wrap .medidash-breadcrumb {
         font-size: 14px;
-        color: #6C757D;
+        color: #64748B;
         display: flex;
         align-items: center;
         gap: 8px;
     }
 
     .dior-patient-portal-wrap .medidash-breadcrumb i.fa-house {
-        color: #6C757D;
+        color: #64748B;
         font-size: 13px;
     }
 
     .dior-patient-portal-wrap .medidash-breadcrumb span {
-        color: #495057;
+        color: #334155;
     }
 
     .dior-patient-portal-wrap .medidash-card {
         background: #FFFFFF;
         border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
         border: none;
         overflow: hidden;
     }
@@ -10098,14 +10098,14 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid #E9ECEF;
+        border-bottom: 1px solid #E2E8F0;
         position: relative;
     }
 
     .dior-patient-portal-wrap .medidash-card-title {
         font-size: 18px;
         font-weight: 500;
-        color: #212529;
+        color: #0F172A;
         margin: 0;
     }
 
@@ -10116,7 +10116,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
         left: 24px;
         width: 60px;
         height: 3px;
-        background: #605BFF;
+        background: #1A528E;
         border-radius: 3px 3px 0 0;
     }
 
@@ -10136,18 +10136,18 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     .dior-patient-portal-wrap .medidash-search i {
         position: absolute;
         left: 14px;
-        color: #ADB5BD;
+        color: #94A3B8;
         font-size: 13px;
         z-index: 2;
     }
 
     .dior-patient-portal-wrap .medidash-search input {
         padding: 8px 16px 8px 38px !important;
-        border: 1px solid #DEE2E6 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 20px !important;
         font-size: 14px !important;
         width: 220px !important;
-        color: #495057 !important;
+        color: #334155 !important;
         outline: none !important;
         transition: 0.2s !important;
         margin: 0 !important;
@@ -10159,7 +10159,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     }
 
     .dior-patient-portal-wrap .medidash-search input:focus {
-        border-color: #605BFF !important;
+        border-color: #1A528E !important;
     }
 
     .dior-patient-portal-wrap .medidash-btn {
@@ -10179,19 +10179,19 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     }
 
     .dior-patient-portal-wrap .medidash-btn-green {
-        background: #00D084 !important;
+        background: #059669 !important;
     }
 
     .dior-patient-portal-wrap .medidash-btn-green:hover {
-        background: #00B371 !important;
+        background: #059669 !important;
     }
 
     .dior-patient-portal-wrap .medidash-btn-blue {
-        background: #605BFF !important;
+        background: #1A528E !important;
     }
 
     .dior-patient-portal-wrap .medidash-btn-blue:hover {
-        background: #4D48CC !important;
+        background: #00346C !important;
     }
 
     .dior-patient-portal-wrap .medidash-table-wrap {
@@ -10208,33 +10208,33 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
         padding: 16px 24px !important;
         font-size: 12px !important;
         font-weight: 600 !important;
-        color: #6C757D !important;
+        color: #64748B !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
         border: none !important;
-        border-bottom: 1px solid #E9ECEF !important;
+        border-bottom: 1px solid #E2E8F0 !important;
         text-align: left !important;
         white-space: nowrap !important;
         background: transparent !important;
     }
 
     .dior-patient-portal-wrap .medidash-table th i {
-        color: #CED4DA !important;
+        color: #CBD5E1 !important;
         margin-left: 6px !important;
     }
 
     .dior-patient-portal-wrap .medidash-table td {
         padding: 16px 24px !important;
         font-size: 14px !important;
-        color: #495057 !important;
+        color: #334155 !important;
         border: none !important;
-        border-bottom: 1px solid #F1F3F5 !important;
+        border-bottom: 1px solid #F1F5F9 !important;
         vertical-align: middle !important;
         background: transparent !important;
     }
 
     .dior-patient-portal-wrap .medidash-table tr:hover td {
-        background: #F8F9FA;
+        background: #F8FAFC;
     }
 
     .dior-patient-portal-wrap .medidash-user-cell {
@@ -10247,8 +10247,8 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        background: #F3F4F6;
-        color: #605BFF;
+        background: #F1F5F9;
+        color: #1A528E;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -10258,7 +10258,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
     }
 
     .dior-patient-portal-wrap .medidash-icon-blue {
-        color: #605BFF;
+        color: #1A528E;
         margin-right: 6px;
     }
 
@@ -10343,14 +10343,14 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
         left: 0;
         width: 18px;
         height: 18px;
-        border: 1.5px solid #CED4DA;
+        border: 1.5px solid #CBD5E1;
         border-radius: 4px;
         z-index: 1;
     }
 
     .dior-patient-portal-wrap .medidash-checkbox-round input:checked+label {
-        background: #605BFF;
-        border-color: #605BFF;
+        background: #1A528E;
+        border-color: #1A528E;
     }
 
     .dior-patient-portal-wrap .medidash-checkbox-round input:checked+label::after {
@@ -10367,7 +10367,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
 
     .dior-patient-portal-wrap .medidash-pagination-info {
         padding: 20px 24px;
-        color: #6C757D;
+        color: #64748B;
         font-size: 13px;
     }
 
@@ -10409,7 +10409,7 @@ body .dior-auth-wrap .dior-btn-auth-secondary:hover {
         border-left: none !important;
         border-right: none !important;
         border-top: none !important;
-        border-bottom: 1px solid #f1f3f5 !important;
+        border-bottom: 1px solid #F1F5F9 !important;
         background-color: #ffffff !important;
     }
 
@@ -11349,9 +11349,7 @@ body {
     width: 40px !important;
     height: 40px !important;
     border-radius: 12px !important;
-    background: linear-gradient(135deg,
-            #EBF3FA 0%,
-            #D0E1F9 100%) !important;
+    background: #EBF3FA !important;
     color: #2C6CB1 !important;
     font-size: 14px !important;
     font-weight: 800 !important;
@@ -11376,7 +11374,7 @@ body {
 
 .dior-patient-meta strong,
 .dior-side-org-card .org-info strong {
-    color: #0B1030 !important;
+    color: #00346C !important;
     font-size: 13.5px !important;
     font-weight: 700 !important;
     white-space: nowrap !important;
@@ -12382,7 +12380,7 @@ body {
     display: inline-flex !important;
     align-items: center !important;
     gap: 8px !important;
-    border: 1px solid #D0E1F9 !important;
+    border: 1px solid #E2E8F0 !important;
     font-family: 'Montserrat',
         sans-serif !important;
 }
@@ -12453,9 +12451,7 @@ body {
     width: 44px !important;
     height: 44px !important;
     border-radius: 12px !important;
-    background: linear-gradient(135deg,
-            #EBF3FA 0%,
-            #D0E1F9 100%) !important;
+    background: #EBF3FA !important;
     color: #2C6CB1 !important;
     display: flex !important;
     align-items: center !important;
@@ -14880,11 +14876,11 @@ body {
 
 .dior-book-patient-name i,
 .dior-book-patient-name svg {
-    color: #D4AF37 !important;
+    color: #1A528E !important;
 }
 
 .dior-book-patient-id {
-    color: #D4AF37 !important;
+    color: #1A528E !important;
     font-size: 11px !important;
     font-weight: 700 !important;
     background: rgba(212,
@@ -15143,9 +15139,7 @@ body {
     width: 40px !important;
     height: 40px !important;
     border-radius: 12px !important;
-    background: linear-gradient(135deg,
-            #EBF3FA 0%,
-            #D0E1F9 100%) !important;
+    background: #EBF3FA !important;
     color: #2C6CB1 !important;
     display: flex !important;
     align-items: center !important;
@@ -16685,9 +16679,7 @@ body {
     width: 44px !important;
     height: 44px !important;
     border-radius: 12px !important;
-    background: linear-gradient(135deg,
-            #EBF3FA 0%,
-            #D0E1F9 100%) !important;
+    background: #EBF3FA !important;
     color: #2C6CB1 !important;
     font-size: 18px !important;
     display: flex !important;
@@ -19293,9 +19285,7 @@ button.dior-avatar-quick-camera i {
     width: 36px !important;
     height: 36px !important;
     border-radius: 9px !important;
-    background: linear-gradient(135deg,
-            #EBF3FA,
-            #D0E1F9) !important;
+    background: #EBF3FA !important;
     color: #2C6CB1 !important;
     display: flex !important;
     align-items: center !important;
@@ -24936,14 +24926,15 @@ textarea.dior-form-control {
  */
 
 .dior-patient-portal-wrap {
-    --patient-navy: #0B1030;
-    --patient-navy-hover: #174E87;
-    --patient-active: #1F5F9F;
-    --patient-blue: #2D6EB4;
-    --patient-line: #BFD7EC;
-    --patient-bg: #F5FAFF;
-    --patient-text: #171717;
-    --patient-muted: #707070;
+    /* Doctor Dashboard palette (see --dior-color-* tokens) */
+    --patient-navy: #00346C;
+    --patient-navy-hover: #002752;
+    --patient-active: #1A528E;
+    --patient-blue: #2C6CB1;
+    --patient-line: #E2E8F0;
+    --patient-bg: #F8FAFC;
+    --patient-text: #0F172A;
+    --patient-muted: #64748B;
     background: var(--patient-bg) !important;
     color: var(--patient-text) !important;
     font-family: 'Montserrat', Arial, sans-serif !important;
@@ -25221,7 +25212,7 @@ textarea.dior-form-control {
 
 /* Appointment dropdown stays functional, but follows the same sidebar visual language. */
 .dior-patient-portal-wrap .dior-nav-dropdown {
-    background: #090e29 !important;
+    background: #00346C !important;
     border-radius: 0 !important;
     padding: 3px 0 !important;
     margin: 0 !important;
@@ -25234,7 +25225,7 @@ textarea.dior-form-control {
     min-height: 38px !important;
     height: 38px !important;
     padding: 0 10px 0 26px !important;
-    color: #D9E4F0 !important;
+    color: #E2E8F0 !important;
     background: transparent !important;
     font-size: 12.5px !important;
     font-weight: 500 !important;
@@ -25257,12 +25248,12 @@ textarea.dior-form-control {
 }
 
 .dior-patient-portal-wrap .dior-nav-dropdown-item:hover {
-    background: rgba(23, 78, 135, 0.6) !important;
+    background: rgba(0, 52, 108, 0.6) !important;
     color: #fff !important;
 }
 
 .dior-patient-portal-wrap .dior-nav-dropdown-item.active {
-    background: #174E87 !important;
+    background: #00346C !important;
     color: #fff !important;
     font-weight: 600 !important;
 }
@@ -25485,7 +25476,7 @@ textarea.dior-form-control {
     width: 42px !important;
     height: 42px !important;
     border-radius: 50% !important;
-    border: 2px solid #9fc1df !important;
+    border: 2px solid #CBD5E1 !important;
     overflow: hidden !important;
     flex-shrink: 0 !important;
 }
@@ -25511,7 +25502,7 @@ textarea.dior-form-control {
     max-width: calc(100vw - 30px) !important;
     border: 1px solid #E2E8F0 !important;
     border-radius: 12px !important;
-    box-shadow: 0 14px 35px rgba(11, 16, 48, .16) !important;
+    box-shadow: 0 14px 35px rgba(0, 52, 108, .16) !important;
 }
 
 /* ================================================================
@@ -25622,7 +25613,7 @@ textarea.dior-form-control {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    background: #EF4D62 !important;
+    background: #DC2626 !important;
     color: #fff !important;
     font-size: 10px !important;
     font-weight: 700 !important;
@@ -25849,15 +25840,15 @@ body .media-modal .media-modal-close .media-modal-icon::before {
  * The Patient Dashboard / Overview page is not styled by this file.
  */
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) {
-    --pdx-navy: #0B1030;
-    --pdx-blue: #2D6EB4;
-    --pdx-blue-dark: #205B99;
-    --pdx-bg: #F5FAFF;
+    --pdx-navy: #00346C;
+    --pdx-blue: #2C6CB1;
+    --pdx-blue-dark: #1A528E;
+    --pdx-bg: #F8FAFC;
     --pdx-card: #FFFFFF;
-    --pdx-line: #D7E5F1;
-    --pdx-text: #172033;
-    --pdx-muted: #6B7788;
-    --pdx-gold: #D4A719;
+    --pdx-line: #E2E8F0;
+    --pdx-text: #0F172A;
+    --pdx-muted: #64748B;
+    --pdx-gold: #1A528E;
     box-sizing: border-box;
     background: var(--pdx-bg) !important;
     color: var(--pdx-text);
@@ -25878,7 +25869,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .mb-4:first-child h4 {
     margin: 0 !important;
-    color: #225A92 !important;
+    color: #1A528E !important;
     font-family: 'DM Sans', 'Montserrat', sans-serif !important;
     font-size: 30px !important;
     line-height: 1.2 !important;
@@ -25893,7 +25884,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     list-style: none !important;
     margin: 5px 0 0 !important;
     padding: 0 !important;
-    color: #7A8797 !important;
+    color: #64748B !important;
     font-size: 12px !important;
 }
 
@@ -25912,12 +25903,12 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     border: 1px solid var(--pdx-line) !important;
     border-radius: 14px !important;
     background: #fff !important;
-    box-shadow: 0 5px 18px rgba(20, 63, 105, .055) !important;
+    box-shadow: 0 5px 18px rgba(0, 52, 108, .055) !important;
 }
 
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .dior-page-header-box h2 {
     margin: 0 !important;
-    color: #225A92 !important;
+    color: #1A528E !important;
     font-family: 'DM Sans', 'Montserrat', sans-serif !important;
     font-size: 21px !important;
     font-weight: 700 !important;
@@ -25945,7 +25936,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     background: #fff !important;
     border: 1px solid var(--pdx-line) !important;
     border-radius: 16px !important;
-    box-shadow: 0 5px 20px rgba(20, 63, 105, .055) !important;
+    box-shadow: 0 5px 20px rgba(0, 52, 108, .055) !important;
     overflow: hidden !important;
     transition: border 0.2s ease, box-shadow 0.2s ease;
 }
@@ -25957,11 +25948,11 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .master-table-header {
     padding: 18px 22px !important;
     background: #fff !important;
-    border-bottom: 1px solid #E4EDF5 !important;
+    border-bottom: 1px solid #E2E8F0 !important;
 }
 
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .table-title {
-    color: #225A92 !important;
+    color: #1A528E !important;
     font-family: 'DM Sans', 'Montserrat', sans-serif !important;
     font-size: 18px !important;
     font-weight: 700 !important;
@@ -25980,9 +25971,9 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .search-container {
     min-width: 190px !important;
     height: 40px !important;
-    border: 1px solid #D7E5F1 !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 8px !important;
-    background: #F9FCFF !important;
+    background: #F8FAFC !important;
 }
 
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .search-input {
@@ -26008,7 +25999,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .action-btn:hover,
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .action-icon-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 5px 12px rgba(45, 110, 180, .15);
+    box-shadow: 0 5px 12px rgba(26, 82, 142, .15);
 }
 
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .table-responsive,
@@ -26028,8 +26019,8 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     height: 46px !important;
     padding: 0 15px !important;
     background: #ffffff !important;
-    color: #3972A8 !important;
-    border-bottom: 1px solid #DDE9F2 !important;
+    color: #2C6CB1 !important;
+    border-bottom: 1px solid #E2E8F0 !important;
     font-size: 11px !important;
     font-weight: 700 !important;
     letter-spacing: .35px !important;
@@ -26078,7 +26069,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     min-height: 180px !important;
     padding: 55px 20px !important;
     text-align: center !important;
-    color: #8A97A6 !important;
+    color: #64748B !important;
     background: #FBFDFF !important;
 }
 
@@ -26091,7 +26082,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .profile-header-card {
     border: 1px solid var(--pdx-line) !important;
     border-radius: 14px !important;
-    box-shadow: 0 5px 18px rgba(20, 63, 105, .05) !important;
+    box-shadow: 0 5px 18px rgba(0, 52, 108, .05) !important;
 }
 
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .kpi-mini-card {
@@ -26114,8 +26105,8 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .dior-btn-gold-secondary {
     background: #fff !important;
-    border: 1px solid #D4A719 !important;
-    color: #A77F05 !important;
+    border: 1px solid #1A528E !important;
+    color: #D97706 !important;
 }
 
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .form-control,
@@ -26123,7 +26114,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) input:not([type="checkbox"]):not([type="radio"]),
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) select,
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) textarea {
-    border: 1px solid #D5E3EE !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 8px !important;
     background: #fff !important;
     color: #00346C !important;
@@ -26132,16 +26123,16 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) input:focus,
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) select:focus,
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) textarea:focus {
-    border-color: #75A8D1 !important;
-    box-shadow: 0 0 0 3px rgba(45, 110, 180, .10) !important;
+    border-color: #2C6CB1 !important;
+    box-shadow: 0 0 0 3px rgba(26, 82, 142, .10) !important;
     outline: none !important;
 }
 
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .master-table-footer,
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .dior-table-footer {
-    border-top: 1px solid #E4EDF5 !important;
+    border-top: 1px solid #E2E8F0 !important;
     background: #FBFDFF !important;
-    color: #7A8797 !important;
+    color: #64748B !important;
 }
 
 /* Appointment sub-navigation / cards */
@@ -26154,7 +26145,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     border: 1px solid var(--pdx-line) !important;
     border-radius: 14px !important;
     background: #fff !important;
-    box-shadow: 0 5px 18px rgba(20, 63, 105, .05) !important;
+    box-shadow: 0 5px 18px rgba(0, 52, 108, .05) !important;
 }
 
 /* Settings gets the same visual language without touching Overview. */
@@ -26395,7 +26386,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     align-items: center !important;
     justify-content: center !important;
     cursor: pointer !important;
-    color: #000000 !important;
+    color: #0F172A !important;
     line-height: 1 !important;
     box-sizing: border-box !important;
     flex-shrink: 0 !important;
@@ -26404,7 +26395,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 .dior-patient-portal-wrap .dior-static-modal-close:hover {
     background: transparent !important;
-    color: #000000 !important;
+    color: #0F172A !important;
     border: none !important;
     opacity: 0.75 !important;
     transform: scale(1.15) !important;
@@ -26418,7 +26409,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     padding: 0 !important;
     line-height: 1 !important;
     font-size: 1.35rem !important;
-    color: #000000 !important;
+    color: #0F172A !important;
 }
 
 .dior-patient-portal-wrap .dior-static-modal-body {
@@ -26457,7 +26448,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     min-height: 40px;
     padding: 0 16px;
     border-radius: 9px;
-    border: 1px solid #D1D5DB;
+    border: 1px solid #CBD5E1;
     cursor: pointer;
     font-weight: 700;
 }
@@ -26517,8 +26508,8 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 }
 
 .dior-patient-portal-wrap #tab-notifications .dior-patient-alert-stat-icon.unread {
-    background: #FFF7ED;
-    color: #F59E0B;
+    background: #FFFBEB;
+    color: #D97706;
 }
 
 .dior-patient-portal-wrap #tab-notifications .dior-patient-alert-stat-icon.success {
@@ -26569,7 +26560,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 }
 
 .dior-patient-portal-wrap #dior-feedback-modal .dior-static-modal-header h3 {
-    color: #172033 !important;
+    color: #0F172A !important;
     font-size: 19px !important;
     font-weight: 700 !important;
 }
@@ -26602,7 +26593,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     min-height: 42px !important;
     margin: 0 0 6px !important;
     padding: 10px 12px !important;
-    border: 1px solid #D5E3EE !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 8px !important;
     background: #FFFFFF !important;
     color: #00346C !important;
@@ -26619,7 +26610,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap #dior-feedback-modal .dior-static-modal-body input:focus,
 .dior-patient-portal-wrap #dior-feedback-modal .dior-static-modal-body select:focus,
 .dior-patient-portal-wrap #dior-feedback-modal .dior-static-modal-body textarea:focus {
-    border-color: #6B9CC8 !important;
+    border-color: #2C6CB1 !important;
     box-shadow: 0 0 0 3px rgba(44, 108, 177, 0.12) !important;
     outline: none !important;
 }
@@ -26632,7 +26623,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap #dior-feedback-modal .dior-static-modal-footer button {
     min-height: 40px !important;
     padding: 0 16px !important;
-    border: 1px solid #D5E3EE !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 8px !important;
     background: #FFFFFF !important;
     color: #475569 !important;
@@ -26780,9 +26771,9 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     gap: 9px !important;
     margin: 0 0 8px !important;
     padding: 10px 12px !important;
-    border: 1px solid #D5E3EE !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 8px !important;
-    background: #F7FAFD !important;
+    background: #F8FAFC !important;
     color: #64748B !important;
     font-size: 12px !important;
 }
@@ -26849,7 +26840,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 .dior-patient-portal-wrap #dior-feedback-modal .dior-feedback-rating-control input:checked+label {
     border-color: #2C6CB1 !important;
-    background: #F0F7FC !important;
+    background: #F0F6FC !important;
     box-shadow: 0 0 0 2px rgba(44, 108, 177, 0.12) !important;
 }
 
@@ -26930,7 +26921,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     outline: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
-    color: #2B6FB7 !important;
+    color: #1A528E !important;
     font-family: 'DM Sans', 'Montserrat', Arial, sans-serif !important;
     font-size: 22px !important;
     line-height: 1.25 !important;
@@ -27010,7 +27001,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 }
 
 .dior-patient-portal-wrap .master-table-card table tbody tr:hover td {
-    background: #F8FBFF !important;
+    background: #F8FAFC !important;
 }
 
 .dior-patient-portal-wrap .master-table-card table tbody tr:last-child td {
@@ -27047,7 +27038,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     min-width: 34px !important;
     height: 34px !important;
     padding: 0 !important;
-    border: 1px solid #C4D8EB !important;
+    border: 1px solid #CBD5E1 !important;
     border-radius: 8px !important;
     background: #FFFFFF !important;
     color: #2B70B8 !important;
@@ -27924,7 +27915,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .mb-4:first-child h4 {
     margin: 0 !important;
-    color: #102b4e !important;
+    color: #00346C !important;
     font-size: 20px !important;
     line-height: 1.25 !important;
     font-weight: 700 !important;
@@ -27945,9 +27936,9 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     width: 100% !important;
     max-width: 100% !important;
     background: #fff !important;
-    border: 1px solid #dce7f1 !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 14px !important;
-    box-shadow: 0 5px 18px rgba(20, 63, 105, .05) !important;
+    box-shadow: 0 5px 18px rgba(0, 52, 108, .05) !important;
     overflow: hidden !important;
 }
 
@@ -27956,7 +27947,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     min-height: 66px !important;
     padding: 16px 22px !important;
     background: #fff !important;
-    border-bottom: 1px solid #e4edf5 !important;
+    border-bottom: 1px solid #E2E8F0 !important;
     box-sizing: border-box !important;
 }
 
@@ -27964,7 +27955,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap .master-table-header .table-title,
 .dior-patient-portal-wrap .table-title {
     margin: 0 !important;
-    color: #225a92 !important;
+    color: #1A528E !important;
     font-size: 18px !important;
     line-height: 1.25 !important;
     font-weight: 700 !important;
@@ -27985,7 +27976,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     width: 250px !important;
     min-width: 190px !important;
     height: 40px !important;
-    border: 1px solid #d7e5f1 !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 8px !important;
     background: #fff !important;
     box-sizing: border-box !important;
@@ -28004,7 +27995,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 .dior-patient-portal-wrap .docs-search-box i,
 .dior-patient-portal-wrap .search-container .search-icon {
-    color: #3972a8 !important;
+    color: #2C6CB1 !important;
 }
 
 .dior-patient-portal-wrap .docs-actions-group,
@@ -28035,7 +28026,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     background-color: #1A528E !important;
     color: #fff !important;
     font-size: 14px !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
 }
@@ -28254,8 +28245,8 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     height: 46px !important;
     padding: 0 15px !important;
     background: #fff !important;
-    color: #3972a8 !important;
-    border-bottom: 1px solid #dde9f2 !important;
+    color: #2C6CB1 !important;
+    border-bottom: 1px solid #E2E8F0 !important;
     font-size: 11px !important;
     font-weight: 700 !important;
     letter-spacing: .35px !important;
@@ -28283,7 +28274,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap .master-modern-table tbody tr:hover td,
 .dior-patient-portal-wrap .master-table-card table tbody tr:hover td,
 .dior-patient-portal-wrap .va-table tbody tr:hover td {
-    background: #f8fbfe !important;
+    background: #F8FAFC !important;
 }
 
 .dior-patient-portal-wrap .docs-table tbody tr:last-child td,
@@ -28318,7 +28309,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap .va-footer {
     min-height: 54px !important;
     padding: 10px 22px !important;
-    border-top: 1px solid #e4edf5 !important;
+    border-top: 1px solid #E2E8F0 !important;
     background: #fbfdff !important;
     box-sizing: border-box !important;
 }
@@ -28340,7 +28331,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     min-width: 34px !important;
     height: 34px !important;
     padding: 0 !important;
-    border: 1px solid #d7e2ec !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 8px !important;
     background: #fff !important;
     color: #334155 !important;
@@ -28357,7 +28348,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     background: #2b70b8 !important;
     border-color: #2b70b8 !important;
     color: #fff !important;
-    box-shadow: 0 3px 8px rgba(43, 112, 184, .22) !important;
+    box-shadow: 0 3px 8px rgba(26, 82, 142, .22) !important;
 }
 
 /* Settings/profile card: same sizing and alignment as the dashboard shell. */
@@ -28394,7 +28385,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 .dior-patient-portal-wrap #tab-settings .dior-settings-profile-name {
     font-size: 20px !important;
     line-height: 1.25 !important;
-    color: #102b4e !important;
+    color: #00346C !important;
 }
 
 /* Horizontal scrolling belongs to the table area, never the whole page. */
@@ -28883,8 +28874,8 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 #tab-overview.custom-patient-overview {
     font-family: 'Montserrat', Arial, sans-serif;
     font-size: 14px;
-    background: #f5faff;
-    color: #171717;
+    background: #F8FAFC;
+    color: #0F172A;
     padding: 31px 29px 36px;
 }
 
@@ -28903,7 +28894,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 #tab-overview.custom-patient-overview h1 {
     font-family: 'DM Sans', sans-serif;
     margin: 0;
-    color: #225a92;
+    color: #1A528E;
     font-size: 35px;
     line-height: 1.15;
     font-weight: 700;
@@ -28918,7 +28909,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 #tab-overview.custom-patient-overview .gold-btn {
     border: 0;
-    background: #d4a719;
+    background: #1A528E;
     color: #fff;
     border-radius: 28px;
     height: 56px;
@@ -28995,7 +28986,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     letter-spacing: 0%;
     vertical-align: middle;
     text-transform: capitalize;
-    color: #000000;
+    color: #0F172A;
 
 }
 
@@ -29022,9 +29013,9 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     height: 88px;
     border-radius: 16px;
     overflow: hidden;
-    border: 1px solid #d9e2ec;
+    border: 1px solid #E2E8F0;
     flex: none;
-    background: #eaf3fb;
+    background: #F0F6FC;
 }
 
 #tab-overview.custom-patient-overview .patient-photo img {
@@ -29042,16 +29033,16 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     letter-spacing: 0%;
     vertical-align: middle;
     text-transform: capitalize;
-    color: #245f9c;
+    color: #1A528E;
 }
 
 #tab-overview.custom-patient-overview .patient-id {
     display: inline-block;
-    border: 1px solid #d9e2ec;
+    border: 1px solid #E2E8F0;
     border-radius: 10px;
     padding: 3px 9px;
     font-size: 9px;
-    color: #34404d;
+    color: #334155;
     vertical-align: middle;
     margin-left: 6px;
 }
@@ -29063,7 +29054,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     font-size: 14px;
     line-height: 31.85px;
     letter-spacing: 0%;
-    color: #000000;
+    color: #0F172A;
     margin-bottom: 10px;
 }
 
@@ -29077,7 +29068,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 }
 
 #tab-overview.custom-patient-overview .metric+.metric {
-    border-left: 1px solid #b7cde0;
+    border-left: 1px solid #E2E8F0;
     padding-left: 22px;
     margin-left: 20px;
 }
@@ -29122,7 +29113,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 }
 
 #tab-overview.custom-patient-overview .section-title {
-    color: #2465a8;
+    color: #1A528E;
     font-family: 'DM Sans', sans-serif;
     font-size: 20px;
     font-weight: 700;
@@ -29150,14 +29141,14 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 #tab-overview.custom-patient-overview .progress {
     height: 8px;
     border-radius: 5px;
-    background: #d7e1e9;
+    background: #E2E8F0;
     overflow: hidden;
 }
 
 #tab-overview.custom-patient-overview .progress i {
     display: block;
     height: 100%;
-    background: #ff970f;
+    background: #D97706;
 }
 
 #tab-overview.custom-patient-overview .table-card {
@@ -29177,7 +29168,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 }
 
 #tab-overview.custom-patient-overview .view-all {
-    color: #0f61aa;
+    color: #1A528E;
     text-decoration: none;
     font-size: 13px;
     font-weight: 600;
@@ -29216,7 +29207,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 #tab-overview.custom-patient-overview th {
     text-align: left !important;
-    color: #1763ad !important;
+    color: #1A528E !important;
     font-size: 14px !important;
     font-weight: 600 !important;
     padding: 12px 14px !important;
@@ -29248,7 +29239,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 #tab-overview.custom-patient-overview tbody tr:hover td,
 #tab-overview.custom-patient-overview tbody tr:hover th {
-    background-color: #f7fbff !important;
+    background-color: #F8FAFC !important;
 }
 
 #tab-overview.custom-patient-overview .status {
@@ -29264,28 +29255,28 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 }
 
 #tab-overview.custom-patient-overview .status.cancel {
-    background: #fde1e5;
-    color: #f0435a;
+    background: #FEF2F2;
+    color: #DC2626;
 }
 
 #tab-overview.custom-patient-overview .status.progressing {
-    background: #fff0df;
-    color: #c97600;
+    background: #FFFBEB;
+    color: #D97706;
 }
 
 #tab-overview.custom-patient-overview .status.done {
-    background: #e1f5e6;
-    color: #238b3e;
+    background: #ECFDF5;
+    color: #059669;
 }
 
 #tab-overview.custom-patient-overview .status.normal {
-    background: #e1f5e6;
-    color: #238b3e;
+    background: #ECFDF5;
+    color: #059669;
 }
 
 #tab-overview.custom-patient-overview .status.abnormal {
-    background: #f6ead1;
-    color: #a96300;
+    background: #FFFBEB;
+    color: #D97706;
 }
 
 #tab-overview.custom-patient-overview .lab-card {
@@ -29301,7 +29292,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     width: 26px !important;
     height: 26px !important;
     border-radius: 6px !important;
-    background: #2c8d45 !important;
+    background: #059669 !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -29410,15 +29401,15 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 }
 
 #tab-overview.custom-patient-overview .primary-btn {
-    background: #2c71b7;
+    background: #1A528E;
     color: #fff;
-    border: 1px solid #2c71b7;
+    border: 1px solid #1A528E;
 }
 
 #tab-overview.custom-patient-overview .outline-btn {
     background: #fff;
-    color: #1763ad;
-    border: 1px solid #5992c7;
+    color: #1A528E;
+    border: 1px solid #2C6CB1;
 }
 
 #tab-overview.custom-patient-overview .upcoming {
@@ -29431,7 +29422,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     grid-template-columns: 92px 1fr;
     gap: 14px;
     padding: 13px 0 24px;
-    border-bottom: 1px solid #d5e3ef;
+    border-bottom: 1px solid #E2E8F0;
 }
 
 #tab-overview.custom-patient-overview .consult:last-child {
@@ -29444,7 +29435,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
     height: 90px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2px solid #a4cbe8;
+    border: 2px solid #CBD5E1;
 }
 
 #tab-overview.custom-patient-overview .consult-photo img {
@@ -29474,10 +29465,10 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 #tab-overview.custom-patient-overview .reschedule {
     height: 29px;
     padding: 0 17px;
-    border: 1px solid #5e9bd0;
+    border: 1px solid #2C6CB1;
     border-radius: 17px;
     background: #fff;
-    color: #1763ad;
+    color: #1A528E;
     font-size: 10px;
     cursor: pointer;
 }
@@ -29489,7 +29480,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 #tab-overview.custom-patient-overview .rx {
     padding: 15px 0 18px;
-    border-bottom: 1px solid #d5e3ef;
+    border-bottom: 1px solid #E2E8F0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -29524,11 +29515,11 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 }
 
 #tab-overview.custom-patient-overview .rx-active {
-    background: #2b8c44;
+    background: #059669;
 }
 
 #tab-overview.custom-patient-overview .rx-inactive {
-    background: #ad6900;
+    background: #D97706;
 }
 
 @media (max-width: 1400px) {
@@ -30162,7 +30153,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 /* Doctor dashboard patient chart workspace */
 .pp-workspace-card {
     border-radius: 14px;
-    box-shadow: 0 8px 26px rgba(31, 41, 55, .06) !important;
+    box-shadow: 0 8px 26px rgba(15, 23, 42, .06) !important;
 }
 
 .pp-page-header .breadcrumb {
@@ -30181,14 +30172,14 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 .pp-patient-picker .form-select,
 .pp-patient-picker .input-group-text {
-    border-color: #e4e8f0;
+    border-color: #E2E8F0;
 }
 
 .pp-patient-hero {
     color: #fff;
-    background: linear-gradient(118deg, #403287 0%, #5949b7 58%, #7666d1 100%);
+    background: #00346C;
     border-radius: 14px;
-    box-shadow: 0 12px 28px rgba(68, 54, 155, .18);
+    box-shadow: 0 12px 28px rgba(0, 52, 108, .18);
 }
 
 .pp-avatar {
@@ -30209,8 +30200,8 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 }
 
 .pp-patient-hero .badge {
-    background: #d8f7e7;
-    color: #167447;
+    background: #ECFDF5;
+    color: #059669;
 }
 
 .pp-patient-id {
@@ -30442,8 +30433,8 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 .pp-form-card .btn-primary,
 .pp-patient-picker .btn-primary {
-    border-color: #5546d7;
-    background: #5546d7;
+    border-color: #1A528E;
+    background: #1A528E;
 }
 
 .pp-chip-list {
@@ -32089,7 +32080,7 @@ body,
         transform: translateX(-100%) !important;
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
         margin: 0 !important;
-        box-shadow: 0 0 30px rgba(0, 0, 0, 0.3) !important;
+        box-shadow: 0 0 30px rgba(15, 23, 42, 0.3) !important;
     }
 
     .dior-patient-portal-wrap .dior-side.mobile-open {
@@ -32658,9 +32649,7 @@ body {
     width: 40px !important;
     height: 40px !important;
     border-radius: 12px !important;
-    background: linear-gradient(135deg,
-            #EBF3FA 0%,
-            #D0E1F9 100%) !important;
+    background: #EBF3FA !important;
     color: #2C6CB1 !important;
     font-size: 14px !important;
     font-weight: 800 !important;
@@ -32685,7 +32674,7 @@ body {
 
 .dior-patient-meta strong,
 .dior-side-org-card .org-info strong {
-    color: #0B1030 !important;
+    color: #00346C !important;
     font-size: 13.5px !important;
     font-weight: 700 !important;
     white-space: nowrap !important;
@@ -33691,7 +33680,7 @@ body {
     display: inline-flex !important;
     align-items: center !important;
     gap: 8px !important;
-    border: 1px solid #D0E1F9 !important;
+    border: 1px solid #E2E8F0 !important;
     font-family: 'Montserrat',
         sans-serif !important;
 }
@@ -33762,9 +33751,7 @@ body {
     width: 44px !important;
     height: 44px !important;
     border-radius: 12px !important;
-    background: linear-gradient(135deg,
-            #EBF3FA 0%,
-            #D0E1F9 100%) !important;
+    background: #EBF3FA !important;
     color: #2C6CB1 !important;
     display: flex !important;
     align-items: center !important;
@@ -36189,11 +36176,11 @@ body {
 
 .dior-book-patient-name i,
 .dior-book-patient-name svg {
-    color: #D4AF37 !important;
+    color: #1A528E !important;
 }
 
 .dior-book-patient-id {
-    color: #D4AF37 !important;
+    color: #1A528E !important;
     font-size: 11px !important;
     font-weight: 700 !important;
     background: rgba(212,
@@ -36452,9 +36439,7 @@ body {
     width: 40px !important;
     height: 40px !important;
     border-radius: 12px !important;
-    background: linear-gradient(135deg,
-            #EBF3FA 0%,
-            #D0E1F9 100%) !important;
+    background: #EBF3FA !important;
     color: #2C6CB1 !important;
     display: flex !important;
     align-items: center !important;
@@ -37994,9 +37979,7 @@ body {
     width: 44px !important;
     height: 44px !important;
     border-radius: 12px !important;
-    background: linear-gradient(135deg,
-            #EBF3FA 0%,
-            #D0E1F9 100%) !important;
+    background: #EBF3FA !important;
     color: #2C6CB1 !important;
     font-size: 18px !important;
     display: flex !important;
@@ -40602,9 +40585,7 @@ button.dior-avatar-quick-camera i {
     width: 36px !important;
     height: 36px !important;
     border-radius: 9px !important;
-    background: linear-gradient(135deg,
-            #EBF3FA,
-            #D0E1F9) !important;
+    background: #EBF3FA !important;
     color: #2C6CB1 !important;
     display: flex !important;
     align-items: center !important;
@@ -45927,7 +45908,7 @@ button.dior-page-btn {
     font-weight: 600;
     font-size: 17.37px;
     line-height: 27.22px;
-    color: #000000;
+    color: #0F172A;
     margin: 0;
 }
 
@@ -45936,7 +45917,7 @@ button.dior-page-btn {
     font-weight: 400;
     font-size: 12.41px;
     line-height: 21.78px;
-    color: #000000;
+    color: #0F172A;
     margin: 0;
 }
 
@@ -49405,7 +49386,7 @@ button.dior-page-btn {
 
 .dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .mb-4:first-child h4 {
     margin: 0 !important;
-    color: #102b4e !important;
+    color: #00346C !important;
     font-size: 20px !important;
     line-height: 1.25 !important;
     font-weight: 700 !important;
@@ -49426,9 +49407,9 @@ button.dior-page-btn {
     width: 100% !important;
     max-width: 100% !important;
     background: #fff !important;
-    border: 1px solid #dce7f1 !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 14px !important;
-    box-shadow: 0 5px 18px rgba(20, 63, 105, .05) !important;
+    box-shadow: 0 5px 18px rgba(0, 52, 108, .05) !important;
     overflow: hidden !important;
 }
 
@@ -49437,7 +49418,7 @@ button.dior-page-btn {
     min-height: 66px !important;
     padding: 16px 22px !important;
     background: #fff !important;
-    border-bottom: 1px solid #e4edf5 !important;
+    border-bottom: 1px solid #E2E8F0 !important;
     box-sizing: border-box !important;
 }
 
@@ -49445,7 +49426,7 @@ button.dior-page-btn {
 .dior-patient-portal-wrap .master-table-header .table-title,
 .dior-patient-portal-wrap .table-title {
     margin: 0 !important;
-    color: #225a92 !important;
+    color: #1A528E !important;
     font-size: 18px !important;
     line-height: 1.25 !important;
     font-weight: 700 !important;
@@ -49466,7 +49447,7 @@ button.dior-page-btn {
     width: 250px !important;
     min-width: 190px !important;
     height: 40px !important;
-    border: 1px solid #d7e5f1 !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 8px !important;
     background: #fff !important;
     box-sizing: border-box !important;
@@ -49485,7 +49466,7 @@ button.dior-page-btn {
 
 .dior-patient-portal-wrap .docs-search-box i,
 .dior-patient-portal-wrap .search-container .search-icon {
-    color: #3972a8 !important;
+    color: #2C6CB1 !important;
 }
 
 .dior-patient-portal-wrap .docs-actions-group,
@@ -49516,7 +49497,7 @@ button.dior-page-btn {
     background-color: #1A528E !important;
     color: #fff !important;
     font-size: 14px !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
 }
@@ -49735,8 +49716,8 @@ button.dior-page-btn {
     height: 46px !important;
     padding: 0 15px !important;
     background: #fff !important;
-    color: #3972a8 !important;
-    border-bottom: 1px solid #dde9f2 !important;
+    color: #2C6CB1 !important;
+    border-bottom: 1px solid #E2E8F0 !important;
     font-size: 11px !important;
     font-weight: 700 !important;
     letter-spacing: .35px !important;
@@ -49764,7 +49745,7 @@ button.dior-page-btn {
 .dior-patient-portal-wrap .master-modern-table tbody tr:hover td,
 .dior-patient-portal-wrap .master-table-card table tbody tr:hover td,
 .dior-patient-portal-wrap .va-table tbody tr:hover td {
-    background: #f8fbfe !important;
+    background: #F8FAFC !important;
 }
 
 .dior-patient-portal-wrap .docs-table tbody tr:last-child td,
@@ -49798,7 +49779,7 @@ button.dior-page-btn {
 .dior-patient-portal-wrap .va-footer {
     min-height: 54px !important;
     padding: 10px 22px !important;
-    border-top: 1px solid #e4edf5 !important;
+    border-top: 1px solid #E2E8F0 !important;
     background: #fbfdff !important;
     box-sizing: border-box !important;
 }
@@ -49820,7 +49801,7 @@ button.dior-page-btn {
     min-width: 34px !important;
     height: 34px !important;
     padding: 0 !important;
-    border: 1px solid #d7e2ec !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 8px !important;
     background: #fff !important;
     color: #334155 !important;
@@ -49837,7 +49818,7 @@ button.dior-page-btn {
     background: #2b70b8 !important;
     border-color: #2b70b8 !important;
     color: #fff !important;
-    box-shadow: 0 3px 8px rgba(43, 112, 184, .22) !important;
+    box-shadow: 0 3px 8px rgba(26, 82, 142, .22) !important;
 }
 
 /* Settings/profile card: same sizing and alignment as the dashboard shell. */
@@ -49874,7 +49855,7 @@ button.dior-page-btn {
 .dior-patient-portal-wrap #tab-settings .dior-settings-profile-name {
     font-size: 20px !important;
     line-height: 1.25 !important;
-    color: #102b4e !important;
+    color: #00346C !important;
     padding-top: 30px;
 }
 
@@ -52152,7 +52133,7 @@ a.va-btn-primary:hover {
 .edit-patient-wrapper .card {
     background: #ffffff;
     border-radius: 8px;
-    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05);
+    box-shadow: 0px 4px 20px rgba(15, 23, 42, 0.05);
     border: none;
     margin-top: 10px;
 }
@@ -52216,7 +52197,7 @@ a.va-btn-primary:hover {
 .edit-patient-wrapper .form-select:focus {
     border-color: #1A528E;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(26, 82, 142, 0.1);
 }
 
 .edit-patient-wrapper .form-select {
@@ -53484,7 +53465,7 @@ a.va-btn-primary:hover {
     font-size: 18px !important;
     font-weight: 700 !important;
     line-height: 1.3 !important;
-    color: #172033 !important;
+    color: #0F172A !important;
 }
 
 /* 4. Breadcrumbs across all subpages standardized to 13px */
@@ -54233,7 +54214,7 @@ a.va-btn-primary:hover {
         width: 100% !important;
         max-width: 100% !important;
         overflow-x: clip !important;
-        background: #f5f8fc !important;
+        background: #F8FAFC !important;
     }
 
     .dior-patient-portal-wrap .dior-app {
@@ -54276,7 +54257,7 @@ a.va-btn-primary:hover {
     .dior-patient-portal-wrap .dior-side-header {
         min-height: 72px !important;
         padding: 16px 20px !important;
-        border-bottom: 1px solid #edf1f7 !important;
+        border-bottom: 1px solid #E2E8F0 !important;
     }
 
     .dior-patient-portal-wrap .dior-side-nav {
@@ -54296,7 +54277,7 @@ a.va-btn-primary:hover {
         margin: 12px !important;
         padding: 14px !important;
         border-radius: 12px !important;
-        background: #f6f8fc !important;
+        background: #F8FAFC !important;
     }
 
     .dior-patient-portal-wrap .dior-main-content {
@@ -54326,7 +54307,7 @@ a.va-btn-primary:hover {
         height: auto !important;
         padding: 10px 14px !important;
         background: rgba(255, 255, 255, .97) !important;
-        border-bottom: 1px solid #e8edf5 !important;
+        border-bottom: 1px solid #E2E8F0 !important;
         box-shadow: 0 3px 12px rgba(20, 40, 80, .04) !important;
     }
 
@@ -54343,10 +54324,10 @@ a.va-btn-primary:hover {
         width: 42px !important;
         height: 42px !important;
         padding: 0 !important;
-        border: 1px solid #e4eaf3 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 12px !important;
         background: #fff !important;
-        color: #243b63 !important;
+        color: #00346C !important;
     }
 
     .dior-patient-portal-wrap .dior-top-search {
@@ -54357,9 +54338,9 @@ a.va-btn-primary:hover {
         max-width: 280px !important;
         height: 42px !important;
         padding: 0 11px !important;
-        border: 1px solid #e4eaf3 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 12px !important;
-        background: #f8fafd !important;
+        background: #F8FAFC !important;
     }
 
     .dior-patient-portal-wrap .dior-top-search input,
@@ -54381,7 +54362,7 @@ a.va-btn-primary:hover {
         min-width: 40px !important;
         height: 40px !important;
         padding: 0 !important;
-        border: 1px solid #e4eaf3 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 12px !important;
         background: #fff !important;
     }
@@ -54664,7 +54645,7 @@ a.va-btn-primary:hover {
         width: 100%;
         max-width: 100%;
         overflow-x: clip;
-        background: #f5f8fc;
+        background: #F8FAFC;
     }
 
     #dior-patient-portal-app *,
@@ -54811,7 +54792,7 @@ a.va-btn-primary:hover {
         gap: 0 12px;
         padding: 12px !important;
         background: #fff !important;
-        border: 1px solid #e1e8f1 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 14px !important;
         box-shadow: 0 2px 8px rgba(25, 55, 90, .04);
     }
@@ -54884,7 +54865,7 @@ a.va-btn-primary:hover {
     #dior-patient-portal-app #dior-today-appointments-table td::before,
     #dior-patient-portal-app #dior-upcoming-appointments-table td::before,
     #dior-patient-portal-app #dior-past-appointments-table td::before {
-        color: #718198;
+        color: #64748B;
         font-size: 10px;
         font-weight: 700;
         letter-spacing: .055em;
@@ -55002,11 +54983,11 @@ a.va-btn-primary:hover {
 .dior-patient-avatar-circle {
     width: 120px;
     height: 120px;
-    border: 3px solid #dbeafe !important;
+    border: 3px solid #F0F6FC !important;
 }
 
 .dior-progress-orange {
-    background-color: #f59e0b !important;
+    background-color: #D97706 !important;
 }
 
 .dior-text-navy {
@@ -55118,8 +55099,8 @@ a.va-btn-primary:hover {
     width: 120px !important;
     height: 120px !important;
     border-radius: 50% !important;
-    border: 3px solid #b8d5ed !important;
-    background: #eaf3fb !important;
+    border: 3px solid #CBD5E1 !important;
+    background: #F0F6FC !important;
     flex-shrink: 0 !important;
     overflow: hidden !important;
 }
@@ -55132,7 +55113,7 @@ a.va-btn-primary:hover {
 }
 
 .dior-progress-orange {
-    background-color: #f59e0b !important;
+    background-color: #D97706 !important;
 }
 
 .dior-text-navy {
@@ -55140,15 +55121,15 @@ a.va-btn-primary:hover {
 }
 
 .dior-btn-gold {
-    background-color: #c49b28 !important;
-    border-color: #c49b28 !important;
+    background-color: #1A528E !important;
+    border-color: #1A528E !important;
     color: #ffffff !important;
 }
 
 .dior-btn-gold:hover,
 .dior-btn-gold:focus {
-    background-color: #af8920 !important;
-    border-color: #af8920 !important;
+    background-color: #00346C !important;
+    border-color: #00346C !important;
     color: #ffffff !important;
 }
 
@@ -63859,25 +63840,25 @@ a.va-btn-primary:hover {
     .dior-patient-portal-wrap #tab-appointments .status-cell-text.status-confirm,
     .dior-patient-portal-wrap #tab-appointments .status-cell-text.status-upcoming {
         background: #F0F6FC !important;
-        border-color: #D9E6F5 !important;
+        border-color: #E2E8F0 !important;
         color: #1A528E !important;
     }
 
     .dior-patient-portal-wrap #tab-appointments .status-cell-text.status-pending {
         background: #FFFBEB !important;
-        border-color: #F5E2BC !important;
+        border-color: #FFFBEB !important;
         color: #D97706 !important;
     }
 
     .dior-patient-portal-wrap #tab-appointments .status-cell-text.status-cancelled {
         background: #FEF2F2 !important;
-        border-color: #F6CFCF !important;
+        border-color: #FEF2F2 !important;
         color: #DC2626 !important;
     }
 
     .dior-patient-portal-wrap #tab-appointments .status-cell-text.status-completed {
         background: #ECFDF5 !important;
-        border-color: #C8EBDC !important;
+        border-color: #ECFDF5 !important;
         color: #059669 !important;
     }
 
@@ -63937,7 +63918,7 @@ a.va-btn-primary:hover {
         height: 44px !important;
         border-radius: 10px !important;
         background: #F0F6FC !important;
-        border: 1px solid #D9E6F5 !important;
+        border: 1px solid #E2E8F0 !important;
         color: #1A528E !important;
         font-size: 18px !important;
     }
@@ -63946,7 +63927,7 @@ a.va-btn-primary:hover {
     .dior-patient-portal-wrap #tab-appointments .dior-booking-banner-card [style*="rgba(16, 185, 129, 0.2)"] {
         background: #F0F6FC !important;
         color: #1A528E !important;
-        border: 1px solid #D9E6F5 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 6px !important;
     }
 
@@ -64166,7 +64147,7 @@ a.va-btn-primary:hover {
         min-width: 215px !important;
         padding: 8px !important;
         border-radius: 0 10px 10px 0 !important;
-        box-shadow: 6px 6px 22px rgba(0, 0, 0, .35) !important;
+        box-shadow: 6px 6px 22px rgba(15, 23, 42, .35) !important;
         z-index: 10005 !important;
         overflow: visible !important;
     }
@@ -64441,7 +64422,7 @@ a.va-btn-primary:hover {
 
 .dior-patient-portal-wrap #tab-appointments .dior-booking-banner-card [style*="rgba(212, 175, 55, 0.15)"] {
     background: #F0F6FC !important;
-    border-color: #D9E6F5 !important;
+    border-color: #E2E8F0 !important;
     color: #1A528E !important;
     border-radius: 10px !important;
 }
@@ -64450,7 +64431,7 @@ a.va-btn-primary:hover {
 .dior-patient-portal-wrap #tab-appointments .dior-booking-banner-card [style*="rgba(16, 185, 129, 0.2)"] {
     background: #F0F6FC !important;
     color: #1A528E !important;
-    border: 1px solid #D9E6F5 !important;
+    border: 1px solid #E2E8F0 !important;
     border-radius: 6px !important;
 }
 
@@ -64798,7 +64779,7 @@ a.va-btn-primary:hover {
         margin: 0 0 4px 0 !important;
         padding: 0 !important;
         text-align: left !important;
-        color: #718198 !important;
+        color: #64748B !important;
         font-size: 10px !important;
         font-weight: 700 !important;
         line-height: 1.2 !important;
@@ -65075,7 +65056,7 @@ a.va-btn-primary:hover {
         height: 44px !important;
         border-radius: 10px !important;
         background: #F0F6FC !important;
-        border: 1px solid #D9E6F5 !important;
+        border: 1px solid #E2E8F0 !important;
         color: #1A528E !important;
         font-size: 18px !important;
     }
@@ -65083,7 +65064,7 @@ a.va-btn-primary:hover {
     #dior-patient-portal-app #tab-appointments .dior-booking-banner-card [style*="rgba(212, 175, 55, 0.2)"],
     #dior-patient-portal-app #tab-appointments .dior-booking-banner-card [style*="rgba(16, 185, 129, 0.2)"] {
         background: #F0F6FC !important;
-        border: 1px solid #D9E6F5 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 6px !important;
         color: #1A528E !important;
         font-size: 10px !important;
@@ -65179,7 +65160,7 @@ a.va-btn-primary:hover {
         max-height: 66px !important;
         padding: 0 58px 0 16px !important;
         margin: 0 !important;
-        background: var(--patient-navy, #0B1030) !important;
+        background: var(--patient-navy, #00346C) !important;
         border-bottom: 1px solid rgba(255, 255, 255, .10) !important;
     }
 
@@ -65337,4 +65318,375 @@ a.va-btn-primary:hover {
     .dior-patient-portal-wrap .dior-patient-collapse-btn {
         display: none !important;
     }
+}
+
+/* ==================================================================
+   PATIENT DASHBOARD → DOCTOR DASHBOARD COLOUR SCHEME
+   ------------------------------------------------------------------
+   Every value below is taken from the Doctor Dashboard token block
+   (#dior-doctor-app / .dior-doctor-wrap, see "DIOR MEDICAL — DOCTOR
+   DASHBOARD DESIGN FOUNDATION") or from colours the doctor shell
+   already renders. No new colours, no gradients, layout untouched.
+   ================================================================== */
+
+/* ---------- 1. token bridge ---------- */
+.dior-patient-portal-wrap,
+#dior-patient-portal-app {
+
+    /* doctor design tokens, available inside the patient portal */
+    --dior-color-primary: #1A528E;
+    --dior-color-primary-hover: #00346C;
+    --dior-color-primary-active: #001B3A;
+    --dior-color-primary-soft: #F0F6FC;
+    --dior-color-gold: #C5A059;
+
+    --dior-color-page: #F8FAFC;
+    --dior-color-surface: #FFFFFF;
+    --dior-color-surface-muted: #F8FAFC;
+    --dior-color-border: #E2E8F0;
+    --dior-color-border-strong: #CBD5E1;
+
+    --dior-color-text: #0F172A;
+    --dior-color-text-secondary: #334155;
+    --dior-color-text-muted: #64748B;
+    --dior-color-text-inverse: #FFFFFF;
+
+    --dior-color-success: #059669;
+    --dior-color-success-soft: #ECFDF5;
+    --dior-color-warning: #D97706;
+    --dior-color-warning-soft: #FFFBEB;
+    --dior-color-danger: #DC2626;
+    --dior-color-danger-soft: #FEF2F2;
+    --dior-color-info: #0284C7;
+    --dior-color-info-soft: #F0F9FF;
+
+    --dior-radius-sm: 6px;
+    --dior-radius-control: 8px;
+    --dior-radius-card: 12px;
+    --dior-radius-panel: 16px;
+    --dior-radius-pill: 999px;
+
+    /* legacy shared tokens, re-pointed at the same doctor values */
+    --dior-primary: #1A528E;
+    --dior-primary-hover: #00346C;
+    --dior-primary-rgb: 0, 52, 108;
+    --dior-primary-light: rgba(0, 52, 108, 0.08);
+    --dior-primary-subtle: #F0F6FC;
+
+    --dior-accent-blue: #2C6CB1;
+    --dior-accent-blue-hover: #1A528E;
+    --dior-accent-blue-light: #F0F6FC;
+
+    --dior-success: #059669;
+    --dior-success-bg: #ECFDF5;
+    --dior-success-text: #059669;
+    --dior-warning: #D97706;
+    --dior-warning-bg: #FFFBEB;
+    --dior-warning-text: #D97706;
+    --dior-danger: #DC2626;
+    --dior-danger-bg: #FEF2F2;
+    --dior-danger-text: #DC2626;
+    --dior-info: #0284C7;
+
+    /* the doctor shell has no gold gradient — flat gold only */
+    --dior-gold: #C5A059;
+    --dior-gold-hover: #C5A059;
+    --dior-gold-gradient: #C5A059;
+    --dior-gold-light: #F0F6FC;
+
+    /* shell */
+    --patient-navy: #00346C;
+    --patient-navy-hover: #002752;
+    --patient-active: #1A528E;
+    --patient-blue: #2C6CB1;
+    --patient-line: #E2E8F0;
+    --patient-bg: #F8FAFC;
+    --patient-text: #0F172A;
+    --patient-muted: #64748B;
+}
+
+/* ---------- 2. app shell ---------- */
+.dior-patient-portal-wrap,
+.dior-patient-portal-wrap .dior-app,
+.dior-patient-portal-wrap .dior-main-content,
+.dior-patient-portal-wrap .dior-dashboard-content,
+.dior-patient-portal-wrap .dior-tab-panel {
+    background-color: #F8FAFC !important;
+    color: #334155 !important;
+}
+
+.dior-patient-portal-wrap .dior-topbar {
+    background: #FFFFFF !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+    box-shadow: 0 2px 10px rgba(11, 16, 48, 0.06) !important;
+}
+
+.dior-patient-portal-wrap .dior-side,
+.dior-patient-portal-wrap .dior-side-header {
+    background: #00346C !important;
+    background-color: #00346C !important;
+    border-right: 1px solid rgba(0, 52, 108, 0.1) !important;
+    color: #FFFFFF !important;
+}
+
+/* ---------- 3. sidebar navigation (doctor states) ---------- */
+.dior-patient-portal-wrap .dior-side-nav .dior-nav-btn {
+    color: rgba(255, 255, 255, 0.85) !important;
+    background: transparent !important;
+}
+
+.dior-patient-portal-wrap .dior-side-nav .dior-nav-btn i,
+.dior-patient-portal-wrap .dior-side-nav .dior-nav-btn svg {
+    color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dior-patient-portal-wrap .dior-side-nav .dior-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.10) !important;
+    color: #FFFFFF !important;
+}
+
+.dior-patient-portal-wrap .dior-side-nav .dior-nav-btn:hover i,
+.dior-patient-portal-wrap .dior-side-nav .dior-nav-btn:hover svg {
+    color: #FFFFFF !important;
+}
+
+.dior-patient-portal-wrap .dior-side-nav .dior-nav-btn.active,
+.dior-patient-portal-wrap .dior-nav-item-has-children.active>.dior-nav-btn,
+.dior-patient-portal-wrap .dior-nav-item-has-children>.dior-nav-btn.active {
+    background: rgba(255, 255, 255, 0.16) !important;
+    color: #FFFFFF !important;
+}
+
+.dior-patient-portal-wrap .dior-side-nav .dior-nav-btn.active i,
+.dior-patient-portal-wrap .dior-side-nav .dior-nav-btn.active svg,
+.dior-patient-portal-wrap .dior-side-nav .dior-nav-btn.active .nav-label {
+    color: #FFFFFF !important;
+}
+
+.dior-patient-portal-wrap .dior-side-nav .grp-title {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Appointments dropdown */
+.dior-patient-portal-wrap .dior-nav-dropdown {
+    background: #002752 !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dior-patient-portal-wrap .dior-nav-dropdown-item {
+    color: #E2E8F0 !important;
+}
+
+.dior-patient-portal-wrap .dior-nav-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #FFFFFF !important;
+}
+
+.dior-patient-portal-wrap .dior-nav-dropdown-item.active {
+    background: rgba(255, 255, 255, 0.16) !important;
+    color: #FFFFFF !important;
+}
+
+/* sidebar bottom profile card */
+.dior-patient-portal-wrap .dior-sidebar-bottom-profile {
+    background: rgba(255, 255, 255, 0.10) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ---------- 4. buttons (doctor primary / secondary) ---------- */
+.dior-patient-portal-wrap .dior-btn-gold-primary,
+.dior-patient-portal-wrap .dior-btn-gold,
+#dior-patient-portal-app .dior-btn-gold-primary {
+    background: #1A528E !important;
+    background-color: #1A528E !important;
+    background-image: none !important;
+    border: 1px solid #1A528E !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    box-shadow: none !important;
+}
+
+.dior-patient-portal-wrap .dior-btn-gold-primary *,
+.dior-patient-portal-wrap .dior-btn-gold * {
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+}
+
+.dior-patient-portal-wrap .dior-btn-gold-primary:hover,
+.dior-patient-portal-wrap .dior-btn-gold-primary:focus,
+.dior-patient-portal-wrap .dior-btn-gold:hover,
+.dior-patient-portal-wrap .dior-btn-gold:focus,
+#dior-patient-portal-app .dior-btn-gold-primary:hover {
+    background: #00346C !important;
+    background-color: #00346C !important;
+    background-image: none !important;
+    border-color: #00346C !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+}
+
+.dior-patient-portal-wrap .dior-btn-gold-secondary {
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #334155 !important;
+    -webkit-text-fill-color: #334155 !important;
+}
+
+.dior-patient-portal-wrap .dior-btn-gold-secondary:hover,
+.dior-patient-portal-wrap .dior-btn-gold-secondary:focus {
+    background: #EBF3FA !important;
+    background-color: #EBF3FA !important;
+    border-color: #2C6CB1 !important;
+    color: #1A528E !important;
+    -webkit-text-fill-color: #1A528E !important;
+}
+
+.dior-patient-portal-wrap .btn-primary,
+.dior-patient-portal-wrap .primary-btn,
+.dior-patient-portal-wrap .dior-btn-blue,
+.dior-patient-portal-wrap .medidash-btn-blue {
+    background: #1A528E !important;
+    background-color: #1A528E !important;
+    background-image: none !important;
+    border-color: #1A528E !important;
+    color: #FFFFFF !important;
+}
+
+.dior-patient-portal-wrap .btn-primary:hover,
+.dior-patient-portal-wrap .primary-btn:hover,
+.dior-patient-portal-wrap .dior-btn-blue:hover,
+.dior-patient-portal-wrap .medidash-btn-blue:hover {
+    background: #00346C !important;
+    background-color: #00346C !important;
+    border-color: #00346C !important;
+}
+
+.dior-patient-portal-wrap .medidash-btn-green {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+}
+
+.dior-patient-portal-wrap .medidash-btn-green:hover {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+}
+
+/* ---------- 5. surfaces, tables, status pills ---------- */
+.dior-patient-portal-wrap .dior-tab-panel .card,
+.dior-patient-portal-wrap .dior-tab-panel .dior-card,
+.dior-patient-portal-wrap .docs-card,
+.dior-patient-portal-wrap .master-table-card,
+.dior-patient-portal-wrap .medidash-card {
+    background: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+}
+
+.dior-patient-portal-wrap .docs-header-container,
+.dior-patient-portal-wrap .master-table-header,
+.dior-patient-portal-wrap .medidash-card-header {
+    border-bottom-color: #E2E8F0 !important;
+}
+
+.dior-patient-portal-wrap table thead th,
+.dior-patient-portal-wrap .docs-table thead th {
+    background: #F8FAFC !important;
+    background-color: #F8FAFC !important;
+    color: #64748B !important;
+    border-color: #E2E8F0 !important;
+}
+
+.dior-patient-portal-wrap table tbody td {
+    color: #334155 !important;
+    border-color: #E2E8F0 !important;
+}
+
+.dior-patient-portal-wrap table tbody tr:hover td {
+    background: #F8FAFC !important;
+}
+
+/* page titles — same navy the doctor shell uses for content headings */
+.dior-patient-portal-wrap .dior-tab-panel:not(#tab-overview) .mb-4:first-child h4,
+.dior-patient-portal-wrap .dior-page-header-box h2,
+.dior-patient-portal-wrap .medidash-page-header h2 {
+    color: #00346C !important;
+}
+
+/* table / section titles — the doctor .table-title token (--dior-primary) */
+.dior-patient-portal-wrap .table-title,
+.dior-patient-portal-wrap .section-title,
+.dior-patient-portal-wrap .medidash-card-title {
+    color: #1A528E !important;
+}
+
+/* status text + badges */
+.dior-patient-portal-wrap .badge.bg-success,
+.dior-patient-portal-wrap .status-confirm,
+.dior-patient-portal-wrap .status-completed {
+    background: #ECFDF5 !important;
+    color: #059669 !important;
+    border-color: #ECFDF5 !important;
+}
+
+.dior-patient-portal-wrap .badge.bg-warning,
+.dior-patient-portal-wrap .status-pending {
+    background: #FFFBEB !important;
+    color: #D97706 !important;
+    border-color: #FFFBEB !important;
+}
+
+.dior-patient-portal-wrap .badge.bg-danger,
+.dior-patient-portal-wrap .status-cancelled {
+    background: #FEF2F2 !important;
+    color: #DC2626 !important;
+    border-color: #FEF2F2 !important;
+}
+
+.dior-patient-portal-wrap .badge.bg-info,
+.dior-patient-portal-wrap .status-upcoming {
+    background: #F0F9FF !important;
+    color: #0284C7 !important;
+    border-color: #F0F9FF !important;
+}
+
+/* row action icon buttons */
+.dior-patient-portal-wrap .action-icon-btn,
+.dior-patient-portal-wrap .cell-actions .action-icon-btn {
+    background: #F4F9FD !important;
+    background-color: #F4F9FD !important;
+    border-color: #cbdbea !important;
+    color: #2b70b8 !important;
+}
+
+.dior-patient-portal-wrap .action-icon-btn:hover,
+.dior-patient-portal-wrap .cell-actions .action-icon-btn:hover {
+    background: #F0F6FC !important;
+    border-color: #1A528E !important;
+    color: #1A528E !important;
+}
+
+/* alerts / notices */
+.dior-patient-portal-wrap .alert-success {
+    background: #ECFDF5 !important;
+    background-color: #ECFDF5 !important;
+    border-color: #ECFDF5 !important;
+    color: #059669 !important;
+}
+
+.dior-patient-portal-wrap .alert-warning {
+    background: #FFFBEB !important;
+    border-color: #FFFBEB !important;
+    color: #D97706 !important;
+}
+
+.dior-patient-portal-wrap .alert-danger {
+    background: #FEF2F2 !important;
+    border-color: #FEF2F2 !important;
+    color: #DC2626 !important;
+}
+
+.dior-patient-portal-wrap .alert-info {
+    background: #F0F9FF !important;
+    border-color: #F0F9FF !important;
+    color: #0284C7 !important;
 }

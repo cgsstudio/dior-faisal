@@ -887,7 +887,7 @@
                         <div>
                             <strong class="dior-ic-3a5e03a707">Consultation
                                 Mode</strong>
-                            <span id="pat-modal-appt-mode" class="dior-ic-035b2e7453"><i class="fas fa-video me-1" style="color:#22c55e;"></i> Video Visit</span>
+                            <span id="pat-modal-appt-mode" class="dior-ic-035b2e7453"><i class="fas fa-video me-1" style="color:#059669;"></i> Video Visit</span>
                         </div>
                         <div class="dior-ic-b652b6f21e">
                             <strong class="dior-ic-3a5e03a707">Service
@@ -902,7 +902,7 @@
                 <div id="pat-modal-zoom-wrap" class="dior-ic-5d5fe245c5">
                     <div class="dior-ic-63a4b96787">
                         <div class="dior-ic-99e83aaa9f">
-                            <i class="fas fa-video" style="color:#22c55e;font-size:18px;"></i>
+                            <i class="fas fa-video" style="color:#059669;font-size:18px;"></i>
                         </div>
                         <div>
                             <strong class="dior-ic-08abd803b3">Live Virtual Consultation
@@ -912,7 +912,7 @@
                     </div>
                     <a id="pat-modal-zoom-link" href="#" target="_blank" rel="noopener noreferrer"
                         class="dior-ic-459d58fbd7">
-                        <i class="fas fa-video me-1" style="color:#22c55e;"></i> Join Video Call &rarr;
+                        <i class="fas fa-video me-1" style="color:#059669;"></i> Join Video Call &rarr;
                     </a>
                 </div>
 
