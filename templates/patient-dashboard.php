@@ -49,8 +49,6 @@
                                     class="fas fa-angle-right"></i> Upcoming Appointments</a>
                             <a href="#tab=appointments&subtab=past" class="dior-nav-dropdown-item" data-appt-subtab="past"><i
                                     class="fas fa-angle-right"></i> Past Appointments</a>
-                            <a href="#tab=appointments&subtab=calendar" class="dior-nav-dropdown-item" data-appt-subtab="calendar"><i
-                                    class="fas fa-angle-right"></i> Appointment Calendar</a>
                         </div>
                     </div>
                     <button type="button" class="dior-nav-btn btn" data-tab="docs_meds">

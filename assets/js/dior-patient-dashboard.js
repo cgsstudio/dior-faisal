@@ -686,6 +686,10 @@ let diorPastCurrentPage = 1;
 // --- Extracted dashboard script 5 ---
 window.diorSwitchApptSubTab = function(targetSubTab) {
                         if (!targetSubTab) targetSubTab = 'book';
+                        // The calendar subtab was removed — never fall back to a pane that no longer exists.
+                        if (targetSubTab === 'calendar' || !document.getElementById('dior-subtab-' + targetSubTab)) {
+                            targetSubTab = 'today';
+                        }
                         var navBtns = document.querySelectorAll('.dior-nav-btn');
                         var tabPanels = document.querySelectorAll('.dior-tab-panel');
                         
@@ -3227,7 +3231,7 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
                 if (requested === 'appointments' && typeof window.diorSwitchApptSubTab === 'function') {
                     var s = requestedSub || (function(){
                         try { return sessionStorage.getItem('dior_active_appt_subtab'); } catch(e){ return null; }
-                    })() || 'calendar';
+                    })() || 'today';
                     window.diorSwitchApptSubTab(s);
                 }
             }
