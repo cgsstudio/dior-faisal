@@ -953,7 +953,7 @@
 
 /* Outer Panel Spacing for all sub-pages */
 :is(.dior-patient-portal-wrap, .dior-doctor-wrap, .dior-admin-wrap) .dior-tab-panel:not(#tab-overview):not(#tab-doc-overview) {
-    padding: 24px 28px !important;
+    padding: 24px 28px;
     background-color: #F8FAFC !important;
 }
 
@@ -57804,13 +57804,14 @@ a.va-btn-primary:hover {
 
 /* 3. Desktop Collapsible Sidebar (ChatGPT / Cloud / WordPress style) */
 @media (min-width: 1025px) {
+
     /* Smooth width and margin transitions */
     .dior-doctor-wrap .dior-side,
     .dior-doctor-wrap .dior-main-content {
         transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-                    min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-                    max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-                    margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+            max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+            margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     /* Collapsed sidebar layout */
@@ -57896,11 +57897,11 @@ a.va-btn-primary:hover {
         position: relative !important;
     }
 
-    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu > .dior-submenu {
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu>.dior-submenu {
         display: none !important;
     }
 
-    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover > .dior-submenu {
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover>.dior-submenu {
         display: flex !important;
         flex-direction: column !important;
         position: absolute !important;
@@ -57917,7 +57918,7 @@ a.va-btn-primary:hover {
         border-left: none !important;
     }
 
-    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover > .dior-submenu .nav-label {
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover>.dior-submenu .nav-label {
         display: inline-block !important;
         opacity: 1 !important;
         visibility: visible !important;
@@ -57927,7 +57928,7 @@ a.va-btn-primary:hover {
         font-weight: 500 !important;
     }
 
-    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover > .dior-submenu .submenu-btn {
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover>.dior-submenu .submenu-btn {
         justify-content: flex-start !important;
         padding: 8px 12px !important;
         width: 100% !important;
@@ -57937,12 +57938,12 @@ a.va-btn-primary:hover {
         margin-bottom: 2px !important;
     }
 
-    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover > .dior-submenu .submenu-btn:hover {
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover>.dior-submenu .submenu-btn:hover {
         background: rgba(255, 255, 255, 0.12) !important;
         color: #FFFFFF !important;
     }
 
-    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover > .dior-submenu .submenu-btn i {
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-nav-item.has-submenu:hover>.dior-submenu .submenu-btn i {
         width: 16px !important;
         font-size: 13px !important;
         margin: 0 !important;
@@ -57955,6 +57956,7 @@ a.va-btn-primary:hover {
         display: none !important;
     }
 }
+
 /* ==========================================================================
    DIGITAL PRESCRIPTIONS — mobile card layout
    Mirrors the Consultation Notes treatment ("CONSULTATION NOTES — compact
@@ -57991,6 +57993,7 @@ a.va-btn-primary:hover {
 }
 
 @media (max-width: 991.98px) {
+
     /* Recover the horizontal space consumed by the shared sub-page padding. */
     #dior-doctor-app #dior-doc-content #tab-doc-e-prescriptions.dior-prescriptions-screen {
         box-sizing: border-box !important;
@@ -58433,8 +58436,8 @@ a.va-btn-primary:hover {
     }
 
     /* The icon is the only visible child, so it defines the centre line. */
-    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn > i:first-of-type,
-    .dior-doctor-wrap.dior-sidebar-collapsed .dior-doc-collapse-btn > i:first-of-type {
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn>i:first-of-type,
+    .dior-doctor-wrap.dior-sidebar-collapsed .dior-doc-collapse-btn>i:first-of-type {
         margin: 0 auto !important;
         width: 24px !important;
         min-width: 24px !important;
@@ -58535,7 +58538,7 @@ a.va-btn-primary:hover {
     }
 
     /* Never let a wide table push the page into horizontal scroll. */
-    .dior-doctor-wrap #dior-doc-content > .dior-tab-panel {
+    .dior-doctor-wrap #dior-doc-content>.dior-tab-panel {
         min-width: 0 !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
@@ -59098,11 +59101,11 @@ a.va-btn-primary:hover {
     text-align: left !important;
 }
 
-#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-page-heading > div {
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-page-heading>div {
     text-align: left !important;
 }
 
-#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-hint > span {
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-hint>span {
     flex: 1 1 auto !important;
     min-width: 0 !important;
 }
@@ -59324,7 +59327,7 @@ a.va-btn-primary:hover {
     color: #64748B !important;
 }
 
-#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-empty > i.fas:first-child {
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-empty>i.fas:first-child {
     display: block !important;
     width: auto !important;
     font-size: 30px !important;
@@ -59638,6 +59641,7 @@ a.va-btn-primary:hover {
 
 /* -- Responsive ----------------------------------------------------------- */
 @media (max-width: 991.98px) {
+
     /* Stay inside the content column: no negative margins, so headings and
        pills never bleed past the viewport edge. */
     #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel {
@@ -59967,7 +59971,8 @@ a.va-btn-primary:hover {
     }
 
     #dior-doctor-app #dior-doc-content .dior-pharm-input {
-        font-size: 16px !important; /* prevents iOS zoom-on-focus */
+        font-size: 16px !important;
+        /* prevents iOS zoom-on-focus */
     }
 
     #dior-doctor-app #dior-doc-content .dior-pharm-actions {
@@ -60144,7 +60149,7 @@ a.va-btn-primary:hover {
     color: #64748B !important;
 }
 
-#dior-doctor-app #dior-doc-content .dior-docs-empty > i:first-child {
+#dior-doctor-app #dior-doc-content .dior-docs-empty>i:first-child {
     display: block !important;
     margin: 0 auto 12px !important;
     font-size: 30px !important;
@@ -60347,6 +60352,7 @@ a.va-btn-primary:hover {
 
 /* -- Responsive ----------------------------------------------------------- */
 @media (max-width: 991.98px) {
+
     #dior-doctor-app #dior-doc-content #tab-doc-documents-upload.dior-tab-panel,
     #dior-doctor-app #dior-doc-content #tab-doc-documents-templates.dior-tab-panel,
     #dior-doctor-app #dior-doc-content #tab-doc-documents-signed.dior-tab-panel {
@@ -60361,9 +60367,9 @@ a.va-btn-primary:hover {
     }
 
     /* Page heading: title on top, breadcrumb underneath. */
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload > .mb-4,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates > .mb-4,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed > .mb-4 {
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload>.mb-4,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates>.mb-4,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed>.mb-4 {
         display: flex !important;
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -60372,15 +60378,15 @@ a.va-btn-primary:hover {
         padding: 0 4px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload > .mb-4 h4,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates > .mb-4 h4,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed > .mb-4 h4 {
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload>.mb-4 h4,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates>.mb-4 h4,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed>.mb-4 h4 {
         font-size: 18px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload > .mb-4 .va-breadcrumb-list,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates > .mb-4 .va-breadcrumb-list,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed > .mb-4 .va-breadcrumb-list {
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload>.mb-4 .va-breadcrumb-list,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates>.mb-4 .va-breadcrumb-list,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed>.mb-4 .va-breadcrumb-list {
         flex-wrap: wrap !important;
         font-size: 12.5px !important;
     }
@@ -60400,9 +60406,9 @@ a.va-btn-primary:hover {
         margin: 0 0 14px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .dior-subtab-nav-bar > .dior-subtab-pill,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .dior-subtab-nav-bar > .dior-subtab-pill,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .dior-subtab-nav-bar > .dior-subtab-pill {
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .dior-subtab-nav-bar>.dior-subtab-pill,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .dior-subtab-nav-bar>.dior-subtab-pill,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .dior-subtab-nav-bar>.dior-subtab-pill {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -60419,15 +60425,15 @@ a.va-btn-primary:hover {
         box-sizing: border-box !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .dior-subtab-nav-bar > .dior-subtab-pill:last-child,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .dior-subtab-nav-bar > .dior-subtab-pill:last-child,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .dior-subtab-nav-bar > .dior-subtab-pill:last-child {
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .dior-subtab-nav-bar>.dior-subtab-pill:last-child,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .dior-subtab-nav-bar>.dior-subtab-pill:last-child,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .dior-subtab-nav-bar>.dior-subtab-pill:last-child {
         grid-column: 1 / -1 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .dior-subtab-nav-bar > .dior-subtab-pill.active::after,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .dior-subtab-nav-bar > .dior-subtab-pill.active::after,
-    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .dior-subtab-nav-bar > .dior-subtab-pill.active::after {
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .dior-subtab-nav-bar>.dior-subtab-pill.active::after,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .dior-subtab-nav-bar>.dior-subtab-pill.active::after,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .dior-subtab-nav-bar>.dior-subtab-pill.active::after {
         display: none !important;
     }
 
@@ -60646,7 +60652,7 @@ a.va-btn-primary:hover {
         object-fit: cover !important;
     }
 
-    #dior-doctor-app #dior-doc-content .docs-table tbody .docs-user-profile > div {
+    #dior-doctor-app #dior-doc-content .docs-table tbody .docs-user-profile>div {
         min-width: 0 !important;
         flex: 1 1 auto !important;
     }
@@ -60759,7 +60765,8 @@ a.va-btn-primary:hover {
     }
 
     .dior-docs-overlay .dior-docs-input {
-        font-size: 16px !important; /* prevents iOS zoom-on-focus */
+        font-size: 16px !important;
+        /* prevents iOS zoom-on-focus */
     }
 
     /* Overlay markup puts the primary action first, so a plain column stacks
@@ -60781,144 +60788,145 @@ a.va-btn-primary:hover {
 }
 
 @media (min-width: 992px) {
-/* -- Table sizing: fill the card, never clip the right-most actions --------- */
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table-wrapper,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table-wrapper,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table-wrapper {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-}
 
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    font-size: 12.5px !important;
-}
+    /* -- Table sizing: fill the card, never clip the right-most actions --------- */
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table-wrapper,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table-wrapper,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table-wrapper {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
 
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table thead th,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table thead th,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table thead th {
-    /* Headers wrap; rows keep a single line. Wrapping the headers is what lets
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        font-size: 12.5px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table thead th,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table thead th,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table thead th {
+        /* Headers wrap; rows keep a single line. Wrapping the headers is what lets
        the 9-10 column tables fit the card instead of clipping ACTIONS. */
-    white-space: normal !important;
-    line-height: 1.2 !important;
-    vertical-align: middle !important;
-    font-size: 10.5px !important;
-    letter-spacing: 0.02em !important;
-}
+        white-space: normal !important;
+        line-height: 1.2 !important;
+        vertical-align: middle !important;
+        font-size: 10.5px !important;
+        letter-spacing: 0.02em !important;
+    }
 
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table thead th .fa-sort,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table thead th .fa-sort,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table thead th .fa-sort {
-    margin-left: 3px !important;
-    font-size: 9px !important;
-    opacity: 0.7 !important;
-}
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table thead th .fa-sort,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table thead th .fa-sort,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table thead th .fa-sort {
+        margin-left: 3px !important;
+        font-size: 9px !important;
+        opacity: 0.7 !important;
+    }
 
-/* Status badges stay compact so they never widen the row past the card. */
-#dior-doctor-app #dior-doc-content .docs-table tbody .badge {
-    font-size: 11px !important;
-    padding: 3px 9px !important;
-    white-space: nowrap !important;
-}
+    /* Status badges stay compact so they never widen the row past the card. */
+    #dior-doctor-app #dior-doc-content .docs-table tbody .badge {
+        font-size: 11px !important;
+        padding: 3px 9px !important;
+        white-space: nowrap !important;
+    }
 
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table thead th,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table thead th,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table thead th,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table tbody td,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table tbody td,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-}
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table thead th,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table thead th,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table thead th,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table tbody td,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table tbody td,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
 
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table tbody td,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table tbody td,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td {
-    white-space: nowrap !important;
-    vertical-align: middle !important;
-}
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table tbody td,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table tbody td,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td {
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+    }
 
-/* Name/patient/title columns wrap instead of truncating. */
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table tbody td[data-label="Document Name"],
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table tbody td[data-label="Template Name"],
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Procedure"] {
-    white-space: normal !important;
-    overflow-wrap: break-word !important;
-}
+    /* Name/patient/title columns wrap instead of truncating. */
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table tbody td[data-label="Document Name"],
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table tbody td[data-label="Template Name"],
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Procedure"] {
+        white-space: normal !important;
+        overflow-wrap: break-word !important;
+    }
 
-#dior-doctor-app #dior-doc-content .docs-table tbody .docs-user-profile {
-    flex-wrap: nowrap !important;
-}
+    #dior-doctor-app #dior-doc-content .docs-table tbody .docs-user-profile {
+        flex-wrap: nowrap !important;
+    }
 
-#dior-doctor-app #dior-doc-content .docs-table tbody .docs-user-profile > div {
-    min-width: 0 !important;
-}
+    #dior-doctor-app #dior-doc-content .docs-table tbody .docs-user-profile>div {
+        min-width: 0 !important;
+    }
 
-#dior-doctor-app #dior-doc-content .docs-table tbody .docs-user-name {
-    display: block !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-}
+    #dior-doctor-app #dior-doc-content .docs-table tbody .docs-user-name {
+        display: block !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
 
-/* Wide identity columns for the two patient-centric tables. */
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table th:nth-child(3),
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table td:nth-child(3),
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table th:nth-child(3),
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table td:nth-child(3) {
-    min-width: 168px !important;
-}
+    /* Wide identity columns for the two patient-centric tables. */
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table th:nth-child(3),
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table td:nth-child(3),
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table th:nth-child(3),
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table td:nth-child(3) {
+        min-width: 168px !important;
+    }
 
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table th:nth-child(3),
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table td:nth-child(3) {
-    min-width: 190px !important;
-}
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table th:nth-child(3),
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table td:nth-child(3) {
+        min-width: 190px !important;
+    }
 
-/* Actions column must always be fully visible. */
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table th:last-child,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table th:last-child,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table th:last-child,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table td:last-child,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table td:last-child,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table td:last-child {
-    width: 96px !important;
-    min-width: 96px !important;
-}
+    /* Actions column must always be fully visible. */
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table th:last-child,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table th:last-child,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table th:last-child,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-table td:last-child,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-table td:last-child,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table td:last-child {
+        width: 96px !important;
+        min-width: 96px !important;
+    }
 
-/* ------------------------------------------------------------------
+    /* ------------------------------------------------------------------
    Signed Consent has 10 columns. Trim per-cell padding and let the
    short text columns (Signer / Witness / Consent type) wrap onto two
    lines so the table lands exactly on the card width instead of
    pushing ACTIONS ~56px outside it.
    ------------------------------------------------------------------ */
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table thead th,
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td {
-    padding-left: 6px !important;
-    padding-right: 6px !important;
-}
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table thead th,
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
 
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Consent Type"],
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Signed By"],
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Witness"],
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Signed Date"] {
-    white-space: normal !important;
-    overflow-wrap: break-word !important;
-    line-height: 1.35 !important;
-}
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Consent Type"],
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Signed By"],
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Witness"],
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Signed Date"] {
+        white-space: normal !important;
+        overflow-wrap: break-word !important;
+        line-height: 1.35 !important;
+    }
 
-/* Keep the date on one line so "May 2, 2024" never breaks mid-token. */
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Signed Date"] {
-    white-space: nowrap !important;
-}
+    /* Keep the date on one line so "May 2, 2024" never breaks mid-token. */
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table tbody td[data-label="Signed Date"] {
+        white-space: nowrap !important;
+    }
 
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table th:nth-child(3),
-#dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table td:nth-child(3) {
-    min-width: 150px !important;
-}
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table th:nth-child(3),
+    #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-table td:nth-child(3) {
+        min-width: 150px !important;
+    }
 }
 
 /* ------------------------------------------------------------------
@@ -60929,6 +60937,7 @@ a.va-btn-primary:hover {
    underneath.
    ------------------------------------------------------------------ */
 @media (max-width: 420px) {
+
     #dior-doctor-app #dior-doc-content #tab-doc-documents-upload .docs-actions-wrapper,
     #dior-doctor-app #dior-doc-content #tab-doc-documents-templates .docs-actions-wrapper,
     #dior-doctor-app #dior-doc-content #tab-doc-documents-signed .docs-actions-wrapper {
@@ -61059,7 +61068,7 @@ a.va-btn-primary:hover {
     }
 
     /* Page heading: title on top, breadcrumb underneath. */
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video > .mb-4 {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video>.mb-4 {
         display: flex !important;
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -61068,18 +61077,18 @@ a.va-btn-primary:hover {
         padding: 0 4px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video > .mb-4 h4 {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video>.mb-4 h4 {
         font-size: 18px !important;
         line-height: 1.3 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video > .mb-4 .text-secondary.small {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video>.mb-4 .text-secondary.small {
         font-size: 12.5px !important;
         line-height: 1.45 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video > .mb-4 .breadcrumb-list,
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video > .mb-4 .va-breadcrumb-list {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video>.mb-4 .breadcrumb-list,
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video>.mb-4 .va-breadcrumb-list {
         flex-wrap: wrap !important;
         font-size: 12.5px !important;
     }
@@ -61097,7 +61106,7 @@ a.va-btn-primary:hover {
         margin: 0 0 14px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-subtab-nav-bar > .dior-subtab-pill {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-subtab-nav-bar>.dior-subtab-pill {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -61114,12 +61123,12 @@ a.va-btn-primary:hover {
         box-sizing: border-box !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-subtab-nav-bar > .dior-subtab-pill.active::after {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-subtab-nav-bar>.dior-subtab-pill.active::after {
         display: none !important;
     }
 
     /* ---- Cards inside the tab: no horizontal overflow ------------- */
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video > .card,
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video>.card,
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #dior-tele-patient-panel {
         box-sizing: border-box !important;
         width: 100% !important;
@@ -61140,7 +61149,8 @@ a.va-btn-primary:hover {
         flex: 1 1 100% !important;
         width: 100% !important;
         min-width: 0 !important;
-        font-size: 16px !important; /* prevents iOS zoom-on-focus */
+        font-size: 16px !important;
+        /* prevents iOS zoom-on-focus */
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-selector-row .btn {
@@ -61162,7 +61172,7 @@ a.va-btn-primary:hover {
         padding-top: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-action-row > .btn {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-action-row>.btn {
         width: 100% !important;
         min-width: 0 !important;
         margin: 0 !important;
@@ -61179,7 +61189,7 @@ a.va-btn-primary:hover {
         gap: 12px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-head > div {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-head>div {
         width: 100% !important;
         min-width: 0 !important;
     }
@@ -61199,7 +61209,7 @@ a.va-btn-primary:hover {
         width: 100% !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions > .btn {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions>.btn {
         width: 100% !important;
         min-width: 0 !important;
         margin: 0 !important;
@@ -61242,7 +61252,8 @@ a.va-btn-primary:hover {
 
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-bs-search-group {
         flex: 1 1 auto !important;
-        width: auto !important; /* beats the inline 240px */
+        width: auto !important;
+        /* beats the inline 240px */
         min-width: 0 !important;
         overflow: hidden !important;
     }
@@ -61252,7 +61263,8 @@ a.va-btn-primary:hover {
         min-width: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
-        font-size: 16px !important; /* prevents iOS zoom-on-focus */
+        font-size: 16px !important;
+        /* prevents iOS zoom-on-focus */
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-actions-group {
@@ -61389,7 +61401,7 @@ a.va-btn-primary:hover {
     /* ---- Scheduled Consultations card rhythm ----------------------
        checkbox → consultation id → patient → doctor/status → date/time
        → actions.                                                  */
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(1) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(1) {
         grid-column: 1 / -1 !important;
         grid-row: 1 !important;
         align-items: flex-end !important;
@@ -61397,12 +61409,12 @@ a.va-btn-primary:hover {
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(1)::before {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(1)::before {
         content: none !important;
         display: none !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(2) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(2) {
         grid-column: 1 / -1 !important;
         grid-row: 2 !important;
         padding-top: 2px !important;
@@ -61410,36 +61422,36 @@ a.va-btn-primary:hover {
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(3) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(3) {
         grid-column: 1 / -1 !important;
         grid-row: 3 !important;
         border-bottom: 1px solid #E2E8F0 !important;
         padding-bottom: 10px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(4) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(4) {
         grid-column: 1 / 2 !important;
         grid-row: 4 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(7) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(7) {
         grid-column: 2 / 3 !important;
         grid-row: 4 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(5) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(5) {
         grid-column: 1 / 2 !important;
         grid-row: 5 !important;
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(6) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(6) {
         grid-column: 2 / 3 !important;
         grid-row: 5 !important;
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(8) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-consultations-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(8) {
         grid-column: 1 / -1 !important;
         grid-row: 6 !important;
         align-items: center !important;
@@ -61448,7 +61460,7 @@ a.va-btn-primary:hover {
     }
 
     /* ---- Previous Prescriptions card rhythm ---------------------- */
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-prescriptions-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(1) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-prescriptions-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(1) {
         grid-column: 1 / -1 !important;
         grid-row: 1 !important;
         padding-top: 2px !important;
@@ -61458,27 +61470,27 @@ a.va-btn-primary:hover {
         color: #00346C !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-prescriptions-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(2) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-prescriptions-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(2) {
         grid-column: 1 / -1 !important;
         grid-row: 2 !important;
         border-bottom: 1px solid #E2E8F0 !important;
         padding-bottom: 8px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-prescriptions-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(3) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-prescriptions-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(3) {
         grid-column: 1 / 2 !important;
         grid-row: 3 !important;
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-prescriptions-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(4) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-prescriptions-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(4) {
         grid-column: 2 / 3 !important;
         grid-row: 3 !important;
         border-bottom: 0 !important;
     }
 
     /* ---- Uploaded Documents card rhythm -------------------------- */
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-documents-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(1) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-documents-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(1) {
         grid-column: 1 / -1 !important;
         grid-row: 1 !important;
         padding-top: 2px !important;
@@ -61488,19 +61500,19 @@ a.va-btn-primary:hover {
         color: #00346C !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-documents-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(2) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-documents-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(2) {
         grid-column: 1 / 2 !important;
         grid-row: 2 !important;
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-documents-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(3) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-documents-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(3) {
         grid-column: 2 / 3 !important;
         grid-row: 2 !important;
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-documents-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(4) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-documents-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(4) {
         grid-column: 1 / -1 !important;
         grid-row: 3 !important;
         align-items: stretch !important;
@@ -61508,7 +61520,7 @@ a.va-btn-primary:hover {
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-documents-tbody > tr:not(.dior-tele-empty-row) > td:nth-child(4) .btn {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video #tele-documents-tbody>tr:not(.dior-tele-empty-row)>td:nth-child(4) .btn {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -61817,7 +61829,7 @@ a.va-btn-primary:hover {
     }
 
     /* Page heading: the markup uses inline flex, so override it. */
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records > .mb-4 {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records>.mb-4 {
         display: flex !important;
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -61826,13 +61838,13 @@ a.va-btn-primary:hover {
         padding: 0 4px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records > .mb-4 h4 {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records>.mb-4 h4 {
         font-size: 18px !important;
         line-height: 1.3 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records > .mb-4 .va-breadcrumb-list,
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records > .mb-4 .breadcrumb-list {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records>.mb-4 .va-breadcrumb-list,
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records>.mb-4 .breadcrumb-list {
         flex-wrap: wrap !important;
         font-size: 12.5px !important;
         row-gap: 6px !important;
@@ -61851,7 +61863,7 @@ a.va-btn-primary:hover {
         margin: 0 0 14px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .dior-subtab-nav-bar > .dior-subtab-pill {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .dior-subtab-nav-bar>.dior-subtab-pill {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -61868,7 +61880,7 @@ a.va-btn-primary:hover {
         box-sizing: border-box !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .dior-subtab-nav-bar > .dior-subtab-pill.active::after {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .dior-subtab-nav-bar>.dior-subtab-pill.active::after {
         display: none !important;
     }
 
@@ -61907,7 +61919,8 @@ a.va-btn-primary:hover {
         min-width: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
-        font-size: 16px !important; /* prevents iOS zoom-on-focus */
+        font-size: 16px !important;
+        /* prevents iOS zoom-on-focus */
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-actions-group {
@@ -61994,7 +62007,7 @@ a.va-btn-primary:hover {
        checkbox → visit id → patient → doctor│visit date →
        duration│diagnosis → status & actions                        */
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(1) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(1) {
         grid-column: 1 / -1 !important;
         grid-row: 1 !important;
         align-items: flex-end !important;
@@ -62002,12 +62015,12 @@ a.va-btn-primary:hover {
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(1)::before {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(1)::before {
         content: none !important;
         display: none !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(2) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(2) {
         grid-column: 1 / -1 !important;
         grid-row: 2 !important;
         padding-top: 2px !important;
@@ -62015,14 +62028,14 @@ a.va-btn-primary:hover {
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(3) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(3) {
         grid-column: 1 / -1 !important;
         grid-row: 3 !important;
         border-bottom: 1px solid #E2E8F0 !important;
         padding-bottom: 10px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(3) .docs-user-name {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(3) .docs-user-name {
         font-size: 14px !important;
         color: #00346C !important;
         white-space: normal !important;
@@ -62030,30 +62043,30 @@ a.va-btn-primary:hover {
         text-overflow: clip !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(4) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(4) {
         grid-column: 1 / 2 !important;
         grid-row: 4 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(5) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(5) {
         grid-column: 2 / 3 !important;
         grid-row: 4 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(6) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(6) {
         grid-column: 1 / 2 !important;
         grid-row: 5 !important;
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(7) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(7) {
         grid-column: 2 / 3 !important;
         grid-row: 5 !important;
         border-bottom: 0 !important;
     }
 
     /* Diagnosis is truncated on desktop; on mobile let it wrap in full. */
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(7) span {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(7) span {
         display: block !important;
         max-width: none !important;
         white-space: normal !important;
@@ -62062,7 +62075,7 @@ a.va-btn-primary:hover {
     }
 
     /* Last card row: status badge on the left, row action on the right. */
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(8) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(8) {
         grid-column: 1 / 2 !important;
         grid-row: 6 !important;
         align-items: flex-start !important;
@@ -62071,7 +62084,7 @@ a.va-btn-primary:hover {
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(9) {
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody>tr:not(#dior-empty-tele-row)>td:nth-child(9) {
         grid-column: 2 / 3 !important;
         grid-row: 6 !important;
         align-items: flex-start !important;
@@ -62234,7 +62247,7 @@ a.va-btn-primary:hover {
     color: #FFFFFF !important;
 }
 
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records > .mb-4 .va-breadcrumb-label a:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records>.mb-4 .va-breadcrumb-label a:hover,
 #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .va-breadcrumb-list a:hover,
 #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .breadcrumb-list a:hover {
     color: #00346C !important;
@@ -62274,7 +62287,7 @@ a.va-btn-primary:hover {
     }
 
     /* Page heading: the markup uses inline flex without wrapping. */
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review > .mb-4 {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review>.mb-4 {
         display: flex !important;
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -62284,18 +62297,18 @@ a.va-btn-primary:hover {
         padding: 0 4px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review > .mb-4 h4 {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review>.mb-4 h4 {
         font-size: 18px !important;
         line-height: 1.3 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review > .mb-4 .va-breadcrumb-list {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review>.mb-4 .va-breadcrumb-list {
         flex-wrap: wrap !important;
         font-size: 12.5px !important;
         row-gap: 6px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review > .mb-4 .va-breadcrumb-list span {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review>.mb-4 .va-breadcrumb-list span {
         font-size: 12.5px !important;
     }
 
@@ -62341,7 +62354,8 @@ a.va-btn-primary:hover {
         min-width: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
-        font-size: 16px !important; /* stops iOS zoom-on-focus */
+        font-size: 16px !important;
+        /* stops iOS zoom-on-focus */
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-patient-review .va-actions-group {
@@ -62391,7 +62405,7 @@ a.va-btn-primary:hover {
         width: 100% !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id] {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         grid-template-rows: auto !important;
@@ -62407,7 +62421,7 @@ a.va-btn-primary:hover {
         overflow: hidden !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td {
         display: flex !important;
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -62429,7 +62443,7 @@ a.va-btn-primary:hover {
         overflow-wrap: anywhere !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td::before {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td::before {
         content: attr(data-label);
         display: block !important;
         margin-bottom: 5px !important;
@@ -62446,7 +62460,7 @@ a.va-btn-primary:hover {
        checkbox → patient → subject → rating │ date → comment →
        status │ actions                                             */
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td:nth-child(1) {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td:nth-child(1) {
         grid-column: 1 / -1 !important;
         grid-row: 1 !important;
         align-items: flex-end !important;
@@ -62454,7 +62468,7 @@ a.va-btn-primary:hover {
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td:nth-child(1)::before {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td:nth-child(1)::before {
         content: none !important;
         display: none !important;
     }
@@ -62465,7 +62479,7 @@ a.va-btn-primary:hover {
         height: 17px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td:nth-child(2) {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td:nth-child(2) {
         grid-column: 1 / -1 !important;
         grid-row: 2 !important;
         padding-top: 2px !important;
@@ -62500,7 +62514,7 @@ a.va-btn-primary:hover {
         text-overflow: clip !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td:nth-child(3) {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td:nth-child(3) {
         grid-column: 1 / -1 !important;
         grid-row: 3 !important;
         color: #1E293B !important;
@@ -62508,17 +62522,17 @@ a.va-btn-primary:hover {
         font-weight: 600 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td:nth-child(4) {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td:nth-child(4) {
         grid-column: 1 / 2 !important;
         grid-row: 4 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td:nth-child(5) {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td:nth-child(5) {
         grid-column: 2 / 3 !important;
         grid-row: 4 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td:nth-child(6) {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td:nth-child(6) {
         grid-column: 1 / -1 !important;
         grid-row: 5 !important;
         max-width: none !important;
@@ -62529,20 +62543,20 @@ a.va-btn-primary:hover {
         line-height: 1.5 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td:nth-child(7) {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td:nth-child(7) {
         grid-column: 1 / 2 !important;
         grid-row: 6 !important;
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td:nth-child(8) {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td:nth-child(8) {
         grid-column: 2 / 3 !important;
         grid-row: 6 !important;
         align-items: stretch !important;
         border-bottom: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr[data-id] > td:nth-child(8)::before {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr[data-id]>td:nth-child(8)::before {
         align-self: flex-start !important;
     }
 
@@ -62568,7 +62582,7 @@ a.va-btn-primary:hover {
     }
 
     /* ---- Empty state stays a centred dashed block ---------------- */
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr:not([data-id]) {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr:not([data-id]) {
         display: block !important;
         width: 100% !important;
         margin: 0 !important;
@@ -62578,7 +62592,7 @@ a.va-btn-primary:hover {
         overflow: hidden !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody > tr:not([data-id]) > td {
+    #dior-doctor-app #dior-doc-content #tab-doc-patient-review #rv-tbody>tr:not([data-id])>td {
         display: block !important;
         width: 100% !important;
         padding: 30px 16px !important;
@@ -62647,7 +62661,7 @@ a.va-btn-primary:hover {
     line-height: 1 !important;
 }
 
-#dior-doctor-app #dior-doc-content #tab-doc-patient-review > .mb-4 .va-breadcrumb-list a:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-patient-review>.mb-4 .va-breadcrumb-list a:hover,
 #dior-doctor-app #dior-doc-content #tab-doc-patient-review .va-breadcrumb-list a:hover {
     color: #00346C !important;
     background: transparent !important;
@@ -62687,7 +62701,7 @@ a.va-btn-primary:hover {
     }
 
     /* Page heading + breadcrumb (inline flex without wrapping). */
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system > .mb-4 {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system>.mb-4 {
         display: flex !important;
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -62697,18 +62711,18 @@ a.va-btn-primary:hover {
         padding: 0 2px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system > .mb-4 h4 {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system>.mb-4 h4 {
         font-size: 18px !important;
         line-height: 1.3 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system > .mb-4 .va-breadcrumb-list {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system>.mb-4 .va-breadcrumb-list {
         flex-wrap: wrap !important;
         row-gap: 6px !important;
         font-size: 12.5px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system > .mb-4 .va-breadcrumb-list span {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system>.mb-4 .va-breadcrumb-list span {
         font-size: 12.5px !important;
     }
 
@@ -62727,13 +62741,13 @@ a.va-btn-primary:hover {
        The shared .card-body rule forces padding:24px !important on every
        doctor tab panel, which drew a white gutter around the whole feed
        (and hid the row backgrounds behind it). Neutralise it here only. */
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .section-body > .row {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .section-body>.row {
         margin-left: 0 !important;
         margin-right: 0 !important;
         --bs-gutter-x: 0;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .section-body > .row > .col-12 {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .section-body>.row>.col-12 {
         width: 100% !important;
         max-width: 100% !important;
         padding-left: 0 !important;
@@ -62744,11 +62758,11 @@ a.va-btn-primary:hover {
         border-radius: 14px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card > .card-body {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card>.card-body {
         padding: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card > .card-header {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card>.card-header {
         display: flex !important;
         flex-direction: column !important;
         align-items: stretch !important;
@@ -62757,7 +62771,7 @@ a.va-btn-primary:hover {
         padding: 14px 12px 12px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card > .card-header > div:nth-child(1) {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card>.card-header>div:nth-child(1) {
         flex-wrap: wrap !important;
         align-items: center !important;
         gap: 6px 8px !important;
@@ -62778,7 +62792,7 @@ a.va-btn-primary:hover {
     }
 
     /* Four toolbar buttons: 2x2 grid, full-width tap targets. */
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card > .card-header > div:nth-child(2) {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card>.card-header>div:nth-child(2) {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         gap: 8px !important;
@@ -62786,7 +62800,7 @@ a.va-btn-primary:hover {
         min-width: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card > .card-header > div:nth-child(2) .btn-outline-action {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card>.card-header>div:nth-child(2) .btn-outline-action {
         width: 100% !important;
         min-width: 0 !important;
         min-height: 36px !important;
@@ -62807,7 +62821,7 @@ a.va-btn-primary:hover {
         --bs-gutter-x: 0;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .filters-bar .row > div {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .filters-bar .row>div {
         display: flex !important;
         flex-direction: column !important;
         align-items: stretch !important;
@@ -62862,7 +62876,8 @@ a.va-btn-primary:hover {
         width: 100% !important;
         max-width: 100% !important;
         height: 40px !important;
-        font-size: 16px !important; /* stops iOS zoom-on-focus */
+        font-size: 16px !important;
+        /* stops iOS zoom-on-focus */
     }
 
     /* ---- Notification rows --------------------------------------- */
@@ -62901,7 +62916,7 @@ a.va-btn-primary:hover {
     }
 
     /* Title block: title + priority badge on one line, timestamp under it. */
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .notification-body > div:first-child {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .notification-body>div:first-child {
         display: flex !important;
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -62912,7 +62927,7 @@ a.va-btn-primary:hover {
         margin-bottom: 4px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .notification-body > div:first-child > div:first-child {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .notification-body>div:first-child>div:first-child {
         display: flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
@@ -62986,7 +63001,7 @@ a.va-btn-primary:hover {
    Very narrow phones (<= 420px)
    ------------------------------------------------------------------ */
 @media (max-width: 420px) {
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system > .mb-4 h4 {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system>.mb-4 h4 {
         font-size: 17px !important;
     }
 
@@ -63343,7 +63358,7 @@ a.va-btn-primary:hover {
 
 /* ---------- Surfaces and dividers on the shared border token ------ */
 #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card,
-#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card > .card-header {
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card>.card-header {
     border-color: var(--dior-color-border) !important;
 }
 
