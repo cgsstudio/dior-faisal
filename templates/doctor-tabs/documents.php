@@ -254,82 +254,17 @@ if (!function_exists('dior_docs_format_date')) {
         </div>
     </div>
 
-    <!-- Doctor Document Upload Modal (Strict 100% Bootstrap 5 Standard) -->
-    <div class="modal fade" id="diorDoctorDocUploadModal" tabindex="-1" aria-labelledby="diorDoctorDocUploadModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="modal-header border-bottom py-3 px-4 bg-white d-flex align-items-center justify-content-between">
-                    <h5 class="modal-title fw-bold text-dark fs-5 mb-0" id="diorDoctorDocUploadModalLabel">
-                        <i class="fas fa-file-arrow-up text-primary me-2"></i> Upload Patient Document
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="dior-doctor-doc-upload-form" enctype="multipart/form-data">
-                    <div class="modal-body p-4 bg-white">
-                        <p class="text-secondary small mb-3">
-                            Select a patient and attach clinical records, lab results, prescriptions, or imaging scans. The document will immediately be accessible in the selected patient's dashboard.
-                        </p>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label small text-uppercase text-secondary fw-semibold mb-1" for="doctor-doc-upload-patient">
-                                    Select Patient <span class="text-danger">*</span>
-                                </label>
-                                <select class="form-select rounded-3 py-2" id="doctor-doc-upload-patient" name="patient_id" required>
-                                    <option value="">-- Choose Patient --</option>
-                                    <?php foreach ($doctor_patient_dropdown as $popt): ?>
-                                        <option value="<?php echo esc_attr($popt['user_id']); ?>">
-                                            <?php echo esc_html($popt['name'] . ' (' . $popt['code'] . (!empty($popt['email']) ? ' - ' . $popt['email'] : '') . ')'); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="col-md-7">
-                                <label class="form-label small text-uppercase text-secondary fw-semibold mb-1" for="doctor-doc-upload-title">
-                                    Document Title <span class="text-danger">*</span>
-                                </label>
-                                <input type="text" class="form-control rounded-3 py-2" id="doctor-doc-upload-title" name="doc_title" placeholder="e.g. Lab Results - Complete Blood Count" required>
-                            </div>
-                            <div class="col-md-5">
-                                <label class="form-label small text-uppercase text-secondary fw-semibold mb-1" for="doctor-doc-upload-category">
-                                    Document Category <span class="text-danger">*</span>
-                                </label>
-                                <select class="form-select rounded-3 py-2" id="doctor-doc-upload-category" name="doc_category" required>
-                                    <option value="Lab Report">Lab Report</option>
-                                    <option value="Clinical Record">Clinical Record</option>
-                                    <option value="Diagnostic & Scans">Diagnostic &amp; Scans</option>
-                                    <option value="Prescription">Prescription</option>
-                                    <option value="Procedure">Procedure</option>
-                                    <option value="ID Proof">ID Proof</option>
-                                    <option value="Consent Form">Consent Form</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small text-uppercase text-secondary fw-semibold mb-1" for="doctor-doc-upload-file">
-                                    Document File <span class="text-danger">*</span>
-                                </label>
-                                <input type="file" class="form-control rounded-3 py-2" id="doctor-doc-upload-file" name="doc_file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" required>
-                                <div class="form-text text-muted small mt-1">
-                                    <i class="fas fa-circle-info text-primary"></i> Supported formats: PDF, PNG, JPG, JPEG, DOC, DOCX (Max 25MB)
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-top py-3 px-4 bg-white d-flex justify-content-end gap-2">
-                        <button type="button" class="btn btn-outline-secondary rounded-3 px-4 fw-semibold" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold shadow-sm" id="doctor-doc-upload-submit-btn">
-                            <i class="fas fa-cloud-arrow-up me-1"></i> Upload Document
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <script>
     window.diorOpenDoctorDocUploadModal = function() {
         var modalEl = document.getElementById('diorDoctorDocUploadModal');
         if (!modalEl) return;
+        // Templates cached from before this fix still render the modal inside
+        // #tab-doc-documents-upload. If that panel is display:none (which is
+        // the case on the other two sub-tabs) Bootstrap would only paint the
+        // backdrop - hoist the modal to <body> first.
+        if (modalEl.closest('.dior-tab-panel')) {
+            document.body.appendChild(modalEl);
+        }
         var form = document.getElementById('dior-doctor-doc-upload-form');
         if (form) form.reset();
         if (window.bootstrap && bootstrap.Modal) {
@@ -848,3 +783,86 @@ if (!function_exists('dior_docs_format_date')) {
         </div>
     </div>
 </section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Doctor Document Upload Modal
+
+     This modal is rendered OUTSIDE all three .dior-tab-panel sections on
+     purpose. It used to live inside #tab-doc-documents-upload, which is
+     display:none whenever another sub-tab is open - so clicking "+" from
+     Consent Forms / Manage Templates only produced a Bootstrap backdrop
+     with no visible dialog (the backdrop is appended to <body>, the dialog
+     was still inside the hidden panel). Keeping it here means it works from
+     every sub-tab.
+     ══════════════════════════════════════════════════════════════════════════ -->
+    <!-- Doctor Document Upload Modal (Strict 100% Bootstrap 5 Standard) -->
+    <div class="modal fade" id="diorDoctorDocUploadModal" tabindex="-1" aria-labelledby="diorDoctorDocUploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header border-bottom py-3 px-4 bg-white d-flex align-items-center justify-content-between">
+                    <h5 class="modal-title fw-bold text-dark fs-5 mb-0" id="diorDoctorDocUploadModalLabel">
+                        <i class="fas fa-file-arrow-up text-primary me-2"></i> Upload Patient Document
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="dior-doctor-doc-upload-form" enctype="multipart/form-data">
+                    <div class="modal-body p-4 bg-white">
+                        <p class="text-secondary small mb-3">
+                            Select a patient and attach clinical records, lab results, prescriptions, or imaging scans. The document will immediately be accessible in the selected patient's dashboard.
+                        </p>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label small text-uppercase text-secondary fw-semibold mb-1" for="doctor-doc-upload-patient">
+                                    Select Patient <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select rounded-3 py-2" id="doctor-doc-upload-patient" name="patient_id" required>
+                                    <option value="">-- Choose Patient --</option>
+                                    <?php foreach ($doctor_patient_dropdown as $popt): ?>
+                                        <option value="<?php echo esc_attr($popt['user_id']); ?>">
+                                            <?php echo esc_html($popt['name'] . ' (' . $popt['code'] . (!empty($popt['email']) ? ' - ' . $popt['email'] : '') . ')'); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label small text-uppercase text-secondary fw-semibold mb-1" for="doctor-doc-upload-title">
+                                    Document Title <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control rounded-3 py-2" id="doctor-doc-upload-title" name="doc_title" placeholder="e.g. Lab Results - Complete Blood Count" required>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small text-uppercase text-secondary fw-semibold mb-1" for="doctor-doc-upload-category">
+                                    Document Category <span class="text-danger">*</span>
+                                </label>
+                                <select class="form-select rounded-3 py-2" id="doctor-doc-upload-category" name="doc_category" required>
+                                    <option value="Lab Report">Lab Report</option>
+                                    <option value="Clinical Record">Clinical Record</option>
+                                    <option value="Diagnostic & Scans">Diagnostic &amp; Scans</option>
+                                    <option value="Prescription">Prescription</option>
+                                    <option value="Procedure">Procedure</option>
+                                    <option value="ID Proof">ID Proof</option>
+                                    <option value="Consent Form">Consent Form</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small text-uppercase text-secondary fw-semibold mb-1" for="doctor-doc-upload-file">
+                                    Document File <span class="text-danger">*</span>
+                                </label>
+                                <input type="file" class="form-control rounded-3 py-2" id="doctor-doc-upload-file" name="doc_file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" required>
+                                <div class="form-text text-muted small mt-1">
+                                    <i class="fas fa-circle-info text-primary"></i> Supported formats: PDF, PNG, JPG, JPEG, DOC, DOCX (Max 25MB)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top py-3 px-4 bg-white d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-outline-secondary rounded-3 px-4 fw-semibold" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold shadow-sm" id="doctor-doc-upload-submit-btn">
+                            <i class="fas fa-cloud-arrow-up me-1"></i> Upload Document
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>

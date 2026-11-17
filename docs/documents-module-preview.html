@@ -103,6 +103,7 @@
         <div class="toc">
             <a href="#before">Pehle kya toota tha</a>
             <a href="#fix">Ab kya badla</a>
+            <a href="#popup">"+" popup fix</a>
             <a href="#data">Data model</a>
             <a href="#screens">Screens</a>
             <a href="#mobile">Mobile / tablet</a>
@@ -194,7 +195,50 @@
             </ul>
         </div>
 
-        <h2 id="data">3. Data model aur endpoints</h2>
+        <h2 id="popup">3. "+" par sirf overlay dikhta tha — consent forms / templates tab se</h2>
+        <div class="card">
+            <p><strong>Report:</strong> Consent Forms tab par toolbar ke <strong>+</strong> par click karne se sirf
+                screen grey (overlay) ho jaati thi — koi popup nahi khulta tha.</p>
+            <table>
+                <tr>
+                    <th>Step</th>
+                    <th>Kya ho raha tha</th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>Upload modal (<code>#diorDoctorDocUploadModal</code>) ka markup
+                        <code>&lt;section id="tab-doc-documents-upload"&gt;</code> ke <em>andar</em> render ho raha
+                        tha.</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Consent Forms / Manage Templates par JS baaki panels ko <code>display:none</code> karta hai —
+                        isliye modal bhi hidden ho jaata tha.</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Bootstrap backdrop ko <code>&lt;body&gt;</code> me daalta hai, par dialog apni jagah hi rehta
+                        hai. Net result: grey backdrop, dialog <strong>0×0</strong> (measured — reproduced in
+                        browser).</td>
+                </tr>
+            </table>
+            <div class="grid" style="margin:16px 0">
+                <div>
+                    <p class="label ok">Consent Forms se "+" → popup ab khulta hai (desktop)</p>
+                    <img class="shot" src="screenshots/docs_upload_popup_from_signed.png" alt="Upload popup from signed consent tab">
+                </div>
+                <div>
+                    <p class="label ok">Wahi popup mobile par (bottom sheet)</p>
+                    <img class="shot" src="screenshots/docs_upload_popup_mobile.png" alt="Upload popup mobile">
+                </div>
+            </div>
+            <p class="note"><strong>Fix:</strong> modal ab teeno panels ke <em>bahar</em>, template ke end me render
+                hota hai — kisi bhi sub-tab se "+" kaam karta hai. Sath hi ek defensive guard: agar purana
+                template cache se aa jaye (modal ab bhi panel ke andar ho), to click par modal ko
+                <code>&lt;body&gt;</code> me hoist kar diya jaata hai — dono versions par popup khulta hai.</p>
+        </div>
+
+        <h2 id="data">4. Data model aur endpoints</h2>
         <div class="card">
             <table>
                 <tr>
@@ -228,7 +272,7 @@
             </table>
         </div>
 
-        <h2 id="screens">4. Screens — desktop</h2>
+        <h2 id="screens">5. Screens — desktop</h2>
         <div class="grid">
             <div>
                 <p class="label ok">Upload Documents</p>
@@ -248,7 +292,7 @@
             </div>
         </div>
 
-        <h2 id="mobile">5. Mobile (390px) aur tablet (820px)</h2>
+        <h2 id="mobile">6. Mobile (390px) aur tablet (820px)</h2>
         <div class="grid">
             <div>
                 <p class="label ok">Upload Documents — cards</p>
@@ -286,7 +330,7 @@
             </ul>
         </div>
 
-        <h2 id="files">6. Files aur deploy</h2>
+        <h2 id="files">7. Files aur deploy</h2>
         <div class="card">
             <table>
                 <tr>
@@ -296,7 +340,8 @@
                 <tr>
                     <td><code>templates/doctor-tabs/documents.php</code></td>
                     <td>Teeno panels PHP-driven; templates list <code>wp_dior_consent_templates</code> se render hoti
-                        hai. Footer nesting fix, <code>data-label</code> attributes, pills rename.</td>
+                        hai. Footer nesting fix, <code>data-label</code> attributes, pills rename, aur upload modal
+                        ab teeno panels ke bahar (popup fix).</td>
                 </tr>
                 <tr>
                     <td><code>assets/js/dior-documents.js</code> <span class="pill ok">naya</span></td>
@@ -322,9 +367,11 @@
                 Seed rows tabhi insert hote hain jab table khaali ho — live site ka existing data safe rehta hai.</p>
         </div>
 
-        <h2>7. Test kaise karein</h2>
+        <h2>8. Test kaise karein</h2>
         <div class="card">
             <ul>
+                <li><strong>Teeno tabs</strong> se toolbar <strong>+</strong> dabaein — Signed Consent / Manage
+                    Templates se bhi "Upload Patient Document" popup poora khule (sirf backdrop nahi).</li>
                 <li>Upload Documents → toolbar <strong>+</strong> par upload modal khule; file upload karne par row
                     list me aaye aur reload ke baad bhi rahe.</li>
                 <li>Manage Templates → <strong>+</strong> par overlay khule; Template Name aur Category bharke

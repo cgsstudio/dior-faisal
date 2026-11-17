@@ -113,6 +113,19 @@
         return document.getElementById('tab-' + tabId);
     }
 
+    // The upload modal is rendered at the end of documents.php, outside the
+    // tab panels. If a cached/older template still nests it inside a panel
+    // that is display:none, Bootstrap shows the backdrop but the dialog is
+    // 0x0 (invisible). Hoisting it to <body> before showing fixes that.
+    function ensureUploadModalAtBodyLevel() {
+        var modalEl = document.getElementById('diorDoctorDocUploadModal');
+        if (!modalEl) return null;
+        if (modalEl.closest('.dior-tab-panel')) {
+            document.body.appendChild(modalEl);
+        }
+        return modalEl;
+    }
+
     function rowsOf(tbody) {
         if (!tbody) return [];
         return Array.prototype.slice.call(tbody.querySelectorAll('tr')).filter(function (tr) {
@@ -343,6 +356,7 @@
             btn.setAttribute('title', 'Upload Patient Document');
             btn.addEventListener('click', function (event) {
                 event.preventDefault();
+                ensureUploadModalAtBodyLevel();
                 if (typeof window.diorOpenDoctorDocUploadModal === 'function') {
                     window.diorOpenDoctorDocUploadModal();
                 } else {
@@ -787,7 +801,7 @@
             btn.setAttribute('aria-label', 'Upload a signed consent form');
             btn.addEventListener('click', function (event) {
                 event.preventDefault();
-                var modalEl = document.getElementById('diorDoctorDocUploadModal');
+                var modalEl = ensureUploadModalAtBodyLevel();
                 if (!modalEl) return;
                 var category = document.getElementById('doctor-doc-upload-category');
                 if (category) category.value = 'Consent Form';
