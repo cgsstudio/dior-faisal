@@ -63083,21 +63083,22 @@ a.va-btn-primary:hover {
     transform: none !important;
 }
 
-/* Delete action: red icon on the same white box, exactly like the
-   Feedback & Reviews delete button. */
+/* The delete action keeps the same blue icon as every other row action on
+   the page: white 34x34 box, #cbdbea border, #2b70b8 trash. */
 #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger,
 #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger i {
-    color: #ef4444 !important;
+    color: #2b70b8 !important;
 }
 
 #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger:hover,
 #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger:focus,
 #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger:focus-visible,
 #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger:active {
-    background: #fef2f2 !important;
-    background-color: #fef2f2 !important;
-    border-color: #ef4444 !important;
-    color: #dc2626 !important;
+    background: #f4f9fd !important;
+    background-color: #f4f9fd !important;
+    background-image: none !important;
+    border-color: #2b70b8 !important;
+    color: #1a528e !important;
 }
 
 #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .btn-inline-action:hover,
