@@ -437,40 +437,69 @@ if (!function_exists('dior_docs_format_date')) {
                     }
                     
                     var tbody = document.getElementById('doc-uploaded-tbody');
-                    if (tbody) {
+                    var doc = result.data.document || {};
+                    var docUid = doc.id || '';
+                    var docTitle = doc.title || fd.get('doc_title');
+                    var docCat = doc.category || fd.get('doc_category');
+                    var pName = doc.patient_name || patientName;
+                    var pCode = doc.patient_code || ('DM-' + (10000 + parseInt(patientId, 10)));
+                    var pAvatar = doc.patient_avatar ||
+                        ('https://ui-avatars.com/api/?name=' + encodeURIComponent(pName) + '&background=random');
+                    var docType = doc.file_type || 'PDF';
+                    var docSize = doc.size || '';
+                    var docDate = doc.date || 'Just now';
+                    var downloadUrl = '<?php echo esc_js(home_url('/')); ?>?dior_action=download_doc&doc_id=' +
+                        encodeURIComponent(docUid) + '&patient_id=' + encodeURIComponent(patientId);
+
+                    // Build the row with the same cells the PHP template renders,
+                    // so the client-side insert matches a server-rendered row
+                    // (including the data-labels the mobile card layout needs).
+                    var tr = document.createElement('tr');
+                    tr.id = 'doc-row-' + docUid;
+                    tr.setAttribute('data-patient-id', patientId);
+                    tr.setAttribute('data-doc-uid', docUid);
+                    tr.innerHTML = '<td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input" value="' + docUid + '"></td>' +
+                        '<td data-label="Document ID"><span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small">' + docUid + '</span></td>' +
+                        '<td data-label="Patient"><div class="docs-user-profile d-flex align-items-center gap-2">' +
+                        '<img src="' + pAvatar + '" class="docs-user-avatar rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" alt="' + pName + '">' +
+                        '<div><span class="docs-user-name fw-semibold text-dark d-block">' + pName + '</span>' +
+                        '<small class="text-muted">' + pCode + '</small></div></div></td>' +
+                        '<td data-label="Document Type">' + docCat + '</td>' +
+                        '<td data-label="Document Name"><div class="fw-semibold text-dark">' + docTitle + '</div>' +
+                        (docType ? '<small class="text-muted">' + docType + (docSize ? ' &bull; ' + docSize : '') + '</small>' : '') + '</td>' +
+                        '<td data-label="Upload Date"><i class="far fa-calendar docs-icon-blue me-1"></i> ' + docDate + '</td>' +
+                        '<td data-label="Uploaded By"><?php echo esc_js($doctor_display_name); ?></td>' +
+                        '<td data-label="Status"><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small"><i class="fas fa-circle-check me-1"></i> Available</span></td>' +
+                        '<td data-label="Actions"><div class="docs-row-actions d-flex gap-1">' +
+                        '<a href="' + downloadUrl + '" target="_blank" class="docs-action-btn-sm docs-btn-edit btn" title="Download Document" download><i class="fas fa-file-arrow-down"></i></a>' +
+                        '<button type="button" class="docs-action-btn-sm docs-btn-delete btn" title="Delete Document"' +
+                        ' onclick="diorDoctorDeleteDoc(this, \'' + docUid + '\', ' + parseInt(patientId, 10) + ')"><i class="fas fa-trash"></i></button>' +
+                        '</div></td>';
+
+                    // Uploaded documents land on the Upload tab, but the Consent
+                    // Forms tab filters the same table by category. A consent
+                    // uploaded from that tab has to appear there too (it used to
+                    // only show up after a manual page reload).
+                    var api = window.DiorDocuments || {};
+                    var targetTbody = tbody;
+                    if (typeof api.isConsentCategory === 'function' &&
+                        typeof api.buildSignedConsentRow === 'function' &&
+                        api.isConsentCategory(docCat)) {
+                        var signedBody = document.getElementById('doc-signed-consents-tbody');
+                        if (signedBody) {
+                            var scRow = api.buildSignedConsentRow(doc, patientId, pName, pCode, pAvatar, docCat, docTitle, docDate, downloadUrl);
+                            var scEmpty = document.getElementById('dior-sc-empty-row');
+                            if (scEmpty) scEmpty.remove();
+                            signedBody.insertBefore(scRow, signedBody.firstChild);
+                        }
+                    }
+                    if (targetTbody) {
                         var emptyRow = document.getElementById('dior-doc-empty-row');
                         if (emptyRow) emptyRow.remove();
-                        
-                        var doc = result.data.document || {};
-                        var docUid = doc.id || ('DOC-' + Math.floor(Math.random() * 89999 + 10000));
-                        var docTitle = doc.title || fd.get('doc_title');
-                        var docCat = doc.category || fd.get('doc_category');
-                        var docType = doc.file_type || 'PDF';
-                        var docSize = doc.size || '150 KB';
-                        var docDate = doc.date || 'Just now';
-                        var downloadUrl = '<?php echo esc_js(home_url('/')); ?>?dior_action=download_doc&doc_id=' + encodeURIComponent(docUid) + '&patient_id=' + encodeURIComponent(patientId);
-                        
-                        var tr = document.createElement('tr');
-                        tr.id = 'doc-row-' + docUid;
-                        tr.setAttribute('data-patient-id', patientId);
-                        tr.setAttribute('data-doc-uid', docUid);
-                        tr.innerHTML = '<td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input" value="' + docUid + '"></td>' +
-                            '<td><span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small">' + docUid + '</span></td>' +
-                            '<td><div class="docs-user-profile d-flex align-items-center gap-2">' +
-                            '<img src="https://ui-avatars.com/api/?name=' + encodeURIComponent(patientName) + '&background=random" class="docs-user-avatar rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" alt="' + patientName + '">' +
-                            '<div><span class="docs-user-name fw-semibold text-dark d-block">' + patientName + '</span><small class="text-muted">ID: ' + patientId + '</small></div>' +
-                            '</div></td>' +
-                            '<td>' + docCat + '</td>' +
-                            '<td><div class="fw-semibold text-dark">' + docTitle + '</div><small class="text-muted">' + docType + ' • ' + docSize + '</small></td>' +
-                            '<td><i class="far fa-calendar docs-icon-blue me-1"></i> ' + docDate + '</td>' +
-                            '<td><?php echo esc_js($doctor_display_name); ?></td>' +
-                            '<td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small"><i class="fas fa-circle-check me-1"></i> Available</span></td>' +
-                            '<td><div class="docs-row-actions d-flex gap-1">' +
-                            '<a href="' + downloadUrl + '" target="_blank" class="docs-action-btn-sm docs-btn-edit btn" title="Download Document" download><i class="fas fa-file-arrow-down"></i></a>' +
-                            '<button type="button" class="docs-action-btn-sm docs-btn-delete btn" title="Delete Document" onclick="diorDoctorDeleteDoc(this, \'' + docUid + '\', ' + patientId + ')"><i class="fas fa-trash"></i></button>' +
-                            '</div></td>';
-                            
-                        tbody.insertBefore(tr, tbody.firstChild);
+                        targetTbody.insertBefore(tr, targetTbody.firstChild);
+                    }
+                    if (window.DiorDocuments && window.DiorDocuments.syncCounters) {
+                        window.DiorDocuments.syncCounters();
                     }
                 })
                 .catch(function(err) {

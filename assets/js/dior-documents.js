@@ -177,6 +177,42 @@
         tbody.appendChild(tr);
     }
 
+    // Categories that make a document show up under Signed Consent Forms
+    // (documents.php filters that query on category/title LIKE %Consent%).
+    function isConsentCategory(category) {
+        return /consent/i.test(String(category || ''));
+    }
+
+    // Builds a Signed Consent row that matches the PHP-rendered markup
+    // (10 cells incl. the checkbox, same data-labels for the card layout).
+    function buildSignedConsentRow(doc, patientId, pName, pCode, pAvatar, docCat, docTitle, docDate, downloadUrl) {
+        var uid = doc.id || '';
+        var tr = document.createElement('tr');
+        tr.id = 'doc-sc-row-' + uid;
+        tr.setAttribute('data-patient-id', patientId);
+        tr.setAttribute('data-doc-uid', uid);
+        tr.innerHTML =
+            '<td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input" value="' + escapeHtml(uid) + '"></td>' +
+            '<td data-label="Consent ID"><span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small">' + escapeHtml(uid) + '</span></td>' +
+            '<td data-label="Patient"><div class="docs-user-profile d-flex align-items-center gap-2">' +
+            '<img src="' + escapeHtml(pAvatar) + '" class="docs-user-avatar rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" alt="' + escapeHtml(pName) + '">' +
+            '<div><span class="docs-user-name fw-semibold text-dark d-block">' + escapeHtml(pName) + '</span>' +
+            '<small class="text-muted">' + escapeHtml(pCode) + '</small></div></div></td>' +
+            '<td data-label="Consent Type">' + escapeHtml(docCat) + '</td>' +
+            '<td data-label="Procedure"><div class="fw-semibold text-dark">' + escapeHtml(docTitle) + '</div></td>' +
+            '<td data-label="Signed Date"><i class="far fa-calendar docs-icon-blue me-1"></i> ' + escapeHtml(docDate) + '</td>' +
+            '<td data-label="Signed By">' + escapeHtml(pName) + '</td>' +
+            '<td data-label="Witness">Clinical Staff</td>' +
+            '<td data-label="Status"><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small"><i class="fas fa-check-circle me-1"></i> Signed</span></td>' +
+            '<td data-label="Actions"><div class="docs-row-actions d-flex gap-1">' +
+            '<a href="' + escapeHtml(downloadUrl) + '" target="_blank" class="docs-action-btn-sm docs-btn-edit btn" title="Download Consent" download><i class="fas fa-file-arrow-down"></i></a>' +
+            '<button type="button" class="docs-action-btn-sm docs-btn-delete btn" title="Delete Consent"' +
+            ' onclick="if(window.diorDoctorDeleteDoc){diorDoctorDeleteDoc(this, \'' + escapeHtml(uid) + '\', ' + parseInt(patientId, 10) + ');}">' +
+            '<i class="fas fa-trash"></i></button>' +
+            '</div></td>';
+        return tr;
+    }
+
     // ── Export helper (shared by the three screens) ──────────────────────────
     function exportTable(opts) {
         var tbody = document.querySelector(opts.tbody);
@@ -904,7 +940,11 @@
         ].forEach(function (item) {
             var root = panel(item.tab);
             if (!root) return;
-            var info = root.querySelector('.docs-pagination-text, .va-pagination-text');
+            // The shared static-table layer re-renders the footer and drops the
+            // .docs-pagination-text class, so match its counter element too.
+            var info = root.querySelector(
+                '.docs-pagination-text, .dior-pagination-count, .va-pagination-text'
+            );
             if (!info) return;
             var total = rowsOf(document.querySelector(item.tbody)).length;
             info.innerHTML = '<strong>' + total + '</strong> ' + item.label + (total === 1 ? '' : 's') + ' total';
@@ -959,9 +999,14 @@
         });
     };
 
+    // Public hooks — used by the upload handler in documents.php so a freshly
+    // uploaded document/consent shows up without a page reload. Keep this the
+    // single assignment: a second one would silently drop earlier methods.
     window.DiorDocuments = {
         reloadPanel: reloadPanel,
         closeOverlay: closeOverlay,
-        syncCounters: syncCounters
+        syncCounters: syncCounters,
+        buildSignedConsentRow: buildSignedConsentRow,
+        isConsentCategory: isConsentCategory
     };
 })();

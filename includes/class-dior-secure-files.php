@@ -146,9 +146,39 @@ class Dior_Medical_Secure_Files
 
         self::sync_legacy_usermeta($patient_id);
 
+        // Patient identity is returned with the row so the dashboard can render
+        // the same avatar / name / code cells the server-side queries produce,
+        // without a full page reload.
+        $patient_name = '';
+        $patient_code = '';
+        $patient_avatar = '';
+        $p_table = $wpdb->prefix . 'dior_patients';
+        $p_row = $wpdb->get_row($wpdb->prepare(
+            "SELECT patient_uid, first_name, last_name, avatar_url FROM $p_table WHERE user_id = %d LIMIT 1",
+            $patient_id
+        ), ARRAY_A);
+        if ($p_row) {
+            $patient_name = trim(($p_row['first_name'] ?? '') . ' ' . ($p_row['last_name'] ?? ''));
+            $patient_code = $p_row['patient_uid'] ?: '';
+            $patient_avatar = $p_row['avatar_url'] ?: '';
+        }
+        if ($patient_name === '') {
+            $u = get_userdata($patient_id);
+            $patient_name = $u ? $u->display_name : 'Patient';
+        }
+        if ($patient_code === '') {
+            $patient_code = 'DM-' . (10000 + $patient_id);
+        }
+        if ($patient_avatar === '') {
+            $patient_avatar = 'https://ui-avatars.com/api/?name=' . rawurlencode($patient_name) . '&background=random';
+        }
+
         return [
             'id'                  => $doc_uid,
             'patient_id'          => $patient_id,
+            'patient_name'        => $patient_name,
+            'patient_code'        => $patient_code,
+            'patient_avatar'      => $patient_avatar,
             'author_id'           => $author_id,
             'title'               => $title,
             'category'            => $category,

@@ -104,6 +104,7 @@
             <a href="#before">Pehle kya toota tha</a>
             <a href="#fix">Ab kya badla</a>
             <a href="#popup">"+" popup fix</a>
+            <a href="#upload-sync">Upload → table sync</a>
             <a href="#data">Data model</a>
             <a href="#screens">Screens</a>
             <a href="#mobile">Mobile / tablet</a>
@@ -238,7 +239,48 @@
                 <code>&lt;body&gt;</code> me hoist kar diya jaata hai — dono versions par popup khulta hai.</p>
         </div>
 
-        <h2 id="data">4. Data model aur endpoints</h2>
+        <h2 id="upload-sync">4. "Upload kiya par table me kuch nahi aaya"</h2>
+        <div class="card">
+            <p><strong>Report:</strong> popup me form bharke Save karne par success toast aata tha, par
+                Signed Consent list khaali hi rehti thi.</p>
+            <table>
+                <tr>
+                    <th>Step</th>
+                    <th>Kya ho raha tha</th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>Data DB me save ho raha tha (list page reload par aati thi) — toast bhi aata tha. Par ab
+                        dashboard reload nahi hota, isliye table ko khud update karna padta hai.</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Upload handler naya row sirf <strong>Upload Documents</strong> table me daalta tha. Signed
+                        Consent panel ka table refresh hi nahi hota tha — usme sirf page-load par aane wale rows
+                        the.</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Naya row me <code>data-label</code> attributes aur inline delete handler bhi nahi the, isliye
+                        mobile par card layout tootta tha aur delete button dead tha.</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Footer counter (<em>0 consent forms total</em>) static tha — insert ke baad bhi 0 hi
+                        dikhta tha.</td>
+                </tr>
+            </table>
+            <p class="note"><strong>Fix:</strong> upload response me ab patient ka naam / ID / avatar bhi aata hai,
+                isliye client wahi 10-cell row banata hai jo PHP render karta hai (data-labels + working delete).
+                Category me "Consent" hone par row <strong>Signed Consent</strong> table me bhi turant insert hoti
+                hai, empty-state hat jaata hai, aur dono counters update ho jaate hain. Delete par dono tables se row
+                hatti hai. Verified: upload → 4 → 5 rows, counter "4 consent forms total" → "5 consent forms
+                total", desktop + mobile card dono sahi, zero console errors.</p>
+            <p class="label ok" style="margin-top:14px">Upload ke turant baad Signed Consent (desktop)</p>
+            <img class="shot" src="screenshots/docs_signed_after_upload.png" alt="Signed consent after upload">
+        </div>
+
+        <h2 id="data">5. Data model aur endpoints</h2>
         <div class="card">
             <table>
                 <tr>
@@ -272,7 +314,7 @@
             </table>
         </div>
 
-        <h2 id="screens">5. Screens — desktop</h2>
+        <h2 id="screens">6. Screens — desktop</h2>
         <div class="grid">
             <div>
                 <p class="label ok">Upload Documents</p>
@@ -292,7 +334,7 @@
             </div>
         </div>
 
-        <h2 id="mobile">6. Mobile (390px) aur tablet (820px)</h2>
+        <h2 id="mobile">7. Mobile (390px) aur tablet (820px)</h2>
         <div class="grid">
             <div>
                 <p class="label ok">Upload Documents — cards</p>
@@ -330,7 +372,7 @@
             </ul>
         </div>
 
-        <h2 id="files">7. Files aur deploy</h2>
+        <h2 id="files">8. Files aur deploy</h2>
         <div class="card">
             <table>
                 <tr>
@@ -354,6 +396,11 @@
                         render/owner/can-touch/save/delete methods.</td>
                 </tr>
                 <tr>
+                    <td><code>includes/class-dior-secure-files.php</code></td>
+                    <td>Upload response me ab patient ka <code>patient_name</code> / <code>patient_code</code> /
+                        <code>patient_avatar</code> bhi jaata hai, taaki naya row server-rendered row jaisa hi bane.</td>
+                </tr>
+                <tr>
                     <td><code>dior-medical-dashboard.php</code></td>
                     <td><code>dior-documents.js</code> enqueue (pharmacy JS ke saath, filemtime versioning).</td>
                 </tr>
@@ -367,13 +414,16 @@
                 Seed rows tabhi insert hote hain jab table khaali ho — live site ka existing data safe rehta hai.</p>
         </div>
 
-        <h2>8. Test kaise karein</h2>
+        <h2>9. Test kaise karein</h2>
         <div class="card">
             <ul>
                 <li><strong>Teeno tabs</strong> se toolbar <strong>+</strong> dabaein — Signed Consent / Manage
                     Templates se bhi "Upload Patient Document" popup poora khule (sirf backdrop nahi).</li>
                 <li>Upload Documents → toolbar <strong>+</strong> par upload modal khule; file upload karne par row
                     list me aaye aur reload ke baad bhi rahe.</li>
+                <li><strong>Consent Forms tab se upload</strong>: Category "Consent Form" rakh kar save karein —
+                    naya row turant Signed Consent list me (aur counter me) dikhe, reload ke baad bhi rahe. Delete
+                    karne par dono tables se hate.</li>
                 <li>Manage Templates → <strong>+</strong> par overlay khule; Template Name aur Category bharke
                     <strong>Create Template</strong> par row add ho aur counter badhe.</li>
                 <li>Row ka pen icon → values prefill hon; save par row update ho. Trash → confirm → row DB se hate.</li>
