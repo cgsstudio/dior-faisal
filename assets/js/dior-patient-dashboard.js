@@ -1428,6 +1428,14 @@ let diorInsuranceCurrentPage = 1;
     }
 
     function diorRenderInsurancePagination() {
+        // Insurance & Claims has a single paginator: the shared table controller
+        // (dior-static-table-interactions.js) renders it inside the card's
+        // `.master-table-footer`. Running this 5-per-page helper as well produced
+        // a second pager and made both fight over row visibility.
+        if (document.getElementById('dior-insurance-table')) {
+            return;
+        }
+
         const activeRows = diorGetInsuranceActiveRows();
         const allRows = Array.from(document.querySelectorAll('#dior-insurance-tbody tr'));
         const totalPages = Math.ceil(activeRows.length / diorInsuranceRowsPerPage) || 1;
