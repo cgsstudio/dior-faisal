@@ -339,7 +339,16 @@ let diorBookingState = {
                     msg.style.color = '#059669';
                     msg.innerText = 'Appointment booked successfully! Redirecting to your dashboard...';
                     setTimeout(() => {
-                        window.location.href = (window.dior_patient_dashboard && window.dior_patient_dashboard.dashboard_url) || (window.dior_vars && window.dior_vars.portal_url) || '/patient-dashboard/';
+                        // Keep the user on the dashboard page they came from instead of
+                        // dropping back to the bare dashboard URL (which renders Overview).
+                        let target = (window.dior_patient_dashboard && window.dior_patient_dashboard.dashboard_url) || (window.dior_vars && window.dior_vars.portal_url) || '/patient-dashboard/';
+                        const currentHash = window.location.hash || '';
+                        const targetHash = currentHash.indexOf('#tab=') === 0
+                            ? currentHash
+                            : '#tab=appointments&subtab=today';
+                        const hashIndex = target.indexOf('#');
+                        if (hashIndex !== -1) target = target.substring(0, hashIndex);
+                        window.location.href = target + targetHash;
                     }, 1500);
                 } else {
                     msg.style.color = '#DC2626';
@@ -3083,7 +3092,24 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
 (function () {
     'use strict';
 
+    // Hash as it was before any other controller touched it, so the tab the user
+    // refreshed on is still the tab that gets restored.
+    var diorInitialHash = window.location.hash || '';
+
     function switchPatientTab(tabId, updateHash) {
+        // Accept the full deep-link shape ("appointments&subtab=today").
+        var requestedSubTab = null;
+        if (typeof tabId === 'string') {
+            if (tabId.indexOf('&subtab=') !== -1) {
+                var subParts = tabId.split('&subtab=');
+                tabId = subParts[0];
+                requestedSubTab = subParts[1] || null;
+            }
+            if (tabId.indexOf('#tab=') === 0) tabId = tabId.substring(5);
+        }
+
+        if (tabId === 'profile') tabId = 'settings';
+
         var panel = document.getElementById('tab-' + tabId);
         if (!panel) {
             return false;
@@ -3150,6 +3176,11 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
             window.history.replaceState(null, '', '#tab=' + encodeURIComponent(tabId));
         }
 
+        if (tabId === 'appointments' && requestedSubTab &&
+            typeof window.diorSwitchApptSubTab === 'function') {
+            window.diorSwitchApptSubTab(requestedSubTab);
+        }
+
         return true;
     }
 
@@ -3214,7 +3245,7 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
         });
 
         // Restore hash only when it points to an actual panel.
-        var hash = window.location.hash || '';
+        var hash = diorInitialHash || window.location.hash || '';
         if (hash.indexOf('#tab=') === 0) {
             var raw = hash.substring(5);
             var requested = raw;
@@ -3233,6 +3264,13 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
                         try { return sessionStorage.getItem('dior_active_appt_subtab'); } catch(e){ return null; }
                     })() || 'today';
                     window.diorSwitchApptSubTab(s);
+                } else if (window.history && window.history.replaceState) {
+                    // Keep the address bar showing the restored page without adding
+                    // a history entry (deep links stay valid and shareable).
+                    var desiredHash = '#tab=' + encodeURIComponent(requested);
+                    if (window.location.hash !== desiredHash) {
+                        window.history.replaceState(null, '', desiredHash);
+                    }
                 }
             }
         }

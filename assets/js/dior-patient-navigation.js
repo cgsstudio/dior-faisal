@@ -5,6 +5,10 @@
 (function () {
     'use strict';
 
+    // Hash captured before any other controller runs, so the tab the user
+    // refreshed on is still the one that gets restored.
+    var diorInitialHash = window.location.hash || '';
+
     function boot() {
         var app = document.getElementById('dior-patient-portal-app');
         if (!app || app.__diorSafeNavigationReady) return;
@@ -140,7 +144,7 @@
         }, true);
 
         // Restore a valid tab and subtab from the URL, otherwise keep Overview active.
-        var hash = window.location.hash || '';
+        var hash = diorInitialHash || window.location.hash || '';
         var requestedTab = 'overview';
         var requestedSubTab = null;
 
