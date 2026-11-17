@@ -65746,18 +65746,24 @@ a.va-btn-primary:hover {
     max-width: 100% !important;
     margin: 0 0 18px 0 !important;
     padding: 0 !important;
+    text-align: left !important;
 }
 
 #dior-patient-portal-app#dior-patient-portal-app #tab-docs_meds>.mb-4>div,
 #dior-patient-portal-app#dior-patient-portal-app #tab-telemedicine>.mb-4>div {
     min-width: 0 !important;
     max-width: 100% !important;
+    margin: 0 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
 }
 
 #dior-patient-portal-app#dior-patient-portal-app #tab-docs_meds>.mb-4 h4,
 #dior-patient-portal-app#dior-patient-portal-app #tab-telemedicine>.mb-4 h4 {
     margin: 0 !important;
     padding: 0 !important;
+    text-align: left !important;
     font-size: 20px !important;
     font-weight: 700 !important;
     line-height: 1.25 !important;
@@ -66463,9 +66469,15 @@ a.va-btn-primary:hover {
 /* ---------- 10. records: reference card below 992px ---------- */
 @media (max-width: 991.98px) {
 
+    /* portrait header: title on the left, page action right under it */
     #dior-patient-portal-app#dior-patient-portal-app #tab-docs_meds>.mb-4,
     #dior-patient-portal-app#dior-patient-portal-app #tab-telemedicine>.mb-4 {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        gap: 10px !important;
         margin-bottom: 14px !important;
+        text-align: left !important;
     }
 
     /* header + toolbar stack: title, then one row with search + buttons */
@@ -67063,20 +67075,34 @@ a.va-btn-primary:hover {
     #dior-patient-portal-app#dior-patient-portal-app #tab-payments>.mb-4,
     #dior-patient-portal-app#dior-patient-portal-app #tab-documents>.mb-4 {
         display: flex !important;
+        flex-direction: column !important;
         flex-wrap: wrap !important;
-        align-items: center !important;
-        justify-content: space-between !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
         gap: 10px !important;
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 0 14px 0 !important;
         padding: 0 !important;
+        text-align: left !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-insurance>.mb-4>div,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-payments>.mb-4>div,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-documents>.mb-4>div {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
     }
 
     #dior-patient-portal-app#dior-patient-portal-app #tab-insurance>.mb-4 h4,
     #dior-patient-portal-app#dior-patient-portal-app #tab-payments>.mb-4 h4,
     #dior-patient-portal-app#dior-patient-portal-app #tab-documents>.mb-4 h4 {
         margin: 0 !important;
+        text-align: left !important;
         font-size: 20px !important;
         font-weight: 700 !important;
         line-height: 1.25 !important;
