@@ -88,7 +88,7 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
                 <label class="form-label small text-uppercase text-secondary fw-bold mb-1" for="dior-tele-patient-select">
                     <i class="fas fa-user-check text-primary me-1"></i> Select Patient for Virtual Visit <span class="text-danger">*</span>
                 </label>
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 dior-tele-selector-row">
                     <select id="dior-tele-patient-select" class="form-select rounded-3 py-2 fw-semibold" onchange="diorLoadTelemedicinePatient(this.value)">
                         <option value="">-- Choose a patient from records --</option>
                         <?php foreach ($all_patients as $ap): ?>
@@ -103,7 +103,7 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
                 </div>
 
             </div>
-            <div class="col-lg-6 col-md-12 d-flex flex-wrap align-items-center justify-content-lg-end gap-2 pt-lg-3">
+            <div class="col-lg-6 col-md-12 d-flex flex-wrap align-items-center justify-content-lg-end gap-2 pt-lg-3 dior-tele-action-row">
                 <button type="button" class="btn btn-success rounded-3 fw-semibold py-2 px-3 shadow-sm" onclick="diorStartVirtualVisit()">
                     <i class="fas fa-video me-1"></i> Start Virtual Visit
                 </button>
@@ -117,7 +117,7 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
     <!-- 2. Dynamic Patient Clinical Summary Panel -->
     <div id="dior-tele-patient-panel" class="card border-0 shadow-sm rounded-4 p-3 p-md-4 mb-4 bg-white" style="display: none;">
         <!-- Patient Header Banner -->
-        <div class="d-flex flex-wrap align-items-center justify-content-between border-bottom pb-3 mb-3 gap-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between border-bottom pb-3 mb-3 gap-3 dior-tele-panel-head">
             <div class="d-flex align-items-center gap-3">
                 <img id="tele-patient-avatar" src="https://ui-avatars.com/api/?name=Patient&background=random" 
                      class="rounded-circle shadow-sm border" style="width: 58px; height: 58px; object-fit: cover;" alt="Patient">
@@ -130,7 +130,7 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
                     </div>
                 </div>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 dior-tele-panel-actions">
                 <button type="button" class="btn btn-sm btn-outline-primary rounded-3 fw-semibold" onclick="diorTeleWritePrescription()">
                     <i class="fas fa-prescription me-1"></i> Write Rx
                 </button>
@@ -172,44 +172,50 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
         </div>
 
         <!-- Previous Prescriptions Table -->
-        <div class="mb-4">
-            <h6 class="fw-bold text-dark mb-2 d-flex align-items-center">
-                <i class="fas fa-pills text-success me-2"></i> Previous Prescriptions &amp; Therapy
-            </h6>
-            <div class="table-responsive border rounded-3">
-                <table class="table table-hover align-middle mb-0 small">
-                    <thead class="table-light">
+        <div class="docs-card dior-tele-subcard mb-4">
+            <div class="docs-header-container">
+                <div class="docs-title-box">
+                    <h2><i class="fas fa-pills text-success me-2"></i>Previous Prescriptions &amp; Therapy</h2>
+                    <div class="docs-title-line"></div>
+                </div>
+            </div>
+            <div class="docs-table-wrapper">
+                <table class="docs-table dior-tele-table table table-hover align-middle mb-0">
+                    <thead>
                         <tr>
-                            <th>Medication</th>
-                            <th>Dosage &amp; Instructions</th>
-                            <th>Status</th>
-                            <th>Date Issued</th>
+                            <th>MEDICATION</th>
+                            <th>DOSAGE &amp; INSTRUCTIONS</th>
+                            <th>STATUS</th>
+                            <th>DATE ISSUED</th>
                         </tr>
                     </thead>
                     <tbody id="tele-prescriptions-tbody">
-                        <tr><td colspan="4" class="text-center py-3 text-muted">No previous prescriptions on record.</td></tr>
+                        <tr class="dior-tele-empty-row"><td colspan="4" class="text-center py-3 text-muted">No previous prescriptions on record.</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
         <!-- Uploaded Documents & Records Table -->
-        <div>
-            <h6 class="fw-bold text-dark mb-2 d-flex align-items-center">
-                <i class="fas fa-folder-open text-primary me-2"></i> Uploaded Documents &amp; Lab Records
-            </h6>
-            <div class="table-responsive border rounded-3">
-                <table class="table table-hover align-middle mb-0 small">
-                    <thead class="table-light">
+        <div class="docs-card dior-tele-subcard">
+            <div class="docs-header-container">
+                <div class="docs-title-box">
+                    <h2><i class="fas fa-folder-open text-primary me-2"></i>Uploaded Documents &amp; Lab Records</h2>
+                    <div class="docs-title-line"></div>
+                </div>
+            </div>
+            <div class="docs-table-wrapper">
+                <table class="docs-table dior-tele-table table table-hover align-middle mb-0">
+                    <thead>
                         <tr>
-                            <th>Document Title</th>
-                            <th>Category</th>
-                            <th>Date</th>
-                            <th>Actions</th>
+                            <th>DOCUMENT TITLE</th>
+                            <th>CATEGORY</th>
+                            <th>DATE</th>
+                            <th>ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody id="tele-documents-tbody">
-                        <tr><td colspan="4" class="text-center py-3 text-muted">No documents uploaded for this patient.</td></tr>
+                        <tr class="dior-tele-empty-row"><td colspan="4" class="text-center py-3 text-muted">No documents uploaded for this patient.</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -237,7 +243,7 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
         </div>
 
         <div class="docs-table-wrapper">
-            <table class="docs-table table table-hover" id="tele-consultations-table">
+            <table class="docs-table table table-hover align-middle mb-0" id="tele-consultations-table">
                 <thead>
                     <tr>
                         <th style="width: 50px;" class="text-center"><input type="checkbox" class="docs-checkbox form-check-input"></th>
@@ -255,8 +261,8 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
                     <?php foreach ($video_consultations as $vc): ?>
                         <tr data-patient-id="<?php echo esc_attr($vc->patient_id); ?>">
                             <td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input"></td>
-                            <td><span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small"><?php echo esc_html($vc->id); ?></span></td>
-                            <td>
+                            <td data-label="Consultation ID"><span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small"><?php echo esc_html($vc->id); ?></span></td>
+                            <td data-label="Patient">
                                 <div class="docs-user-profile d-flex align-items-center gap-2">
                                     <img src="<?php echo esc_url($vc->patient_avatar ?: ('https://ui-avatars.com/api/?name=' . rawurlencode($vc->patient_name))); ?>"
                                         class="docs-user-avatar rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" alt="<?php echo esc_attr($vc->patient_name); ?>"
@@ -266,11 +272,11 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
                                     </a>
                                 </div>
                             </td>
-                            <td><?php echo esc_html($vc->doctor_name); ?></td>
-                            <td><i class="far fa-calendar docs-icon-blue me-1"></i> <?php echo esc_html($vc->date); ?></td>
-                            <td><?php echo esc_html($vc->time); ?></td>
-                            <td><span class="<?php echo esc_attr($vc->status_class); ?> rounded-pill px-2 py-1 small"><?php echo esc_html($vc->status); ?></span></td>
-                            <td>
+                            <td data-label="Doctor"><?php echo esc_html($vc->doctor_name); ?></td>
+                            <td data-label="Date"><i class="far fa-calendar docs-icon-blue me-1"></i> <?php echo esc_html($vc->date); ?></td>
+                            <td data-label="Time"><?php echo esc_html($vc->time); ?></td>
+                            <td data-label="Status"><span class="<?php echo esc_attr($vc->status_class); ?> rounded-pill px-2 py-1 small"><?php echo esc_html($vc->status); ?></span></td>
+                            <td data-label="Actions">
                                 <div class="docs-row-actions d-flex gap-1">
                                     <button type="button" class="docs-action-btn-sm docs-btn-primary btn" title="Review Patient Chart" onclick="diorLoadTelemedicinePatient(<?php echo (int)$vc->patient_id; ?>)">
                                         <i class="fas fa-chart-user"></i>
@@ -283,7 +289,7 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
                         </tr>
                     <?php endforeach; ?>
                     <?php else: ?>
-                    <tr><td colspan="8" class="text-center py-5 text-muted"><i class="fas fa-video-slash d-block fs-2 mb-2"></i>No virtual consultations found.</td></tr>
+                    <tr class="dior-tele-empty-row"><td colspan="8" class="text-center py-5 text-muted"><i class="fas fa-video-slash d-block fs-2 mb-2"></i>No virtual consultations found.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -368,15 +374,15 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
                     var html = '';
                     rxs.forEach(function(rx) {
                         html += '<tr>' +
-                            '<td class="fw-semibold text-dark">' + (rx.medication || '—') + '</td>' +
-                            '<td>' + (rx.instructions || 'As directed') + '</td>' +
-                            '<td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small">' + (rx.status || 'Active') + '</span></td>' +
-                            '<td class="text-muted">' + (rx.created_at || '—') + '</td>' +
+                            '<td data-label="Medication" class="fw-semibold text-dark">' + (rx.medication || '—') + '</td>' +
+                            '<td data-label="Dosage &amp; Instructions">' + (rx.instructions || 'As directed') + '</td>' +
+                            '<td data-label="Status"><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small">' + (rx.status || 'Active') + '</span></td>' +
+                            '<td data-label="Date Issued" class="text-muted">' + (rx.created_at || '—') + '</td>' +
                             '</tr>';
                     });
                     rxTbody.innerHTML = html;
                 } else {
-                    rxTbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">No previous prescriptions on record.</td></tr>';
+                    rxTbody.innerHTML = '<tr class="dior-tele-empty-row"><td colspan="4" class="text-center py-3 text-muted">No previous prescriptions on record.</td></tr>';
                 }
             }
 
@@ -389,15 +395,15 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
                     docs.forEach(function(d) {
                         var dUrl = '<?php echo esc_js(home_url('/')); ?>?dior_action=download_doc&doc_id=' + encodeURIComponent(d.id || '') + '&patient_id=' + encodeURIComponent(p.user_id);
                         dHtml += '<tr>' +
-                            '<td class="fw-semibold text-dark">' + (d.title || 'Document') + '</td>' +
-                            '<td>' + (d.category || 'Clinical Record') + '</td>' +
-                            '<td class="text-muted">' + (d.date || '—') + '</td>' +
-                            '<td><a href="' + dUrl + '" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-2 rounded-2" download><i class="fas fa-file-arrow-down me-1"></i> Download</a></td>' +
+                            '<td data-label="Document Title" class="fw-semibold text-dark">' + (d.title || 'Document') + '</td>' +
+                            '<td data-label="Category">' + (d.category || 'Clinical Record') + '</td>' +
+                            '<td data-label="Date" class="text-muted">' + (d.date || '—') + '</td>' +
+                            '<td data-label="Actions"><a href="' + dUrl + '" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-2 rounded-2" download><i class="fas fa-file-arrow-down me-1"></i> Download</a></td>' +
                             '</tr>';
                     });
                     docTbody.innerHTML = dHtml;
                 } else {
-                    docTbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-muted">No documents uploaded for this patient.</td></tr>';
+                    docTbody.innerHTML = '<tr class="dior-tele-empty-row"><td colspan="4" class="text-center py-3 text-muted">No documents uploaded for this patient.</td></tr>';
                 }
             }
         })
