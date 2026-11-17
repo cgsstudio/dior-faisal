@@ -11,6 +11,39 @@
 
         app.__diorSafeNavigationReady = true;
 
+        // Explicit close control inside the mobile drawer — same control the
+        // Doctor Dashboard injects (icon, size, position and behaviour).
+        function ensureMobileCloseButton() {
+            var sidebar = document.getElementById('dior-sidebar');
+            if (!sidebar || sidebar.querySelector('.dior-mobile-drawer-close')) return;
+
+            var header = sidebar.querySelector('.dior-side-header') || sidebar;
+            var closeButton = document.createElement('button');
+            closeButton.type = 'button';
+            closeButton.className = 'dior-mobile-drawer-close';
+            closeButton.setAttribute('aria-label', 'Close navigation menu');
+            closeButton.setAttribute('title', 'Close menu');
+            closeButton.innerHTML = '&times;';
+            closeButton.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (typeof window.diorCloseMobileDrawer === 'function') {
+                    window.diorCloseMobileDrawer();
+                }
+            });
+            header.appendChild(closeButton);
+        }
+        ensureMobileCloseButton();
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key !== 'Escape') return;
+            var sidebar = document.getElementById('dior-sidebar');
+            if (sidebar && sidebar.classList.contains('mobile-open') &&
+                typeof window.diorCloseMobileDrawer === 'function') {
+                window.diorCloseMobileDrawer();
+            }
+        });
+
         var titles = {
             overview: 'Patient Overview',
             appointments: 'Telehealth Appointments',

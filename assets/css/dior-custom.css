@@ -63982,3 +63982,196 @@ a.va-btn-primary:hover {
         height: 36px !important;
     }
 }
+
+/* ==================================================================
+   Patient Dashboard → sidebar menu
+   Mirrors the Doctor Dashboard menu:
+   1. mobile drawer close button  2. desktop collapse / expand toggle
+   Patient-scoped only; doctor markup and styles untouched.
+   ================================================================== */
+
+/* ---------- 1. mobile drawer close button ---------- */
+.dior-patient-portal-wrap .dior-mobile-drawer-close {
+    display: none !important;
+}
+
+@media (max-width: 1024px) {
+
+    .dior-patient-portal-wrap #dior-sidebar .dior-side-header {
+        position: relative !important;
+    }
+
+    .dior-patient-portal-wrap #dior-sidebar .dior-mobile-drawer-close {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        position: absolute !important;
+        top: 12px !important;
+        right: 12px !important;
+        z-index: 20 !important;
+        width: 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
+        height: 34px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: 1px solid #cbdbea !important;
+        border-radius: 50% !important;
+        background: #F4F9FD !important;
+        color: #1A528E !important;
+        font-size: 25px !important;
+        line-height: 1 !important;
+        cursor: pointer !important;
+        box-shadow: none !important;
+        transition: background .15s ease, border-color .15s ease, color .15s ease !important;
+    }
+
+    .dior-patient-portal-wrap #dior-sidebar .dior-mobile-drawer-close:hover,
+    .dior-patient-portal-wrap #dior-sidebar .dior-mobile-drawer-close:focus-visible {
+        background: #E8F0FA !important;
+        border-color: #1A528E !important;
+        color: #1A528E !important;
+        outline: none !important;
+    }
+}
+
+/* ---------- 2. desktop collapse / expand ---------- */
+.dior-patient-portal-wrap .dior-patient-collapse-btn {
+    margin-top: 10px !important;
+}
+
+.dior-patient-portal-wrap .dior-patient-collapse-btn i {
+    width: 20px !important;
+    text-align: center !important;
+    font-size: 15px !important;
+    transition: transform .25s ease !important;
+}
+
+@media (min-width: 1025px) {
+
+    .dior-patient-portal-wrap .dior-side,
+    .dior-patient-portal-wrap .dior-main-content {
+        transition: width .25s cubic-bezier(.4, 0, .2, 1),
+            min-width .25s cubic-bezier(.4, 0, .2, 1),
+            max-width .25s cubic-bezier(.4, 0, .2, 1),
+            margin-left .25s cubic-bezier(.4, 0, .2, 1) !important;
+    }
+
+    /* collapsed: narrow rail instead of the old slide-out */
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side {
+        transform: none !important;
+        width: 72px !important;
+        min-width: 72px !important;
+        max-width: 72px !important;
+        overflow: visible !important;
+    }
+
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-main-content {
+        margin-left: 72px !important;
+        width: calc(100% - 72px) !important;
+        max-width: calc(100% - 72px) !important;
+    }
+
+    /* brand header */
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-header {
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 12px 6px !important;
+        justify-content: center !important;
+    }
+
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-header .brand,
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-header .brand-link {
+        height: auto !important;
+        width: 100% !important;
+        text-align: center !important;
+        justify-content: center !important;
+    }
+
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-header .brand-logo {
+        max-width: 42px !important;
+        max-height: 42px !important;
+        object-fit: contain !important;
+        margin: 0 auto !important;
+    }
+
+    /* hide every text label, group heading and the submenu chevron */
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-nav .nav-label,
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-nav .grp-title,
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-nav .fa-chevron-down {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        width: 0 !important;
+    }
+
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-nav .grp {
+        padding: 6px !important;
+        overflow: visible !important;
+    }
+
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn {
+        justify-content: center !important;
+        padding: 11px 0 !important;
+        width: 100% !important;
+        margin-bottom: 4px !important;
+        text-align: center !important;
+        gap: 0 !important;
+    }
+
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-nav .dior-nav-btn i {
+        margin: 0 !important;
+        width: 24px !important;
+        font-size: 18px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-patient-collapse-btn {
+        justify-content: center !important;
+        margin-top: 10px !important;
+    }
+
+    /* Appointments submenu becomes a hover flyout, as in the doctor menu */
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-nav-item-has-children {
+        position: relative !important;
+    }
+
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-nav-item-has-children>.dior-nav-dropdown {
+        display: none !important;
+    }
+
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-nav-item-has-children:hover>.dior-nav-dropdown {
+        display: flex !important;
+        flex-direction: column !important;
+        position: absolute !important;
+        left: 64px !important;
+        top: 0 !important;
+        min-width: 215px !important;
+        padding: 8px !important;
+        border-radius: 0 10px 10px 0 !important;
+        box-shadow: 6px 6px 22px rgba(0, 0, 0, .35) !important;
+        z-index: 10005 !important;
+        overflow: visible !important;
+    }
+
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-nav-item-has-children:hover>.dior-nav-dropdown .dior-nav-dropdown-item {
+        justify-content: flex-start !important;
+        width: 100% !important;
+        padding: 8px 10px !important;
+        text-align: left !important;
+    }
+
+    /* bottom profile card keeps only the avatar */
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-sidebar-bottom-profile {
+        margin: 16px 6px 12px 6px !important;
+        padding: 8px !important;
+        justify-content: center !important;
+        gap: 0 !important;
+    }
+
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-sidebar-user-info {
+        display: none !important;
+    }
+}
