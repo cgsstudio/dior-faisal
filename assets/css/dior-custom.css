@@ -62045,21 +62045,33 @@ a.va-btn-primary:hover {
         text-overflow: clip !important;
     }
 
+    /* Last card row: status badge on the left, row action on the right. */
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(8) {
-        grid-column: 1 / -1 !important;
+        grid-column: 1 / 2 !important;
         grid-row: 6 !important;
-        align-items: stretch !important;
+        align-items: flex-start !important;
         padding-top: 10px !important;
+        border-top: 1px solid #E2E8F0 !important;
         border-bottom: 0 !important;
     }
 
-    /* Status badge left, delete action right — comfortable tap target. */
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(8) > div {
-        display: flex !important;
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records #dior-tele-records-tbody > tr:not(#dior-empty-tele-row) > td:nth-child(9) {
+        grid-column: 2 / 3 !important;
+        grid-row: 6 !important;
+        align-items: flex-start !important;
+        padding-top: 10px !important;
+        border-top: 1px solid #E2E8F0 !important;
+        border-bottom: 0 !important;
+    }
+
+    /* Comfortable tap target for the row action on touch screens. */
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .btn-outline-danger {
+        min-width: 34px !important;
+        height: 34px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
         align-items: center !important;
-        justify-content: space-between !important;
-        gap: 10px !important;
-        width: 100% !important;
+        justify-content: center !important;
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .badge {
@@ -62154,12 +62166,6 @@ a.va-btn-primary:hover {
     border: 0 !important;
     color: #DC2626 !important;
     box-shadow: none !important;
-    min-width: 34px !important;
-    height: 34px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 8px !important;
 }
 
 #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .btn-outline-danger:hover,

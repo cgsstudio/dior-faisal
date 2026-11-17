@@ -115,7 +115,8 @@ if (!is_array($all_patients)) {
                         <th>VISIT DATE</th>
                         <th>DURATION (MIN)</th>
                         <th>DIAGNOSIS</th>
-                        <th>ACTIONS</th>
+                        <th>STATUS</th>
+                        <th>ACTION</th>
                     </tr>
                 </thead>
                 <tbody id="dior-tele-records-tbody">
@@ -163,22 +164,22 @@ if (!is_array($all_patients)) {
                                         <?php echo esc_html($vr['notes'] ?: $vr['status']); ?>
                                     </span>
                                 </td>
-                                <td data-label="Status &amp; Actions">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="badge <?php echo esc_attr($status_class); ?> rounded-pill px-2 py-1 small">
-                                            <?php echo esc_html($vr['status']); ?>
-                                        </span>
-                                        <button type="button" class="btn btn-sm btn-outline-danger border-0 p-1"
-                                            title="Delete Record"
-                                            onclick="diorDeleteTelemedRecord('<?php echo esc_js($vr['tele_uid']); ?>', this)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
+                                <td data-label="Status">
+                                    <span class="badge <?php echo esc_attr($status_class); ?> rounded-pill px-2 py-1 small">
+                                        <?php echo esc_html($vr['status']); ?>
+                                    </span>
+                                </td>
+                                <td data-label="Action">
+                                    <button type="button" class="btn btn-sm btn-outline-danger border-0 p-1"
+                                        title="Delete Record"
+                                        onclick="diorDeleteTelemedRecord('<?php echo esc_js($vr['tele_uid']); ?>', this)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; else: ?>
                         <tr id="dior-empty-tele-row">
-                            <td colspan="8" class="text-center py-5 text-muted">
+                            <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="fas fa-video-slash d-block fs-2 mb-2 opacity-50"></i>
                                 <div class="fw-bold text-dark fs-6 mb-1">No virtual visit records available yet</div>
                                 <p class="small text-muted mb-0">Click the plus (+) button above to manually record a
@@ -402,15 +403,15 @@ if (!is_array($all_patients)) {
                             ${rec.diagnosis}
                         </span>
                     </td>
-                    <td data-label="Status &amp; Actions">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge ${statusClass} rounded-pill px-2 py-1 small">
-                                ${rec.status}
-                            </span>
-                            <button type="button" class="btn btn-sm btn-outline-danger border-0 p-1" title="Delete Record" onclick="diorDeleteTelemedRecord('${rec.tele_uid}', this)">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
+                    <td data-label="Status">
+                        <span class="badge ${statusClass} rounded-pill px-2 py-1 small">
+                            ${rec.status}
+                        </span>
+                    </td>
+                    <td data-label="Action">
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0 p-1" title="Delete Record" onclick="diorDeleteTelemedRecord('${rec.tele_uid}', this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </td>
                 `;
 
