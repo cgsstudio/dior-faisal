@@ -57247,7 +57247,6 @@ a.va-btn-primary:hover {
     }
 
     #dior-doctor-app #tab-doc-appointments-view #va-summary-stats>[class*="col-"] {
-        flex: 0 0 50% !important;
         width: 100% !important;
         max-width: 50% !important;
     }
