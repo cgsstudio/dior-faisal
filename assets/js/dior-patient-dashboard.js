@@ -3914,3 +3914,132 @@ function diorShowMeetingJoinModal(alert, force) {
         if (!document.hidden) pollPatientNotifications();
     });
 })();
+
+/* ------------------------------------------------------------------
+ * Patient Appointments — one pager for all three tables.
+ *
+ * Previously only the Upcoming and Past tables paginated, they hid
+ * rows with inline `display:none` (which the mobile card CSS beats
+ * with `display:grid !important`), and the containers they render
+ * into did not exist in the markup at all, so nothing was visible.
+ *
+ * This renderer is the single source of truth: it hides rows with a
+ * class, prints "Showing X to Y of Z entries" plus the Doctor
+ * Dashboard pager (prev / numbers / next), and pages 10 rows at a
+ * time. The old function names stay as thin wrappers so every
+ * existing onclick / init call keeps working.
+ * ------------------------------------------------------------------ */
+(function () {
+    var PAGE_SIZE = 10;
+    var HIDDEN = 'dior-appt-page-hidden';
+
+    var TABLES = {
+        today: { tbody: 'dior-today-appointments-tbody', bar: 'dior-today-pagination', input: 'dior-today-search-input' },
+        upcoming: { tbody: 'dior-upcoming-appointments-tbody', bar: 'dior-upcoming-pagination', input: 'dior-upcoming-search-input' },
+        past: { tbody: 'dior-past-appointments-tbody', bar: 'dior-past-pagination', input: 'dior-past-search-input' }
+    };
+
+    var state = { today: 1, upcoming: 1, past: 1 };
+
+    function matchingRows(cfg) {
+        var tbody = document.getElementById(cfg.tbody);
+        if (!tbody) return [];
+        var input = document.getElementById(cfg.input);
+        var needle = input ? (input.value || '').toLowerCase().trim() : '';
+
+        return Array.prototype.filter.call(tbody.querySelectorAll('tr'), function (row) {
+            if (!needle) return true;
+            return (row.textContent || '').toLowerCase().indexOf(needle) !== -1;
+        });
+    }
+
+    function render(kind) {
+        var cfg = TABLES[kind];
+        if (!cfg) return;
+
+        var tbody = document.getElementById(cfg.tbody);
+        if (!tbody) return;
+
+        // Clear any legacy inline hiding (it loses to the mobile !important rules).
+        Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function (row) {
+            if (row.style.display) row.style.display = '';
+            row.classList.add(HIDDEN);
+        });
+
+        var active = matchingRows(cfg);
+        var total = active.length;
+        var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        var page = Math.min(Math.max(1, parseInt(state[kind], 10) || 1), totalPages);
+        state[kind] = page;
+
+        var start = (page - 1) * PAGE_SIZE;
+        var end = Math.min(start + PAGE_SIZE, total);
+
+        active.slice(start, end).forEach(function (row) {
+            row.classList.remove(HIDDEN);
+        });
+
+        var bar = document.getElementById(cfg.bar);
+        if (!bar) return;
+
+        if (total <= PAGE_SIZE) {
+            bar.style.display = 'none';
+            bar.innerHTML = '';
+            return;
+        }
+
+        var nav = (typeof window.diorBuildPagerHtml === 'function')
+            ? window.diorBuildPagerHtml(page, totalPages, 'diorApptGoPage_' + kind)
+            : '';
+
+        bar.style.display = 'flex';
+        bar.innerHTML =
+            '<div class="dior-pagination-info">Showing <strong>' + (start + 1) + '</strong> to <strong>' +
+            end + '</strong> of <strong>' + total + '</strong> entries</div>' +
+            '<div class="dior-pagination-nav">' + nav + '</div>';
+    }
+
+    window.diorRenderApptPagination = render;
+
+    Object.keys(TABLES).forEach(function (kind) {
+        var suffix = kind.charAt(0).toUpperCase() + kind.slice(1);
+
+        window['diorApptGoPage_' + kind] = function (page) {
+            state[kind] = page;
+            render(kind);
+        };
+
+        // Same names the template's onkeyup / onchange attributes call.
+        window['diorFilter' + suffix + 'Appointments'] = function () {
+            state[kind] = 1;
+            render(kind);
+        };
+
+        // Same names the older init / bulk-delete code calls.
+        window['diorRender' + suffix + 'Pagination'] = function () {
+            render(kind);
+        };
+    });
+
+    function boot() {
+        Object.keys(TABLES).forEach(function (kind) {
+            render(kind);
+
+            // Row removal (bulk delete) or insertion must re-page immediately,
+            // otherwise a page can stay empty or the pager shows stale numbers.
+            var tbody = document.getElementById(TABLES[kind].tbody);
+            if (tbody && window.MutationObserver && !tbody.dataset.diorPagerBound) {
+                tbody.dataset.diorPagerBound = '1';
+                new MutationObserver(function () { render(kind); })
+                    .observe(tbody, { childList: true });
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
+    window.addEventListener('load', boot);
+})();

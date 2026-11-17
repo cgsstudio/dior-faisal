@@ -256,8 +256,8 @@
                                         <tr>
                                             <td>
                                                 <div class="cell-content cell-image-name">
-                                                    <img src="<?php echo esc_url($tm[7]); ?>"
-                                                        alt="<?php echo esc_attr($tm[0]); ?>" class="cell-avatar">
+                                                    <?php if (!empty($tm[7])): ?><img src="<?php echo esc_url($tm[7]); ?>"
+                                                        alt="<?php echo esc_attr($tm[0]); ?>" class="cell-avatar"><?php endif; ?>
                                                     <span
                                                         class="cell-text doctor-name"><?php echo esc_html($tm[0]); ?></span>
                                                 </div>
@@ -312,6 +312,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="dior-table-pagination" id="dior-today-pagination" style="display:none;"></div>
 
                     </div>
                 </div>
@@ -472,6 +473,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="dior-table-pagination" id="dior-upcoming-pagination" style="display:none;"></div>
                     </div>
                 </div>
             </div>
@@ -556,8 +558,8 @@
                                         <tr>
                                             <td>
                                                 <div class="cell-content cell-image-name">
-                                                    <img src="<?php echo esc_url($pm[8]); ?>"
-                                                        alt="<?php echo esc_attr($pm[0]); ?>" class="cell-avatar">
+                                                    <?php if (!empty($pm[8])): ?><img src="<?php echo esc_url($pm[8]); ?>"
+                                                        alt="<?php echo esc_attr($pm[0]); ?>" class="cell-avatar"><?php endif; ?>
                                                     <span
                                                         class="cell-text doctor-name"><?php echo esc_html($pm[0]); ?></span>
                                                 </div>
@@ -584,6 +586,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="dior-table-pagination" id="dior-past-pagination" style="display:none;"></div>
                     </div>
                 </div>
             </div>
@@ -599,134 +602,6 @@
         }
     </script>
 
-    <!-- Appointment table pagination (same component the Doctor Dashboard uses) -->
-    <script>
-        (function () {
-            var PAGE_SIZE = 10;
-            var HIDDEN = 'dior-appt-page-hidden';
-            var registry = [
-                { table: 'dior-today-appointments-table', tbody: 'dior-today-appointments-tbody', bar: 'dior-appt-pager-today' },
-                { table: 'dior-upcoming-appointments-table', tbody: 'dior-upcoming-appointments-tbody', bar: 'dior-appt-pager-upcoming' },
-                { table: 'dior-past-appointments-table', tbody: 'dior-past-appointments-tbody', bar: 'dior-appt-pager-past' }
-            ];
-
-            function activeRows(cfg) {
-                var tbody = document.getElementById(cfg.tbody);
-                if (!tbody) return [];
-                return Array.prototype.filter.call(tbody.querySelectorAll(':scope > tr'), function (row) {
-                    return row.style.display !== 'none';
-                });
-            }
-
-            function ensureBar(cfg) {
-                var bar = document.getElementById(cfg.bar);
-                if (bar) return bar;
-                var table = document.getElementById(cfg.table);
-                if (!table) return null;
-                var wrap = table.closest('.docs-table-wrapper') || table.parentNode;
-                bar = document.createElement('div');
-                bar.className = 'dior-table-pagination';
-                bar.id = cfg.bar;
-                bar.style.display = 'none';
-                wrap.parentNode.insertBefore(bar, wrap.nextSibling);
-                return bar;
-            }
-
-            function buildPager(cfg) {
-                var bar = ensureBar(cfg);
-                var current = 1;
-
-                function render(page) {
-                    var rows = activeRows(cfg);
-                    var total = rows.length;
-                    if (!bar) bar = ensureBar(cfg);
-                    if (!bar) return;
-
-                    var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-                    current = Math.min(Math.max(1, page || 1), totalPages);
-                    var start = (current - 1) * PAGE_SIZE;
-                    var end = Math.min(start + PAGE_SIZE, total);
-
-                    rows.forEach(function (row, index) {
-                        row.classList.toggle(HIDDEN, index < start || index >= end);
-                    });
-
-                    if (total <= PAGE_SIZE) {
-                        bar.style.display = 'none';
-                        bar.innerHTML = '';
-                        return;
-                    }
-
-                    var nav = '';
-                    nav += '<button type="button" class="dior-page-btn" data-page="' + (current - 1) + '"' +
-                        (current === 1 ? ' disabled' : '') + ' title="Previous Page">' +
-                        '<i class="fa-solid fa-chevron-left" style="font-size:11px;"></i></button>';
-
-                    if (totalPages <= 7) {
-                        for (var i = 1; i <= totalPages; i++) {
-                            nav += '<button type="button" class="dior-page-btn' + (i === current ? ' active' : '') +
-                                '" data-page="' + i + '">' + i + '</button>';
-                        }
-                    } else {
-                        for (var j = 1; j <= totalPages; j++) {
-                            if (j === 1 || j === totalPages || (j >= current - 1 && j <= current + 1)) {
-                                nav += '<button type="button" class="dior-page-btn' + (j === current ? ' active' : '') +
-                                    '" data-page="' + j + '">' + j + '</button>';
-                            } else if (j === current - 2 || j === current + 2) {
-                                nav += '<span style="padding:0 4px;color:#94A3B8;font-size:12px;">...</span>';
-                            }
-                        }
-                    }
-
-                    nav += '<button type="button" class="dior-page-btn" data-page="' + (current + 1) + '"' +
-                        (current === totalPages ? ' disabled' : '') + ' title="Next Page">' +
-                        '<i class="fa-solid fa-chevron-right" style="font-size:11px;"></i></button>';
-
-                    bar.style.display = 'flex';
-                    bar.innerHTML =
-                        '<div class="dior-pagination-info">Showing <strong>' + (start + 1) + '</strong> to <strong>' +
-                        end + '</strong> of <strong>' + total + '</strong> entries</div>' +
-                        '<div class="dior-pagination-nav">' + nav + '</div>';
-
-                    bar.querySelectorAll('.dior-page-btn[data-page]').forEach(function (btn) {
-                        btn.addEventListener('click', function (e) {
-                            e.preventDefault();
-                            var target = parseInt(btn.getAttribute('data-page'), 10);
-                            if (!isNaN(target) && !btn.disabled) render(target);
-                        });
-                    });
-                }
-
-                render(1);
-                return render;
-            }
-
-            var renderers = [];
-            registry.forEach(function (cfg) {
-                var render = buildPager(cfg);
-                if (!render) return;
-                renderers.push(render);
-
-                var tbody = document.getElementById(cfg.tbody);
-                if (tbody && window.MutationObserver) {
-                    new MutationObserver(function () { render(1); }).observe(tbody, { childList: true });
-                }
-            });
-
-            // Re-page whenever a search box or a toolbar action changes the rows.
-            document.addEventListener('keyup', function (e) {
-                if (e.target && e.target.classList && e.target.classList.contains('form-control')) {
-                    setTimeout(function () { renderers.forEach(function (r) { r(1); }); }, 0);
-                }
-            }, true);
-
-            document.addEventListener('click', function (e) {
-                if (e.target.closest && e.target.closest('.docs-actions-group')) {
-                    setTimeout(function () { renderers.forEach(function (r) { r(1); }); }, 60);
-                }
-            }, true);
-        })();
-    </script>
 
 </section>
 <!-- ============================================================== -->
