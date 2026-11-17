@@ -90,6 +90,19 @@ if (!empty($dp_list)) {
         }
     }
 }
+
+// Consent templates have no table of their own historically - they now live in
+// wp_dior_consent_templates and are seeded once per doctor.
+$consent_templates = class_exists('Dior_Doctor_Dynamic') ? Dior_Doctor_Dynamic::render_consent_templates() : [];
+
+if (!function_exists('dior_docs_format_date')) {
+    function dior_docs_format_date($value)
+    {
+        if (empty($value) || $value === '0000-00-00 00:00:00') return '';
+        $stamp = strtotime($value);
+        return $stamp ? date_i18n('M j, Y', $stamp) : (string) $value;
+    }
+}
 ?>
 <section class="dior-tab-panel" id="tab-doc-documents-upload" style="display: none;">
     <!-- Breadcrumb Header -->
@@ -117,10 +130,10 @@ if (!empty($dp_list)) {
             <i class="fas fa-file-arrow-up"></i> Upload Documents
         </button>
         <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-documents-templates" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-documents-templates');">
-            <i class="fas fa-file-lines"></i> Consent Templates
+            <i class="fas fa-file-lines"></i> Manage Templates
         </button>
         <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-documents-signed" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-documents-signed');">
-            <i class="fas fa-file-signature"></i> Signed Consent
+            <i class="fas fa-file-signature"></i> Consent Forms
         </button>
     </div>
 
@@ -132,17 +145,23 @@ if (!empty($dp_list)) {
             </div>
 
             <div class="docs-actions-wrapper">
-                <div class="input-group input-group-sm dior-bs-search-group" style="width: 240px;">
+                <div class="input-group input-group-sm dior-bs-search-group">
                     <input type="text" id="doc-upload-search-input" class="form-control border-start-0 ps-0" placeholder="Search records..." onkeyup="diorFilterDoctorUploadDocs(this.value)">
                 </div>
                 <div class="docs-actions-group">
-                    <button type="button" class="docs-icon-btn docs-btn-primary btn" aria-label="Add new record" title="Upload Patient Document" onclick="diorOpenDoctorDocUploadModal()">
+                    <button type="button" class="docs-icon-btn docs-btn-primary btn" id="dior-doc-upload-btn"
+                        aria-label="Upload patient document" title="Upload Patient Document"
+                        onclick="diorOpenDoctorDocUploadModal()">
                         <i class="fas fa-plus"></i>
                     </button>
-                    <button type="button" class="docs-icon-btn docs-btn-success btn" aria-label="Export to Excel" title="Export CSV" onclick="diorExportDoctorDocsCSV()">
+                    <button type="button" class="docs-icon-btn docs-btn-success btn" id="dior-doc-upload-export-btn"
+                        aria-label="Export documents to CSV" title="Export to CSV"
+                        onclick="diorExportDoctorDocsCSV()">
                         <i class="fas fa-file-arrow-down"></i>
                     </button>
-                    <button type="button" class="docs-icon-btn docs-btn-info btn" aria-label="Refresh data" title="Refresh" onclick="window.location.reload()">
+                    <button type="button" class="docs-icon-btn docs-btn-info btn" id="dior-doc-upload-refresh-btn"
+                        aria-label="Refresh document list" title="Refresh"
+                        onclick="window.location.reload()">
                         <i class="fas fa-rotate-right"></i>
                     </button>
                 </div>
@@ -184,10 +203,10 @@ if (!empty($dp_list)) {
                                 <td class="text-center">
                                     <input type="checkbox" class="docs-checkbox form-check-input" value="<?php echo esc_attr($doc_uid); ?>">
                                 </td>
-                                <td>
+                                <td data-label="Document ID">
                                     <span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small"><?php echo esc_html($doc_uid); ?></span>
                                 </td>
-                                <td>
+                                <td data-label="Patient">
                                     <div class="docs-user-profile d-flex align-items-center gap-2">
                                         <img src="<?php echo esc_url($p_avatar); ?>" class="docs-user-avatar rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" alt="<?php echo esc_attr($p_name); ?>" onerror="this.src='https://ui-avatars.com/api/?name=<?php echo urlencode($p_name); ?>&background=random'">
                                         <div>
@@ -196,15 +215,15 @@ if (!empty($dp_list)) {
                                         </div>
                                     </div>
                                 </td>
-                                <td><?php echo esc_html($doc['category'] ?: 'Clinical Record'); ?></td>
-                                <td>
+                                <td data-label="Document Type"><?php echo esc_html($doc['category'] ?: 'Clinical Record'); ?></td>
+                                <td data-label="Document Name">
                                     <div class="fw-semibold text-dark"><?php echo esc_html($doc['title'] ?: 'Medical Document'); ?></div>
                                     <small class="text-muted"><?php echo esc_html(($doc['file_type'] ?: 'PDF') . ' • ' . ($doc['file_size_formatted'] ?: '150 KB')); ?></small>
                                 </td>
-                                <td><i class="far fa-calendar docs-icon-blue me-1"></i> <?php echo esc_html($doc_date); ?></td>
-                                <td><?php echo esc_html($doc['author_name'] ?: 'Doctor'); ?></td>
-                                <td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small"><i class="fas fa-circle-check me-1"></i> Available</span></td>
-                                <td>
+                                <td data-label="Upload Date"><i class="far fa-calendar docs-icon-blue me-1"></i> <?php echo esc_html($doc_date); ?></td>
+                                <td data-label="Uploaded By"><?php echo esc_html($doc['author_name'] ?: 'Doctor'); ?></td>
+                                <td data-label="Status"><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small"><i class="fas fa-circle-check me-1"></i> Available</span></td>
+                                <td data-label="Actions">
                                     <div class="docs-row-actions d-flex gap-1">
                                         <a href="<?php echo esc_url($download_url); ?>" target="_blank" class="docs-action-btn-sm docs-btn-edit btn" title="Download Document" download>
                                             <i class="fas fa-file-arrow-down"></i>
@@ -226,6 +245,12 @@ if (!empty($dp_list)) {
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+
+        <div class="va-footer dior-docs-footer">
+            <div class="va-pagination-text docs-pagination-text">
+                <strong>0</strong> documents total
+            </div>
         </div>
     </div>
 
@@ -568,10 +593,10 @@ if (!empty($dp_list)) {
             <i class="fas fa-file-arrow-up"></i> Upload Documents
         </button>
         <button type="button" class="dior-subtab-pill btn active" data-doc-tab="doc-documents-templates" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-documents-templates');">
-            <i class="fas fa-file-lines"></i> Consent Templates
+            <i class="fas fa-file-lines"></i> Manage Templates
         </button>
         <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-documents-signed" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-documents-signed');">
-            <i class="fas fa-file-signature"></i> Signed Consent
+            <i class="fas fa-file-signature"></i> Consent Forms
         </button>
     </div>
 
@@ -583,16 +608,20 @@ if (!empty($dp_list)) {
             </div>
 
             <div class="docs-actions-wrapper">
-                <div class="input-group input-group-sm dior-bs-search-group" style="width: 240px;">
-
-                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Search records...">
+                <div class="input-group input-group-sm dior-bs-search-group">
+                    <input type="text" id="dior-template-search-input" class="form-control border-start-0 ps-0"
+                        placeholder="Search templates..." aria-label="Search consent templates"
+                        onkeyup="diorFilterConsentRows(this.value, 'dior-consent-templates-tbody')">
                 </div>
                 <div class="docs-actions-group">
-                    <button class="docs-icon-btn docs-btn-primary btn" aria-label="Add new record"><i
+                    <button type="button" class="docs-icon-btn docs-btn-primary btn"
+                        aria-label="Add consent template" title="Add Consent Template"><i
                             class="fas fa-plus"></i></button>
-                    <button class="docs-icon-btn docs-btn-success btn" aria-label="Export to Excel"><i
+                    <button type="button" class="docs-icon-btn docs-btn-success btn"
+                        aria-label="Export consent templates to CSV" title="Export to CSV"><i
                             class="fas fa-file-arrow-down"></i></button>
-                    <button class="docs-icon-btn docs-btn-info btn" aria-label="Refresh data"><i
+                    <button type="button" class="docs-icon-btn docs-btn-info btn"
+                        aria-label="Refresh consent templates" title="Refresh"><i
                             class="fas fa-rotate-right"></i></button>
                 </div>
             </div>
@@ -614,153 +643,62 @@ if (!empty($dp_list)) {
                         <th>ACTIONS</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <!-- Row 1 -->
-                    <tr>
-                        <td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input"></td>
-                        <td>TPL001</td>
-                        <td>General Surgery Consent Form</td>
-                        <td>Surgery Consent</td>
-                        <td>General Surgery</td>
-                        <td>v2.1</td>
-                        <td><i class="far fa-calendar docs-icon-blue"></i> Jan 15, 2024</td>
-                        <td><span class="docs-badge docs-badge-active">Active</span></td>
-                        <td>
-                            <div class="docs-row-actions">
-                                <button class="docs-action-btn-sm docs-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="docs-action-btn-sm docs-btn-delete btn"><i
-                                        class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 2 -->
-                    <tr>
-                        <td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input"></td>
-                        <td>TPL002</td>
-                        <td>Anesthesia Consent Form</td>
-                        <td>Anesthesia Consent</td>
-                        <td>All Departments</td>
-                        <td>v1.5</td>
-                        <td><i class="far fa-calendar docs-icon-blue"></i> Feb 10, 2024</td>
-                        <td><span class="docs-badge docs-badge-active">Active</span></td>
-                        <td>
-                            <div class="docs-row-actions">
-                                <button class="docs-action-btn-sm docs-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="docs-action-btn-sm docs-btn-delete btn"><i
-                                        class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 3 -->
-                    <tr>
-                        <td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input"></td>
-                        <td>TPL003</td>
-                        <td>Blood Transfusion Consent</td>
-                        <td>Blood Transfusion</td>
-                        <td>All Departments</td>
-                        <td>v1.3</td>
-                        <td><i class="far fa-calendar docs-icon-blue"></i> Mar 5, 2024</td>
-                        <td><span class="docs-badge docs-badge-active">Active</span></td>
-                        <td>
-                            <div class="docs-row-actions">
-                                <button class="docs-action-btn-sm docs-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="docs-action-btn-sm docs-btn-delete btn"><i
-                                        class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 4 -->
-                    <tr>
-                        <td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input"></td>
-                        <td>TPL004</td>
-                        <td>Orthopedic Surgery Consent</td>
-                        <td>Surgery Consent</td>
-                        <td>Orthopedics</td>
-                        <td>v2.0</td>
-                        <td><i class="far fa-calendar docs-icon-blue"></i> Apr 12, 2024</td>
-                        <td><span class="docs-badge docs-badge-active">Active</span></td>
-                        <td>
-                            <div class="docs-row-actions">
-                                <button class="docs-action-btn-sm docs-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="docs-action-btn-sm docs-btn-delete btn"><i
-                                        class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 5 -->
-                    <tr>
-                        <td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input"></td>
-                        <td>TPL005</td>
-                        <td>Discharge Against Medical Advice (AMA)</td>
-                        <td>Discharge AMA</td>
-                        <td>All Departments</td>
-                        <td>v1.2</td>
-                        <td><i class="far fa-calendar docs-icon-blue"></i> May 20, 2024</td>
-                        <td><span class="docs-badge docs-badge-active">Active</span></td>
-                        <td>
-                            <div class="docs-row-actions">
-                                <button class="docs-action-btn-sm docs-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="docs-action-btn-sm docs-btn-delete btn"><i
-                                        class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 6 -->
-                    <tr>
-                        <td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input"></td>
-                        <td>TPL006</td>
-                        <td>Cardiac Procedure Consent</td>
-                        <td>Surgery Consent</td>
-                        <td>Cardiology</td>
-                        <td>v1.8</td>
-                        <td><i class="far fa-calendar docs-icon-blue"></i> Jun 15, 2024</td>
-                        <td><span class="docs-badge docs-badge-active">Active</span></td>
-                        <td>
-                            <div class="docs-row-actions">
-                                <button class="docs-action-btn-sm docs-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="docs-action-btn-sm docs-btn-delete btn"><i
-                                        class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 7 -->
-                    <tr>
-                        <td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input"></td>
-                        <td>TPL007</td>
-                        <td>Research Participation Consent</td>
-                        <td>Research Participation</td>
-                        <td>All Departments</td>
-                        <td>v1.0</td>
-                        <td><i class="far fa-calendar docs-icon-blue"></i> Jul 1, 2024</td>
-                        <td><span class="docs-badge docs-badge-orange">Draft</span></td>
-                        <td>
-                            <div class="docs-row-actions">
-                                <button class="docs-action-btn-sm docs-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="docs-action-btn-sm docs-btn-delete btn"><i
-                                        class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 8 -->
-                    <tr>
-                        <td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input"></td>
-                        <td>TPL008</td>
-                        <td>Photography and Media Consent</td>
-                        <td>Photography</td>
-                        <td>All Departments</td>
-                        <td>v1.1</td>
-                        <td><i class="far fa-calendar docs-icon-blue"></i> Aug 10, 2024</td>
-                        <td><span class="docs-badge docs-badge-active">Active</span></td>
-                        <td>
-                            <div class="docs-row-actions">
-                                <button class="docs-action-btn-sm docs-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="docs-action-btn-sm docs-btn-delete btn"><i
-                                        class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
+                <tbody id="dior-consent-templates-tbody">
+                    <?php if (!empty($consent_templates)): ?>
+                        <?php foreach ($consent_templates as $tpl): ?>
+                            <?php
+                            $tpl_status = $tpl['status'] ?: 'Active';
+                            $tpl_status_class = $tpl_status === 'Active' ? 'is-active'
+                                : ($tpl_status === 'Draft' ? 'is-draft' : 'is-archived');
+                            $tpl_created = dior_docs_format_date($tpl['created_at'] ?? '');
+                            ?>
+                            <tr data-template-id="<?php echo esc_attr($tpl['id']); ?>">
+                                <td class="text-center">
+                                    <input type="checkbox" class="docs-checkbox form-check-input"
+                                        aria-label="<?php echo esc_attr('Select ' . $tpl['template_name']); ?>">
+                                </td>
+                                <td data-label="Template ID"><span class="dior-docs-id"><?php echo esc_html($tpl['template_uid']); ?></span></td>
+                                <td data-label="Template Name">
+                                    <div class="fw-semibold dior-docs-name"><?php echo esc_html($tpl['template_name']); ?></div>
+                                </td>
+                                <td data-label="Category"><?php echo esc_html($tpl['template_category'] ?: '—'); ?></td>
+                                <td data-label="Department"><?php echo esc_html($tpl['department'] ?: '—'); ?></td>
+                                <td data-label="Version"><?php echo esc_html($tpl['version'] ?: '—'); ?></td>
+                                <td data-label="Created Date">
+                                    <i class="far fa-calendar docs-icon-blue me-1"></i> <?php echo esc_html($tpl_created ?: '—'); ?>
+                                </td>
+                                <td data-label="Status">
+                                    <span class="dior-docs-badge <?php echo esc_attr($tpl_status_class); ?>"><?php echo esc_html($tpl_status); ?></span>
+                                </td>
+                                <td data-label="Actions">
+                                    <div class="docs-row-actions">
+                                        <button type="button" class="docs-action-btn-sm docs-btn-edit btn"
+                                            title="Edit template"
+                                            aria-label="<?php echo esc_attr('Edit ' . $tpl['template_name']); ?>"><i class="fas fa-pen"></i></button>
+                                        <button type="button" class="docs-action-btn-sm docs-btn-delete btn"
+                                            title="Delete template"
+                                            aria-label="<?php echo esc_attr('Delete ' . $tpl['template_name']); ?>"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr class="dior-docs-empty-row">
+                            <td colspan="9" class="dior-docs-empty">
+                                <i class="fas fa-file-lines"></i>
+                                <strong>No consent templates yet</strong>
+                                <span>Use <em>Add Template</em> to create the first one.</span>
+                            </td>
+                        </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+
+        <div class="va-footer dior-docs-footer">
+            <div class="va-pagination-text docs-pagination-text">
+                <strong>0</strong> templates total
+            </div>
         </div>
     </div>
 </section>
@@ -794,10 +732,10 @@ if (!empty($dp_list)) {
             <i class="fas fa-file-arrow-up"></i> Upload Documents
         </button>
         <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-documents-templates" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-documents-templates');">
-            <i class="fas fa-file-lines"></i> Consent Templates
+            <i class="fas fa-file-lines"></i> Manage Templates
         </button>
         <button type="button" class="dior-subtab-pill btn active" data-doc-tab="doc-documents-signed" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-documents-signed');">
-            <i class="fas fa-file-signature"></i> Signed Consent
+            <i class="fas fa-file-signature"></i> Consent Forms
         </button>
     </div>
 
@@ -809,16 +747,20 @@ if (!empty($dp_list)) {
             </div>
 
             <div class="docs-actions-wrapper">
-                <div class="input-group input-group-sm dior-bs-search-group" style="width: 240px;">
-
-                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Search records...">
+                <div class="input-group input-group-sm dior-bs-search-group">
+                    <input type="text" id="dior-signed-search-input" class="form-control border-start-0 ps-0"
+                        placeholder="Search consents..." aria-label="Search signed consents"
+                        onkeyup="diorFilterConsentRows(this.value, 'doc-signed-consents-tbody')">
                 </div>
                 <div class="docs-actions-group">
-                    <button class="docs-icon-btn docs-btn-primary btn" aria-label="Add new record"><i
+                    <button type="button" class="docs-icon-btn docs-btn-primary btn"
+                        aria-label="Upload a signed consent form" title="Upload Signed Consent"><i
                             class="fas fa-plus"></i></button>
-                    <button class="docs-icon-btn docs-btn-success btn" aria-label="Export to Excel"><i
+                    <button type="button" class="docs-icon-btn docs-btn-success btn"
+                        aria-label="Export signed consents to CSV" title="Export to CSV"><i
                             class="fas fa-file-arrow-down"></i></button>
-                    <button class="docs-icon-btn docs-btn-info btn" aria-label="Refresh data"><i
+                    <button type="button" class="docs-icon-btn docs-btn-info btn"
+                        aria-label="Refresh signed consents" title="Refresh"><i
                             class="fas fa-rotate-right"></i></button>
                 </div>
             </div>
@@ -855,13 +797,15 @@ if (!empty($dp_list)) {
                                 'doc_id'      => $sc_uid,
                                 'patient_id'  => $p_id
                             ], home_url('/'));
-                            $doc_title = $sc['doc_title'] ?: 'Consent Form';
-                            $doc_cat = $sc['doc_category'] ?: 'Surgery Consent';
+                            // The signed-consent query selects d.* from the documents table,
+                            // so the real column names are title / category (not doc_title).
+                            $doc_title = !empty($sc['title']) ? $sc['title'] : 'Consent Form';
+                            $doc_cat = !empty($sc['category']) ? $sc['category'] : 'Surgery Consent';
                             ?>
                             <tr id="doc-sc-row-<?php echo esc_attr($sc_uid); ?>" data-patient-id="<?php echo esc_attr($p_id); ?>" data-doc-uid="<?php echo esc_attr($sc_uid); ?>">
                                 <td class="text-center"><input type="checkbox" class="docs-checkbox form-check-input" value="<?php echo esc_attr($sc_uid); ?>"></td>
-                                <td><span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small"><?php echo esc_html($sc_uid); ?></span></td>
-                                <td>
+                                <td data-label="Consent ID"><span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small"><?php echo esc_html($sc_uid); ?></span></td>
+                                <td data-label="Patient">
                                     <div class="docs-user-profile d-flex align-items-center gap-2">
                                         <img src="<?php echo esc_url($p_avatar); ?>" class="docs-user-avatar rounded-circle" style="width: 32px; height: 32px; object-fit: cover;" alt="<?php echo esc_attr($p_name); ?>" onerror="this.src='https://ui-avatars.com/api/?name=<?php echo urlencode($p_name); ?>&background=random'">
                                         <div>
@@ -870,13 +814,13 @@ if (!empty($dp_list)) {
                                         </div>
                                     </div>
                                 </td>
-                                <td><?php echo esc_html($doc_cat); ?></td>
-                                <td><div class="fw-semibold text-dark"><?php echo esc_html($doc_title); ?></div></td>
-                                <td><i class="far fa-calendar docs-icon-blue me-1"></i> <?php echo esc_html($signed_date); ?></td>
-                                <td><?php echo esc_html($p_name); ?></td>
-                                <td>Clinical Staff</td>
-                                <td><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small"><i class="fas fa-check-circle me-1"></i> Signed</span></td>
-                                <td>
+                                <td data-label="Consent Type"><?php echo esc_html($doc_cat); ?></td>
+                                <td data-label="Procedure"><div class="fw-semibold text-dark"><?php echo esc_html($doc_title); ?></div></td>
+                                <td data-label="Signed Date"><i class="far fa-calendar docs-icon-blue me-1"></i> <?php echo esc_html($signed_date); ?></td>
+                                <td data-label="Signed By"><?php echo esc_html($p_name); ?></td>
+                                <td data-label="Witness">Clinical Staff</td>
+                                <td data-label="Status"><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small"><i class="fas fa-check-circle me-1"></i> Signed</span></td>
+                                <td data-label="Actions">
                                     <div class="docs-row-actions d-flex gap-1">
                                         <a href="<?php echo esc_url($download_url); ?>" target="_blank" class="docs-action-btn-sm docs-btn-edit btn" title="Download Consent" download><i class="fas fa-file-arrow-down"></i></a>
                                         <button type="button" class="docs-action-btn-sm docs-btn-delete btn" title="Delete Consent" onclick="diorDoctorDeleteDoc(this, '<?php echo esc_js($sc_uid); ?>', <?php echo (int)$p_id; ?>)"><i class="fas fa-trash"></i></button>
@@ -895,6 +839,12 @@ if (!empty($dp_list)) {
                     <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+
+        <div class="va-footer dior-docs-footer">
+            <div class="va-pagination-text docs-pagination-text">
+                <strong>0</strong> consent forms total
+            </div>
         </div>
     </div>
 </section>

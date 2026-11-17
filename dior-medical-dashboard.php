@@ -1239,6 +1239,16 @@ class Dior_Medical_Auth
             true
         );
 
+        // ── Documents & Consent (upload / templates / signed) ────────────────
+        $documents_js_ver = file_exists(DIOR_PORTAL_PATH . 'assets/js/dior-documents.js') ? filemtime(DIOR_PORTAL_PATH . 'assets/js/dior-documents.js') : DIOR_PORTAL_VERSION;
+        wp_enqueue_script(
+            'dior-documents-js',
+            DIOR_PORTAL_URL . 'assets/js/dior-documents.js',
+            ['dior-static-table-interactions', 'sweetalert2'],
+            $documents_js_ver,
+            true
+        );
+
         // ── Pharmacy (Medicine List / Add Medicine) ──────────────────────────
         $pharmacy_js_ver = file_exists(DIOR_PORTAL_PATH . 'assets/js/dior-pharmacy.js') ? filemtime(DIOR_PORTAL_PATH . 'assets/js/dior-pharmacy.js') : DIOR_PORTAL_VERSION;
         wp_enqueue_script(
