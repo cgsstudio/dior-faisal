@@ -1239,6 +1239,16 @@ class Dior_Medical_Auth
             true
         );
 
+        // ── Pharmacy (Medicine List / Add Medicine) ──────────────────────────
+        $pharmacy_js_ver = file_exists(DIOR_PORTAL_PATH . 'assets/js/dior-pharmacy.js') ? filemtime(DIOR_PORTAL_PATH . 'assets/js/dior-pharmacy.js') : DIOR_PORTAL_VERSION;
+        wp_enqueue_script(
+            'dior-pharmacy-js',
+            DIOR_PORTAL_URL . 'assets/js/dior-pharmacy.js',
+            ['dior-static-table-interactions', 'sweetalert2'],
+            $pharmacy_js_ver,
+            true
+        );
+
         $portal_url = home_url('/patient-dashboard/');
         $login_url = home_url('/diro-login/');
         $reg_url = home_url('/diro-registration/');

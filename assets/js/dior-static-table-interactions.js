@@ -66,6 +66,39 @@
         });
     }
 
+    // ---------------------------------------------------------------------
+    // PHARMACY (Medicine List) BRIDGE
+    // The generic layer above is client-only: it removes rows from the DOM but
+    // the medicine inventory has to survive a page reload. These helpers route
+    // pharmacy actions through Dior Pharmacy (assets/js/dior-pharmacy.js) so
+    // the AJAX layer owns the data, and every other table keeps the old
+    // client-side behaviour untouched.
+    // ---------------------------------------------------------------------
+    function isPharmacyTable(table) {
+        return !!(table && table.closest('#tab-doc-pharmacy-list'));
+    }
+
+    function getPharmacyApi() {
+        return (window.DiorPharmacy && typeof window.DiorPharmacy.deleteRows === 'function') ? window.DiorPharmacy : null;
+    }
+
+    // Called by the pharmacy module once an AJAX delete succeeds so pagination
+    // and the "Showing X to Y" counter refresh without a reload.
+    function refreshTableChrome(table) {
+        var masterCb = table.querySelector('thead input[type="checkbox"]');
+        if (masterCb) {
+            masterCb.checked = false;
+            masterCb.indeterminate = false;
+        }
+        updateBulkToolbarState(table);
+        var remainingActive = getActiveRows(table).length;
+        var totalPages = Math.max(1, Math.ceil(remainingActive / PAGE_SIZE));
+        var currentPage = table._diorStaticPagination ? table._diorStaticPagination.page : 1;
+        renderTable(table, Math.min(currentPage, totalPages));
+    }
+
+    window.diorRefreshStaticTable = refreshTableChrome;
+
     function standardizeBootstrapSearchFields(root) {
         root = root || document;
 
@@ -330,6 +363,13 @@
         var count = checkedRows.length;
 
         function performDeletion() {
+            var pharmacyApi = isPharmacyTable(table) ? getPharmacyApi() : null;
+            if (pharmacyApi) {
+                // Real inventory: delete the selected rows over AJAX, then
+                // refresh pagination from the server-confirmed state.
+                pharmacyApi.deleteRows(checkedRows, table);
+                return;
+            }
             checkedRows.forEach(function (row) {
                 row.remove();
             });
@@ -849,6 +889,13 @@
                     cancelButtonText: 'Cancel'
                 }).then(function (result) {
                     if (result.isConfirmed) {
+                        var pharmacyApi = isPharmacyTable(table) ? getPharmacyApi() : null;
+                        if (pharmacyApi) {
+                            // Real inventory: the module deletes over AJAX and
+                            // re-renders the table on success.
+                            pharmacyApi.deleteRows([row], table);
+                            return;
+                        }
                         row.remove();
                         updateBulkToolbarState(table);
                         var remainingActive = getActiveRows(table).length;

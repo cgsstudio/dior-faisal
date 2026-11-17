@@ -59082,3 +59082,950 @@ a.va-btn-primary:hover {
         text-align: center !important;
     }
 }
+
+/* ==========================================================================
+   PHARMACY (Medicine List + Add Medicine)
+   Shared doctor-dashboard tokens only: #00346C / #1A528E primary, #E2E8F0
+   borders, #64748B secondary text, 8-10px radii, 0 0 0 3px focus ring.
+   ========================================================================== */
+
+/* -- Page heading --------------------------------------------------------- */
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-page-heading {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 12px !important;
+    text-align: left !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-page-heading > div {
+    text-align: left !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-hint > span {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-page-title {
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    color: #00346C !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-crumb-icon {
+    font-size: 14px !important;
+    color: #1A528E !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-crumb-sep {
+    color: #94A3B8 !important;
+}
+
+/* -- Subtab pills ---------------------------------------------------------
+   The shared .dior-subtab-pill is solid blue for BOTH normal and .active
+   states, so "Medicine List" and "Add Medicine" looked identical and neither
+   read as the current page. Pharmacy pills therefore use the outline/primary
+   pair already used by the rest of the dashboard.
+   ------------------------------------------------------------------------ */
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-subtabs .dior-subtab-pill {
+    background: #FFFFFF !important;
+    color: #1A528E !important;
+    border: 1px solid #CBD5E1 !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-subtabs .dior-subtab-pill:hover {
+    background: #F1F5F9 !important;
+    border-color: #94A3B8 !important;
+    color: #00346C !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-subtabs .dior-subtab-pill:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(0, 52, 108, 0.14) !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-subtabs .dior-subtab-pill.active,
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-subtabs .dior-subtab-pill.active:hover {
+    background: #1A528E !important;
+    border-color: #1A528E !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(26, 82, 142, 0.24) !important;
+}
+
+/* The active pill gets a check-like marker so the "you are here" state is
+   obvious even in greyscale or for colour-blind users. */
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-subtabs .dior-subtab-pill.active::after {
+    content: "" !important;
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    background: #FFFFFF !important;
+    margin-left: 2px !important;
+    display: inline-block !important;
+}
+
+/* -- Search + toolbar ----------------------------------------------------- */
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-bs-search-group {
+    width: 240px !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .va-actions-group .va-icon-btn {
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .va-actions-group .va-icon-btn:hover {
+    transform: translateY(-1px) !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .va-actions-group .va-icon-btn[disabled] {
+    opacity: 0.65 !important;
+    cursor: progress !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .va-actions-group .va-icon-btn.is-done {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.28) !important;
+}
+
+/* -- Table cells ---------------------------------------------------------- */
+/* .va-table ships a 1000px min-width. The medicine table is sized from its own
+   column plan so it fills the card at desktop widths (no clipped STOCK /
+   ACTIONS) and only scrolls on genuinely narrow viewports. */
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .va-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table {
+    width: 100% !important;
+    min-width: 920px !important;
+    max-width: none !important;
+    table-layout: fixed !important;
+    font-size: 13px !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table thead th,
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    vertical-align: middle !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table thead th {
+    white-space: nowrap !important;
+    line-height: 1.25 !important;
+    font-size: 10.5px !important;
+    letter-spacing: 0.02em !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table thead th .fa-sort {
+    margin-left: 4px !important;
+    font-size: 9px !important;
+    opacity: 0.7 !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Text columns wrap instead of truncating; only the narrow numeric/date
+   columns keep a single line. */
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:not(:nth-child(1)):not(:nth-child(7)):not(:nth-child(9)):not(:last-child) {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: break-word !important;
+}
+
+/* Column plan: select | no | name | category | company | purchase | price |
+   expiry | stock | actions. Name and company are fluid (no fixed width). */
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table th:nth-child(2),
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table td:nth-child(2) {
+    width: 102px !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table th:nth-child(4),
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table td:nth-child(4) {
+    width: 106px !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table th:nth-child(6),
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table td:nth-child(6),
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table th:nth-child(8),
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table td:nth-child(8) {
+    width: 136px !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table th:nth-child(7),
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table td:nth-child(7),
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table th:nth-child(9),
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table td:nth-child(9) {
+    width: 72px !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table th:last-child,
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table td:last-child {
+    width: 100px !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table th:nth-child(5),
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table td:nth-child(5) {
+    width: 132px !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-col-select {
+    width: 50px !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td {
+    vertical-align: middle !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-cat {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    color: #475569 !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-cat i {
+    color: #1A528E !important;
+    font-size: 12px !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-muted {
+    color: #94A3B8 !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-stock {
+    display: inline-block !important;
+    min-width: 42px !important;
+    padding: 3px 10px !important;
+    border-radius: 999px !important;
+    background: #E8F0FA !important;
+    color: #00346C !important;
+    font-weight: 600 !important;
+    font-size: 12.5px !important;
+    text-align: center !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-stock.is-low {
+    background: #FEF2F2 !important;
+    color: #B91C1C !important;
+}
+
+/* -- Empty state ---------------------------------------------------------- */
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-empty {
+    padding: 42px 20px !important;
+    text-align: center !important;
+    color: #64748B !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-empty > i.fas:first-child {
+    display: block !important;
+    width: auto !important;
+    font-size: 30px !important;
+    color: #CBD5E1 !important;
+    margin: 0 auto 12px !important;
+    text-align: center !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-empty strong {
+    display: block !important;
+    font-size: 15px !important;
+    color: #00346C !important;
+    margin-bottom: 6px !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-empty span {
+    display: block !important;
+    font-size: 13px !important;
+    margin-bottom: 16px !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-empty-cta {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 9px 18px !important;
+    border-radius: 8px !important;
+    border: 1px solid #1A528E !important;
+    background: #1A528E !important;
+    color: #FFFFFF !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-empty-cta:hover {
+    background: #00346C !important;
+    border-color: #00346C !important;
+}
+
+/* -- Add Medicine form ---------------------------------------------------- */
+#dior-doctor-app #dior-doc-content .dior-pharm-form-card .va-header-container {
+    border-bottom: 1px solid #E2E8F0 !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-form-body {
+    padding: 22px 20px 20px !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 18px 24px !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-field {
+    min-width: 0 !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-label {
+    display: block !important;
+    margin-bottom: 8px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #1E293B !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-req {
+    color: #EF4444 !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-input {
+    display: block !important;
+    width: 100% !important;
+    min-height: 42px !important;
+    padding: 10px 14px !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 8px !important;
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    font-size: 14px !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-input::placeholder {
+    color: #94A3B8 !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-input:focus {
+    border-color: #1A528E !important;
+    box-shadow: 0 0 0 3px rgba(0, 52, 108, 0.14) !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-field.has-error .dior-pharm-input {
+    border-color: #EF4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.14) !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-hint {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    margin: 20px 0 0 !important;
+    font-size: 12.5px !important;
+    color: #64748B !important;
+    line-height: 1.5 !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-hint i {
+    margin-top: 3px !important;
+    color: #1A528E !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    margin-top: 20px !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    min-height: 42px !important;
+    padding: 10px 24px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-btn-primary {
+    background: #1A528E !important;
+    border: 1px solid #1A528E !important;
+    color: #FFFFFF !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-btn-primary:hover:not([disabled]) {
+    background: #00346C !important;
+    border-color: #00346C !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-btn-primary[disabled] {
+    opacity: 0.75 !important;
+    cursor: progress !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-btn-ghost {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #475569 !important;
+}
+
+#dior-doctor-app #dior-doc-content .dior-pharm-btn-ghost:hover {
+    background: #F8FAFC !important;
+    border-color: #CBD5E1 !important;
+    color: #0F172A !important;
+}
+
+/* -- Edit overlay --------------------------------------------------------- */
+.dior-pharm-lock {
+    overflow: hidden !important;
+}
+
+.dior-pharm-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 10800 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px !important;
+    background: rgba(15, 23, 42, 0.55) !important;
+}
+
+.dior-pharm-dialog {
+    width: 100% !important;
+    max-width: 760px !important;
+    max-height: calc(100vh - 40px) !important;
+    overflow-y: auto !important;
+    border-radius: 12px !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24) !important;
+}
+
+.dior-pharm-dialog-head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    padding: 18px 22px !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+}
+
+.dior-pharm-dialog-title {
+    margin: 0 !important;
+    font-size: 17px !important;
+    font-weight: 700 !important;
+    color: #00346C !important;
+}
+
+.dior-pharm-dialog-close {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 34px !important;
+    height: 34px !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 8px !important;
+    background: #FFFFFF !important;
+    color: #64748B !important;
+    cursor: pointer !important;
+}
+
+.dior-pharm-dialog-close:hover {
+    background: #F1F5F9 !important;
+    color: #0F172A !important;
+}
+
+.dior-pharm-overlay .dior-pharm-form {
+    padding: 20px 22px 22px !important;
+}
+
+.dior-pharm-overlay .dior-pharm-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px 20px !important;
+}
+
+.dior-pharm-overlay .dior-pharm-grid .dior-pharm-field:last-child:nth-child(odd) {
+    grid-column: 1 / -1 !important;
+}
+
+.dior-pharm-overlay .dior-pharm-label {
+    display: block !important;
+    margin-bottom: 7px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #1E293B !important;
+}
+
+.dior-pharm-overlay .dior-pharm-req {
+    color: #EF4444 !important;
+}
+
+.dior-pharm-overlay .dior-pharm-input {
+    display: block !important;
+    width: 100% !important;
+    min-height: 40px !important;
+    padding: 9px 13px !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 8px !important;
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    font-size: 14px !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+}
+
+.dior-pharm-overlay .dior-pharm-input:focus {
+    border-color: #1A528E !important;
+    box-shadow: 0 0 0 3px rgba(0, 52, 108, 0.14) !important;
+}
+
+.dior-pharm-overlay .dior-pharm-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    margin-top: 20px !important;
+}
+
+.dior-pharm-overlay .dior-pharm-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 40px !important;
+    padding: 9px 20px !important;
+    border-radius: 8px !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+}
+
+.dior-pharm-overlay .dior-pharm-btn-primary {
+    background: #1A528E !important;
+    border: 1px solid #1A528E !important;
+    color: #FFFFFF !important;
+}
+
+.dior-pharm-overlay .dior-pharm-btn-primary:hover:not([disabled]) {
+    background: #00346C !important;
+    border-color: #00346C !important;
+}
+
+.dior-pharm-overlay .dior-pharm-btn-primary[disabled] {
+    opacity: 0.75 !important;
+    cursor: progress !important;
+}
+
+.dior-pharm-overlay .dior-pharm-btn-ghost {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #475569 !important;
+}
+
+/* -- Responsive ----------------------------------------------------------- */
+@media (max-width: 991.98px) {
+    /* Stay inside the content column: no negative margins, so headings and
+       pills never bleed past the viewport edge. */
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 12px 6px 24px !important;
+        min-width: 0 !important;
+        overflow-x: clip !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-page-heading {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        margin-bottom: 14px !important;
+        padding: 0 4px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-page-title {
+        font-size: 18px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .va-breadcrumb-list {
+        flex-wrap: wrap !important;
+        font-size: 12.5px !important;
+    }
+
+    /* Two equal pills per row, never a horizontally clipped strip. */
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-subtabs.dior-subtab-nav-bar {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        grid-auto-flow: row !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 0 12px !important;
+        margin: 0 0 14px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-subtabs .dior-subtab-pill {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        min-height: 40px !important;
+        margin: 0 !important;
+        padding: 9px 6px !important;
+        font-size: 12px !important;
+        line-height: 1.25 !important;
+        white-space: normal !important;
+        text-align: center !important;
+        box-sizing: border-box !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-subtabs .dior-subtab-pill.active::after {
+        display: none !important;
+    }
+
+    /* Header stacks: title, then search + actions on their own row. */
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .va-header-container {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding: 16px 14px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .va-actions-wrapper {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        width: 100% !important;
+        flex-wrap: nowrap !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-bs-search-group {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .va-actions-group {
+        flex: 0 0 auto !important;
+        display: flex !important;
+        gap: 8px !important;
+    }
+
+    /* Mobile: rows become labelled cards, exactly like the prescriptions and
+       consultation screens, so nothing is hidden behind a sideways scroll. */
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .va-table-wrapper {
+        overflow-x: visible !important;
+        padding: 0 12px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table {
+        display: block !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        margin-bottom: 0 !important;
+        border: 0 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table thead {
+        display: none !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody tr {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 0 12px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 12px !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 14px !important;
+        background: #FFFFFF !important;
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.045) !important;
+        overflow: hidden !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: center !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        padding: 8px 4px !important;
+        border: 0 !important;
+        border-bottom: 1px solid #EEF2F7 !important;
+        background: transparent !important;
+        color: #334155 !important;
+        font-size: 12px !important;
+        line-height: 1.45 !important;
+        text-align: left !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td::before {
+        content: attr(data-label);
+        display: block !important;
+        margin-bottom: 5px !important;
+        color: #64748B !important;
+        font-size: 9px !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        letter-spacing: 0.055em !important;
+        text-transform: uppercase !important;
+    }
+
+    /* Row 1: checkbox badge. Row 2: medicine name/title. */
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:first-child {
+        grid-column: 1 / -1 !important;
+        align-items: flex-end !important;
+        padding: 0 0 4px !important;
+        border-bottom: 0 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:first-child::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:first-child .form-check-input {
+        margin: 0 !important;
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td[data-label="Medicine Name"] {
+        grid-column: 1 / -1 !important;
+        padding-top: 2px !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+        padding-bottom: 10px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td[data-label="Medicine Name"] strong {
+        font-size: 15px !important;
+        color: #00346C !important;
+        line-height: 1.3 !important;
+    }
+
+    /* Explicit card rhythm: checkbox → name → no/category → company/purchase
+       → price/expiry → stock/actions. Keeps cards compact at 360px. */
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(2) {
+        grid-column: 1 / 2 !important;
+        grid-row: 3 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(3) {
+        grid-column: 1 / -1 !important;
+        grid-row: 2 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(4) {
+        grid-column: 2 / 3 !important;
+        grid-row: 3 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(5) {
+        grid-column: 1 / 2 !important;
+        grid-row: 4 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(6) {
+        grid-column: 2 / 3 !important;
+        grid-row: 4 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(7) {
+        grid-column: 1 / 2 !important;
+        grid-row: 5 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(8) {
+        grid-column: 2 / 3 !important;
+        grid-row: 5 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(9) {
+        grid-column: 1 / 2 !important;
+        grid-row: 6 !important;
+    }
+
+    /* Date cells keep the calendar icon inline with the value. */
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(6),
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(8) {
+        display: block !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(6) i,
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td:nth-child(8) i {
+        margin-right: 4px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td[data-label="Actions"] {
+        grid-column: 2 / 3 !important;
+        grid-row: 6 !important;
+        align-items: center !important;
+        padding-top: 10px !important;
+        border-bottom: 0 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td[data-label="Actions"] .va-row-actions {
+        gap: 6px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td[data-label="Actions"] .va-action-btn-sm {
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody td[data-label="Actions"]::before {
+        align-self: flex-start !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table .va-row-actions {
+        display: flex !important;
+        justify-content: flex-end !important;
+        width: 100% !important;
+        gap: 8px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table .va-action-btn-sm {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        padding: 0 !important;
+        border-radius: 9px !important;
+    }
+
+    /* The empty state is a single colspan cell: keep it a centred block. */
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody tr.dior-pharm-empty-row {
+        display: block !important;
+        padding: 0 !important;
+        border: 1px dashed #CBD5E1 !important;
+        box-shadow: none !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody tr.dior-pharm-empty-row td {
+        display: block !important;
+        width: 100% !important;
+        padding: 30px 16px !important;
+        border: 0 !important;
+        text-align: center !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-pharmacy-list .dior-pharm-table tbody tr.dior-pharm-empty-row td::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .va-footer {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        padding: 12px 14px !important;
+    }
+
+    /* Add Medicine form: single column, full-width controls. */
+    #dior-doctor-app #dior-doc-content .dior-pharm-form-body {
+        padding: 18px 14px 18px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 14px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-input {
+        font-size: 16px !important; /* prevents iOS zoom-on-focus */
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-actions {
+        flex-direction: column-reverse !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content .dior-pharm-actions .dior-pharm-btn {
+        width: 100% !important;
+    }
+
+    /* Edit overlay becomes a bottom sheet that never exceeds the viewport. */
+    .dior-pharm-overlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+
+    .dior-pharm-dialog {
+        max-width: 100% !important;
+        max-height: 92vh !important;
+        border-radius: 14px 14px 0 0 !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    }
+
+    .dior-pharm-dialog-head {
+        padding: 16px !important;
+    }
+
+    .dior-pharm-overlay .dior-pharm-form {
+        padding: 16px !important;
+    }
+
+    .dior-pharm-overlay .dior-pharm-grid {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 13px !important;
+    }
+
+    .dior-pharm-overlay .dior-pharm-grid .dior-pharm-field:last-child:nth-child(odd) {
+        grid-column: auto !important;
+    }
+
+    .dior-pharm-overlay .dior-pharm-input {
+        font-size: 16px !important;
+    }
+
+    .dior-pharm-overlay .dior-pharm-actions {
+        flex-direction: column-reverse !important;
+        align-items: stretch !important;
+    }
+
+    .dior-pharm-overlay .dior-pharm-btn {
+        width: 100% !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    #dior-doctor-app #dior-doc-content .dior-pharm-screen.dior-tab-panel .dior-pharm-empty {
+        padding: 32px 16px !important;
+    }
+}

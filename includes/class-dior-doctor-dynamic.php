@@ -14,7 +14,8 @@ class Dior_Doctor_Dynamic {
             'appointment_delete','appointment_update','patient_status','patient_delete','patient_bulk_delete','patient_add','patient_update',
             'get_patient_profile','save_consultation','delete_consultation','document_save','document_delete','document_update_meta',
             'review_save','review_delete','review_bulk_delete','review_get','telemed_save','telemed_delete','notification_read',
-            'notification_all_read','settings_save','chat_send','chat_get'
+            'notification_all_read','settings_save','chat_send','chat_get',
+            'medicine_save','medicine_delete','medicine_bulk_delete'
         ];
         foreach ($actions as $action) add_action('wp_ajax_dior_doc_' . $action, [__CLASS__, 'ajax_' . $action]);
         add_action('wp_ajax_dior_doctor_add_patient', [__CLASS__, 'ajax_patient_add']);
@@ -108,6 +109,29 @@ class Dior_Doctor_Dynamic {
             updated_at DATETIME NOT NULL,
             PRIMARY KEY (id),
             UNIQUE KEY doctor_setting (doctor_id,setting_key)
+        ) $cc;";
+        // Pharmacy inventory (Medicine List / Add Medicine). Scoped per doctor so
+        // one provider's stock never leaks into another provider's list.
+        $tables[] = "CREATE TABLE " . self::table('medicines') . " (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            medicine_uid VARCHAR(64) NOT NULL,
+            doctor_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            medicine_no VARCHAR(32) NULL,
+            medicine_name VARCHAR(190) NOT NULL,
+            category VARCHAR(60) NULL,
+            company_name VARCHAR(190) NULL,
+            purchase_date DATE NULL,
+            expiry_date DATE NULL,
+            price DECIMAL(12,2) NOT NULL DEFAULT 0,
+            stock INT NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY (id),
+            UNIQUE KEY medicine_uid (medicine_uid),
+            KEY doctor_id (doctor_id),
+            KEY medicine_name (medicine_name),
+            KEY category (category),
+            KEY expiry_date (expiry_date)
         ) $cc;";
         foreach ($tables as $sql) dbDelta($sql);
     }
@@ -735,6 +759,154 @@ class Dior_Doctor_Dynamic {
 
     public static function ajax_chat_send(){self::auth();global $wpdb;$uid=sanitize_text_field($_POST['appointment_uid']??'');$a=Dior_Appointment_Service::get_appointment($uid);if(!$a||!self::patient_belongs_to_doctor($a['patient_id'],self::doctor_id())||!in_array((int)$a['doctor_id'],self::doctor_scope_ids(),true))wp_send_json_error(['message'=>'This consultation is not assigned to you.'],403);$msg=sanitize_textarea_field($_POST['message']??'');if(!$msg)wp_send_json_error(['message'=>'Message required.']);$wpdb->insert(self::table('chat_messages'),['appointment_uid'=>$uid,'patient_id'=>$a['patient_id'],'doctor_id'=>self::doctor_id(),'sender_user_id'=>self::doctor_id(),'message'=>$msg,'created_at'=>current_time('mysql')]);wp_send_json_success(['message'=>'Message sent.']);}
     public static function ajax_chat_get(){self::auth();global $wpdb;$uid=sanitize_text_field($_POST['appointment_uid']??'');$a=Dior_Appointment_Service::get_appointment($uid);if(!$a||!self::patient_belongs_to_doctor($a['patient_id'],self::doctor_id())||!in_array((int)$a['doctor_id'],self::doctor_scope_ids(),true))wp_send_json_error(['message'=>'Consultation access denied.'],403);$rows=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table('chat_messages').' WHERE appointment_uid=%s ORDER BY id ASC',$uid),ARRAY_A);wp_send_json_success(['messages'=>$rows,'patient'=>self::patient($a['patient_id']),'appointment'=>$a]);}
+
+    // ── Pharmacy inventory (Medicine List) ───────────────────────────────────
+    // Every write is nonce-checked, capability-checked and scoped to the
+    // doctors the current user may act for, so a medicine row can only be
+    // edited or deleted by the provider that owns it.
+    public static function render_medicines()
+    {
+        global $wpdb;
+        $ids = self::doctor_scope_ids();
+        if (!$ids) return [];
+        $table = self::table('medicines');
+        // Never let a not-yet-installed table break the whole dashboard render.
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) !== $table) {
+            return [];
+        }
+        $in = implode(',', array_fill(0, count($ids), '%d'));
+        return $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM $table WHERE doctor_id IN ($in) ORDER BY id ASC",
+            ...$ids
+        ), ARRAY_A);
+    }
+
+    private static function medicine_owner_id($id)
+    {
+        global $wpdb;
+        $id = (int) $id;
+        if (!$id) return 0;
+        return (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT doctor_id FROM ' . self::table('medicines') . ' WHERE id = %d',
+            $id
+        ));
+    }
+
+    public static function ajax_medicine_save()
+    {
+        self::auth();
+        global $wpdb;
+
+        $id   = (int) ($_POST['id'] ?? 0);
+        $name = sanitize_text_field(wp_unslash($_POST['medicine_name'] ?? ''));
+        $category = sanitize_text_field(wp_unslash($_POST['category'] ?? ''));
+        $company  = sanitize_text_field(wp_unslash($_POST['company_name'] ?? ''));
+
+        if ($name === '') {
+            wp_send_json_error(['message' => 'Medicine name is required.']);
+        }
+        if ($category === '') {
+            wp_send_json_error(['message' => 'Category is required.']);
+        }
+
+        // Optional dates must be real Y-m-d or empty (never a half-typed value).
+        $purchase_date = sanitize_text_field(wp_unslash($_POST['purchase_date'] ?? ''));
+        $expiry_date   = sanitize_text_field(wp_unslash($_POST['expiry_date'] ?? ''));
+        foreach (['purchase_date' => $purchase_date, 'expiry_date' => $expiry_date] as $label => $value) {
+            if ($value === '') continue;
+            $parsed = DateTime::createFromFormat('Y-m-d', $value);
+            if (!$parsed || $parsed->format('Y-m-d') !== $value) {
+                wp_send_json_error(['message' => 'Please provide valid dates.']);
+            }
+        }
+
+        $price = (float) ($_POST['price'] ?? 0);
+        $stock = (int) ($_POST['stock'] ?? 0);
+        if ($price < 0) $price = 0;
+        if ($stock < 0) $stock = 0;
+
+        $data = [
+            'medicine_no'   => sanitize_text_field(wp_unslash($_POST['medicine_no'] ?? '')),
+            'medicine_name' => $name,
+            'category'      => $category,
+            'company_name'  => $company,
+            'purchase_date' => $purchase_date ?: null,
+            'expiry_date'   => $expiry_date ?: null,
+            'price'         => $price,
+            'stock'         => $stock,
+            'updated_at'    => current_time('mysql'),
+        ];
+
+        if ($id) {
+            $owner = self::medicine_owner_id($id);
+            if (!$owner || (!current_user_can('manage_options') && !in_array($owner, self::doctor_scope_ids(), true))) {
+                wp_send_json_error(['message' => 'You cannot edit this medicine.'], 403);
+            }
+            $wpdb->update(self::table('medicines'), $data, ['id' => $id]);
+            wp_send_json_success(['message' => 'Medicine updated.', 'id' => $id, 'row' => $data]);
+        }
+
+        $data['medicine_uid'] = 'MED-' . strtoupper(wp_generate_password(8, false, false));
+        $data['doctor_id']    = self::doctor_id();
+        $data['created_at']   = current_time('mysql');
+
+        $wpdb->insert(self::table('medicines'), $data);
+        $new_id = (int) $wpdb->insert_id;
+        if (!$new_id) {
+            wp_send_json_error(['message' => 'The medicine could not be saved. Please try again.']);
+        }
+        // Fall back to the row id so the "No" column is never blank.
+        if ($data['medicine_no'] === '') {
+            $wpdb->update(self::table('medicines'), ['medicine_no' => (string) $new_id], ['id' => $new_id]);
+            $data['medicine_no'] = (string) $new_id;
+        }
+
+        wp_send_json_success(['message' => 'Medicine added.', 'id' => $new_id, 'row' => $data]);
+    }
+
+    public static function ajax_medicine_delete()
+    {
+        self::auth();
+        global $wpdb;
+        $id = (int) ($_POST['id'] ?? 0);
+        $owner = self::medicine_owner_id($id);
+        if (!$owner || (!current_user_can('manage_options') && !in_array($owner, self::doctor_scope_ids(), true))) {
+            wp_send_json_error(['message' => 'You cannot delete this medicine.'], 403);
+        }
+        $wpdb->delete(self::table('medicines'), ['id' => $id], ['%d']);
+        wp_send_json_success(['message' => 'Medicine deleted.']);
+    }
+
+    public static function ajax_medicine_bulk_delete()
+    {
+        self::auth();
+        global $wpdb;
+        $raw = $_POST['ids'] ?? [];
+        if (is_string($raw)) {
+            $raw = explode(',', $raw);
+        }
+        $ids = array_values(array_filter(array_map('absint', (array) $raw)));
+        if (!$ids) {
+            wp_send_json_error(['message' => 'Select at least one medicine to delete.']);
+        }
+
+        $scope = self::doctor_scope_ids();
+        $deleted = 0;
+        foreach ($ids as $id) {
+            $owner = self::medicine_owner_id($id);
+            if (!$owner || (!current_user_can('manage_options') && !in_array($owner, $scope, true))) {
+                continue;
+            }
+            if ($wpdb->delete(self::table('medicines'), ['id' => $id], ['%d'])) {
+                $deleted++;
+            }
+        }
+
+        if (!$deleted) {
+            wp_send_json_error(['message' => 'None of the selected medicines could be deleted.']);
+        }
+        wp_send_json_success(['message' => $deleted . ' medicine(s) deleted.', 'deleted' => $deleted]);
+    }
 
     public static function get_settings($doctor_id=0){global $wpdb;$doctor_id=$doctor_id?:self::doctor_id();$ids=class_exists('Dior_Doctor_Resolver')?Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id):[$doctor_id];$in=implode(',',array_fill(0,count($ids),'%d'));$args=array_merge($ids,[$doctor_id]);$rows=$wpdb->get_results($wpdb->prepare('SELECT setting_key,setting_value FROM '.self::table('doctor_settings')." WHERE doctor_id IN ($in) ORDER BY (doctor_id=%d) ASC",...$args),ARRAY_A);$out=[];foreach($rows as $r)$out[$r['setting_key']]=$r['setting_value'];return $out;}
     public static function render_appointments($doctor_id=0){$doctor_id=$doctor_id?:self::doctor_id();$a=Dior_Appointment_Service::get_doctor_appointments($doctor_id);foreach($a as &$r){$r['patient_name']=self::patient_name($r['patient_id']??0);$p=self::patient($r['patient_id']??0);$r['patient_uid']=$p['patient_uid']??'';}return $a;}
