@@ -65159,3 +65159,96 @@ a.va-btn-primary:hover {
         padding: 8px 8px !important;
     }
 }
+
+/* ==================================================================
+   Patient Dashboard → mobile drawer header.
+   The brand block was a 150px navy strip with a 190 × 126 logo, so the
+   crest filled the whole header and the 34px close disc floated on top
+   of it. Header is now one 66px row: logo on the left, close on the
+   right, both vertically centred. Desktop sidebar untouched.
+   ================================================================== */
+@media (max-width: 1024px) {
+
+    .dior-patient-portal-wrap #dior-sidebar .dior-side-header {
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        height: 66px !important;
+        min-height: 66px !important;
+        max-height: 66px !important;
+        padding: 0 58px 0 16px !important;
+        margin: 0 !important;
+        background: var(--patient-navy, #0B1030) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, .10) !important;
+    }
+
+    .dior-patient-portal-wrap #dior-sidebar .dior-side-header .brand,
+    .dior-patient-portal-wrap #dior-sidebar .dior-side-header .brand-link {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        width: auto !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        text-align: left !important;
+        overflow: visible !important;
+    }
+
+    .dior-patient-portal-wrap #dior-sidebar .dior-side .brand-logo,
+    .dior-patient-portal-wrap #dior-sidebar .brand-logo {
+        display: block !important;
+        width: auto !important;
+        height: 44px !important;
+        min-height: 0 !important;
+        max-height: 44px !important;
+        max-width: min(150px, 100%) !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        object-fit: contain !important;
+        object-position: left center !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+    }
+
+    /* close button: ghost control that belongs to the navy bar */
+    .dior-patient-portal-wrap #dior-sidebar .dior-mobile-drawer-close {
+        position: absolute !important;
+        top: 50% !important;
+        right: 14px !important;
+        left: auto !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 1px solid rgba(255, 255, 255, .28) !important;
+        border-radius: 50% !important;
+        background: rgba(255, 255, 255, .10) !important;
+        color: #FFFFFF !important;
+        font-size: 19px !important;
+        font-weight: 400 !important;
+        line-height: 1 !important;
+        text-align: center !important;
+        box-shadow: none !important;
+        transition: background .15s ease, border-color .15s ease !important;
+    }
+
+    .dior-patient-portal-wrap #dior-sidebar .dior-mobile-drawer-close:hover,
+    .dior-patient-portal-wrap #dior-sidebar .dior-mobile-drawer-close:focus-visible {
+        background: rgba(255, 255, 255, .20) !important;
+        border-color: rgba(255, 255, 255, .55) !important;
+        color: #FFFFFF !important;
+        outline: none !important;
+    }
+}
