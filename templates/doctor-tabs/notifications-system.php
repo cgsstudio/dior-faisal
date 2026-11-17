@@ -74,29 +74,13 @@ foreach ($doctor_notif_rows as $row) {
         }
     </style>
 
-    <!-- Header & Breadcrumb -->
+    <!-- Page Header -->
     <div class="mb-4"
         style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; position: relative; z-index: 3;">
         <div>
             <h4 class="mb-0 text-dark" style="font-size: 20px; font-weight: 700; color: #1e293b;">
                 <i class="fas fa-bell text-primary me-2"></i>Doctor Notifications
             </h4>
-        </div>
-        <div>
-            <ul class="va-breadcrumb-list"
-                style="display: flex; gap: 8px; list-style: none; padding: 0; margin: 0; align-items: center;">
-                <li>
-                    <a href="javascript:void(0)"
-                        onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-overview')">
-                        <i class="fas fa-house" style="font-size: 14px; color: #2563eb;"></i>
-                    </a>
-                </li>
-                <li><span style="color: #cbd5e1;">/</span></li>
-                <li><span style="color: #64748b; font-size: 13px;">Provider Portal</span></li>
-                <li><span style="color: #cbd5e1;">/</span></li>
-                <li class="active"><span style="color: #1e293b; font-weight: 700; font-size: 13px;">Notifications</span>
-                </li>
-            </ul>
         </div>
     </div>
 

@@ -54,20 +54,11 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
 ?>
 
 <section class="dior-tab-panel documents-tab-panel" id="tab-doc-telemed-video" style="display: none;">
-    <!-- Breadcrumb Header -->
+    <!-- Page Header -->
     <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
             <h4 class="mb-0 text-dark fw-bold fs-4">Virtual Visit &amp; Telehealth Consultation</h4>
             <div class="text-secondary small">Conduct secure video visits, review patient medical records in real-time, and issue prescriptions.</div>
-        </div>
-        <div>
-            <ul class="breadcrumb-list d-flex gap-2 list-unstyled p-0 m-0 align-items-center small">
-                <li><a href="#" class="text-primary text-decoration-none"><i class="fas fa-house"></i></a></li>
-                <li><span class="text-muted">/</span></li>
-                <li><a href="javascript:void(0)" class="text-secondary text-decoration-none">Telemedicine</a></li>
-                <li><span class="text-muted">/</span></li>
-                <li class="active fw-bold text-dark">Virtual Visit</li>
-            </ul>
         </div>
     </div>
 

@@ -36,26 +36,11 @@ if (!is_array($all_patients)) {
 ?>
 
 <section class="dior-tab-panel documents-tab-panel" id="tab-doc-telemed-records" style="display: none;">
-    <!-- Breadcrumb Header -->
+    <!-- Page Header -->
     <div class="mb-4"
         style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
         <div>
             <h4 class="mb-0 text-dark" style="font-size: 20px; font-weight: 700;">Virtual Visit Records</h4>
-        </div>
-        <div>
-            <ul class="va-breadcrumb-list"
-                style="display: flex; gap: 8px; list-style: none; padding: 0; margin: 0; align-items: center;">
-                <li><a href="javascript:void(0)"
-                        onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-overview')"><i
-                            class="fas fa-house" style="font-size: 14px; color: #1A528E;"></i></a></li>
-                <li><span style="color: #94A3B8;">/</span></li>
-                <li><a href="javascript:void(0)"
-                        onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-telemed-video')"
-                        style="color: #64748B; text-decoration: none; font-size: 14px;">Telemedicine</a></li>
-                <li><span style="color: #94A3B8;">/</span></li>
-                <li class="active"><span style="color: #1E293B; font-weight: 700; font-size: 14px;">Virtual Visit
-                        Records</span></li>
-            </ul>
         </div>
     </div>
 

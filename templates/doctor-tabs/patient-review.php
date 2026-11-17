@@ -43,19 +43,10 @@ if (empty($patients)) {
 }
 ?>
 <section class="dior-tab-panel documents-tab-panel" id="tab-doc-patient-review">
-    <!-- Breadcrumb -->
+    <!-- Page Header -->
     <div class="mb-4" style="display:flex;justify-content:space-between;align-items:center;">
         <div>
             <h4 class="mb-0 text-dark" style="font-size:20px;font-weight:700;">Feedback &amp; Reviews</h4>
-        </div>
-        <div>
-            <ul class="va-breadcrumb-list"
-                style="display:flex;gap:8px;list-style:none;padding:0;margin:0;align-items:center;">
-                <li><a href="#"><i class="fas fa-house" style="font-size:14px;color:#1A528E;"></i></a></li>
-                <li><span style="color:#94A3B8;">/</span></li>
-                <li class="active"><span style="color:#1E293B;font-weight:700;font-size:14px;">Feedback &amp;
-                        Reviews</span></li>
-            </ul>
         </div>
     </div>
 
