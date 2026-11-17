@@ -440,7 +440,6 @@ foreach ($patients_query as $pq) {
                         class="dior-login-input dior-search-input-padded form-control"
                         placeholder="Type to search FDA medications (e.g. Metformin, Sporanox, Amoxicillin...) or enter custom drug"
                         autocomplete="off" oninput="diorOnFdaSearchInput(this.value)">
-                    <span class="dior-badge-fda-verify"><i class="fas fa-shield-halved"></i> openFDA</span>
                 </div>
                 <!-- Autocomplete Dropdown -->
                 <div id="dior-fda-autocomplete-dropdown" class="dior-fda-autocomplete-dropdown"></div>

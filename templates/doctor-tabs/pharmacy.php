@@ -41,8 +41,6 @@
                         <input type="text" class="form-control border-start-0 ps-0" placeholder="Search records...">
                     </div>
                     <div class="va-actions-group">
-                        <button class="va-icon-btn va-btn-primary btn" aria-label="Add new record"><i
-                                class="fas fa-plus"></i></button>
                         <button class="va-icon-btn va-btn-success btn" aria-label="Export to Excel"><i
                                 class="fas fa-file-arrow-down"></i></button>
                         <button class="va-icon-btn va-btn-info btn" aria-label="Refresh data"><i
