@@ -62723,9 +62723,29 @@ a.va-btn-primary:hover {
         max-width: 100% !important;
     }
 
-    /* ---- Feed card header ---------------------------------------- */
+    /* ---- Feed card shell -----------------------------------------
+       The shared .card-body rule forces padding:24px !important on every
+       doctor tab panel, which drew a white gutter around the whole feed
+       (and hid the row backgrounds behind it). Neutralise it here only. */
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .section-body > .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        --bs-gutter-x: 0;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .section-body > .row > .col-12 {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
     #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card {
         border-radius: 14px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card > .card-body {
+        padding: 0 !important;
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card > .card-header {
@@ -62854,7 +62874,11 @@ a.va-btn-primary:hover {
             "ctrl ctrl" !important;
         align-items: start !important;
         gap: 0 10px !important;
-        padding: 12px 12px 10px 14px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        padding: 14px !important;
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .unread-strip {
@@ -62944,14 +62968,6 @@ a.va-btn-primary:hover {
         border-top: 1px solid #F1F5F9 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action {
-        width: 34px !important;
-        min-width: 34px !important;
-        max-width: 34px !important;
-        height: 34px !important;
-        font-size: 13px !important;
-    }
-
     /* ---- Empty state --------------------------------------------- */
     #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .dior-empty-state {
         padding: 32px 16px !important;
@@ -63021,19 +63037,67 @@ a.va-btn-primary:hover {
     color: inherit !important;
 }
 
-#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .btn-icon-action:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .btn-icon-action:focus,
-#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .btn-icon-action:focus-visible {
-    background: #F1F5F9 !important;
-    background-color: #F1F5F9 !important;
+/* Row action buttons: identical to the Feedback & Reviews row actions —
+   34x34 white box, 1px #cbdbea border, 8px radius, 14px icon. */
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action {
+    width: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 1px solid #cbdbea !important;
+    border-radius: 8px !important;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
     background-image: none !important;
-    border-color: #CBD5E1 !important;
+    color: #2b70b8 !important;
     box-shadow: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    font-size: 14px !important;
 }
 
-#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .btn-icon-action.text-danger,
-#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .btn-icon-action.text-danger:hover {
-    color: #DC2626 !important;
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action i {
+    font-size: 14px !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action:focus-visible,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action:active {
+    background: #f4f9fd !important;
+    background-color: #f4f9fd !important;
+    background-image: none !important;
+    border-color: #2b70b8 !important;
+    color: #1a528e !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Delete action: red icon on the same white box, exactly like the
+   Feedback & Reviews delete button. */
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger i {
+    color: #ef4444 !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger:focus-visible,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .btn-icon-action.text-danger:active {
+    background: #fef2f2 !important;
+    background-color: #fef2f2 !important;
+    border-color: #ef4444 !important;
+    color: #dc2626 !important;
 }
 
 #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .btn-inline-action:hover,
