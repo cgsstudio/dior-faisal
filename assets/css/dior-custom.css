@@ -65276,11 +65276,25 @@ a.va-btn-primary:hover {
     outline: none !important;
 }
 
-/* the chevrons keep the same 18px box as every other nav icon */
-.dior-patient-portal-wrap .dior-patient-collapse-btn .collapse-icon {
+/* 8px = the nav rows' 10px gap minus the 2px the chevron box gained, so the
+   "Collapse Menu" label stays on the same text column as the tabs. */
+.dior-patient-portal-wrap .dior-side-nav .dior-patient-collapse-btn {
+    gap: 8px !important;
+}
+
+/* The chevrons use the Doctor Dashboard's icon box: a fixed 20px, flex
+   centred box. The previous 18px box was clamped further to 1em by the
+   generic `.dior-patient-portal-wrap i { max-width: 1em }` rule, so the
+   arrow rendered in a 16px box and looked smaller than the doctor's. */
+.dior-patient-portal-wrap .dior-side-nav .dior-patient-collapse-btn .collapse-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     flex: 0 0 auto !important;
-    width: 18px !important;
-    min-width: 18px !important;
+    width: 20px !important;
+    min-width: 20px !important;
+    max-width: 20px !important;
+    height: auto !important;
     text-align: center !important;
     font-size: 16px !important;
     line-height: 1 !important;
@@ -65296,7 +65310,7 @@ a.va-btn-primary:hover {
 
 @media (min-width: 1025px) {
 
-    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-patient-collapse-btn {
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-nav .dior-patient-collapse-btn {
         justify-content: center !important;
         gap: 0 !important;
         margin-top: 10px !important;
@@ -65305,9 +65319,11 @@ a.va-btn-primary:hover {
         text-align: center !important;
     }
 
-    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-patient-collapse-btn .collapse-icon {
+    .dior-patient-portal-wrap.dior-sidebar-collapsed .dior-side-nav .dior-patient-collapse-btn .collapse-icon {
         width: 24px !important;
         min-width: 24px !important;
+        max-width: 24px !important;
+        height: auto !important;
         font-size: 18px !important;
     }
 }
