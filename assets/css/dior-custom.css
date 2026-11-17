@@ -65954,8 +65954,12 @@ a.va-btn-primary:hover {
     display: flex !important;
     flex-wrap: nowrap !important;
     align-items: center !important;
+    justify-content: flex-end !important;
     gap: 8px !important;
-    margin: 0 !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 0 0 auto !important;
     padding: 0 !important;
 }
 
@@ -67174,9 +67178,10 @@ a.va-btn-primary:hover {
     #dior-patient-portal-app#dior-patient-portal-app #tab-payments .docs-actions-wrapper,
     #dior-patient-portal-app#dior-patient-portal-app #tab-documents .docs-actions-wrapper {
         display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        justify-content: flex-start !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
         gap: 10px !important;
         width: 100% !important;
         margin: 0 !important;
@@ -67186,10 +67191,11 @@ a.va-btn-primary:hover {
     #dior-patient-portal-app#dior-patient-portal-app #tab-payments .dior-bs-search-group,
     #dior-patient-portal-app#dior-patient-portal-app #tab-documents .dior-bs-search-group {
         position: relative !important;
-        width: 100% !important;
+        flex: 1 1 140px !important;
+        width: auto !important;
+        min-width: 0 !important;
         max-width: 100% !important;
         margin: 0 !important;
-        flex: 1 1 auto !important;
     }
 
     #dior-patient-portal-app#dior-patient-portal-app #tab-payments .dior-bs-search-group .form-control,
@@ -67209,12 +67215,13 @@ a.va-btn-primary:hover {
     #dior-patient-portal-app#dior-patient-portal-app #tab-payments .docs-actions-group,
     #dior-patient-portal-app#dior-patient-portal-app #tab-documents .docs-actions-group {
         display: flex !important;
-        flex-wrap: wrap !important;
+        flex-wrap: nowrap !important;
         align-items: center !important;
-        justify-content: flex-start !important;
+        justify-content: flex-end !important;
         gap: 8px !important;
-        width: 100% !important;
-        margin: 0 !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        margin: 0 0 0 auto !important;
         padding: 0 !important;
     }
 
@@ -67301,8 +67308,10 @@ a.va-btn-primary:hover {
 
     #dior-patient-portal-app#dior-patient-portal-app #tab-insurance .header-actions-group {
         display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
         gap: 10px !important;
         width: 100% !important;
         margin: 0 !important;
@@ -67310,7 +67319,9 @@ a.va-btn-primary:hover {
     }
 
     #dior-patient-portal-app#dior-patient-portal-app #tab-insurance .header-actions-group .dior-bs-search-group {
-        width: 100% !important;
+        flex: 1 1 140px !important;
+        width: auto !important;
+        min-width: 0 !important;
         max-width: 100% !important;
         margin: 0 !important;
     }
@@ -67330,12 +67341,13 @@ a.va-btn-primary:hover {
 
     #dior-patient-portal-app#dior-patient-portal-app #tab-insurance .header-actions-group .action-buttons {
         display: flex !important;
-        flex-wrap: wrap !important;
+        flex-wrap: nowrap !important;
         align-items: center !important;
-        justify-content: flex-start !important;
+        justify-content: flex-end !important;
         gap: 8px !important;
-        width: 100% !important;
-        margin: 0 !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
+        margin: 0 0 0 auto !important;
         padding: 0 !important;
     }
 
