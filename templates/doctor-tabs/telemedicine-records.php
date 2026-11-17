@@ -131,39 +131,39 @@ if (!is_array($all_patients)) {
                                 <td class="text-center">
                                     <input type="checkbox" class="docs-checkbox form-check-input row-tele-chk">
                                 </td>
-                                <td>
+                                <td data-label="Visit ID">
                                     <span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small fw-semibold">
                                         <?php echo esc_html($vr['tele_uid']); ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="Patient">
                                     <span class="docs-user-name fw-bold text-dark">
                                         <?php echo esc_html(trim(($vr['first_name'] ?? '') . ' ' . ($vr['last_name'] ?? '')) ?: (get_userdata((int) $vr['patient_id'])->display_name ?? 'Patient #' . $vr['patient_id'])); ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="Doctor">
                                     <span class="text-secondary small fw-semibold">
                                         <?php echo esc_html($vr['doctor_name'] ?: 'Doctor'); ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="Visit Date">
                                     <span class="text-dark small">
                                         <i class="far fa-calendar me-1 text-primary"></i>
                                         <?php echo esc_html(!empty($vr['appt_date']) ? date_i18n('M j, Y', strtotime($vr['appt_date'])) : date_i18n('M j, Y', strtotime($vr['created_at']))); ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="Duration">
                                     <span class="badge bg-light text-dark border px-2 py-1 small">
                                         <?php echo !empty($vr['duration']) ? esc_html($vr['duration']) . ' min' : '30 min'; ?>
                                     </span>
                                 </td>
-                                <td style="max-width: 250px;">
+                                <td data-label="Diagnosis" style="max-width: 250px;">
                                     <span class="text-secondary small text-truncate d-inline-block" style="max-width: 240px;"
                                         title="<?php echo esc_attr($vr['notes'] ?: $vr['status']); ?>">
                                         <?php echo esc_html($vr['notes'] ?: $vr['status']); ?>
                                     </span>
                                 </td>
-                                <td>
+                                <td data-label="Status &amp; Actions">
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="badge <?php echo esc_attr($status_class); ?> rounded-pill px-2 py-1 small">
                                             <?php echo esc_html($vr['status']); ?>
@@ -371,38 +371,38 @@ if (!is_array($all_patients)) {
                     <td class="text-center">
                         <input type="checkbox" class="docs-checkbox form-check-input row-tele-chk">
                     </td>
-                    <td>
+                    <td data-label="Visit ID">
                         <span class="badge bg-light text-secondary border rounded-pill px-2 py-1 small fw-semibold">
                             ${rec.tele_uid}
                         </span>
                     </td>
-                    <td>
+                    <td data-label="Patient">
                         <span class="docs-user-name fw-bold text-dark">
                             ${rec.patient_name}
                         </span>
                     </td>
-                    <td>
+                    <td data-label="Doctor">
                         <span class="text-secondary small fw-semibold">
                             ${rec.doctor_name}
                         </span>
                     </td>
-                    <td>
+                    <td data-label="Visit Date">
                         <span class="text-dark small">
                             <i class="far fa-calendar me-1 text-primary"></i>
                             ${rec.visit_date}
                         </span>
                     </td>
-                    <td>
+                    <td data-label="Duration">
                         <span class="badge bg-light text-dark border px-2 py-1 small">
                             ${rec.duration}
                         </span>
                     </td>
-                    <td style="max-width: 250px;">
+                    <td data-label="Diagnosis" style="max-width: 250px;">
                         <span class="text-secondary small text-truncate d-inline-block" style="max-width: 240px;" title="${rec.diagnosis}">
                             ${rec.diagnosis}
                         </span>
                     </td>
-                    <td>
+                    <td data-label="Status &amp; Actions">
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge ${statusClass} rounded-pill px-2 py-1 small">
                                 ${rec.status}
