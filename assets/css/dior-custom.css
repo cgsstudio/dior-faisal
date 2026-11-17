@@ -61694,29 +61694,45 @@ a.va-btn-primary:hover {
     color: #FFFFFF !important;
 }
 
-/* ---------- Row action buttons in the tables -------------------- */
+/* ---------- Row action buttons: canonical 34x34 white box ---------- */
 #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 1px solid #cbdbea !important;
+    border-radius: 8px !important;
     background: #FFFFFF !important;
     background-color: #FFFFFF !important;
-    border: 1px solid #CBD5E1 !important;
-    color: #1A528E !important;
+    background-image: none !important;
+    color: #2b70b8 !important;
     box-shadow: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm:hover,
 #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm:focus,
 #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm:focus-visible,
 #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm:active {
-    background: #E8F0FA !important;
-    background-color: #E8F0FA !important;
-    border-color: #1A528E !important;
-    color: #1A528E !important;
+    background: #f4f9fd !important;
+    background-color: #f4f9fd !important;
+    background-image: none !important;
+    border-color: #2b70b8 !important;
+    color: #1a528e !important;
     box-shadow: none !important;
+    transform: none !important;
 }
 
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm i,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm:hover i {
-    color: #1A528E !important;
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm i {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    color: inherit !important;
 }
 
 /* ---------- Sub-tab pills (Video Consultation / Records) -------- */
@@ -62064,16 +62080,6 @@ a.va-btn-primary:hover {
         border-bottom: 0 !important;
     }
 
-    /* Comfortable tap target for the row action on touch screens. */
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .btn-outline-danger {
-        min-width: 34px !important;
-        height: 34px !important;
-        padding: 0 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .badge {
         display: inline-flex !important;
     }
@@ -62131,9 +62137,9 @@ a.va-btn-primary:hover {
    Virtual Visit Records — button state lock
 
    Same defect as the Video Consultation tab: the theme repaints some
-   button hovers with magenta (#CC3366). The delete action uses
-   .btn-outline-danger, which this plugin does not style, so it is
-   pinned here together with the header icons, pills and breadcrumbs.
+   button hovers with magenta (#CC3366). The header icons, row action,
+   pills, breadcrumbs and checkboxes are pinned to the Dior palette so
+   they match the rest of the Doctor Dashboard.
    ================================================================== */
 #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-icon-btn,
 #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-icon-btn:focus,
@@ -62159,28 +62165,60 @@ a.va-btn-primary:hover {
     color: #FFFFFF !important;
 }
 
-/* Delete row action — stays red, never magenta. */
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .btn-outline-danger {
-    background-color: transparent !important;
+/* Row action — same 34x34 white box + red delete icon as every other
+   Doctor Dashboard table (Documents, Pharmacy, Prescriptions). */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 1px solid #cbdbea !important;
+    border-radius: 8px !important;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
     background-image: none !important;
-    border: 0 !important;
-    color: #DC2626 !important;
+    color: #2b70b8 !important;
     box-shadow: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
 }
 
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .btn-outline-danger:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .btn-outline-danger:focus,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .btn-outline-danger:focus-visible,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .btn-outline-danger:active {
-    background-color: #FEE2E2 !important;
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm:focus-visible,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm:active {
+    background: #f4f9fd !important;
+    background-color: #f4f9fd !important;
     background-image: none !important;
-    border: 0 !important;
-    color: #B91C1C !important;
+    border-color: #2b70b8 !important;
+    color: #1a528e !important;
     box-shadow: none !important;
+    transform: none !important;
 }
 
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .btn-outline-danger i,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-table tbody td .btn-outline-danger:hover i {
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm.docs-btn-delete {
+    color: #ef4444 !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm.docs-btn-delete:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm.docs-btn-delete:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm.docs-btn-delete:focus-visible,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm.docs-btn-delete:active {
+    background: #fef2f2 !important;
+    background-color: #fef2f2 !important;
+    border-color: #ef4444 !important;
+    color: #dc2626 !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm i {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
     color: inherit !important;
 }
 

@@ -279,7 +279,7 @@ $first_pid = !empty($all_patients) ? (int)$all_patients[0]['user_id'] : 0;
                             <td data-label="Actions">
                                 <div class="docs-row-actions d-flex gap-1">
                                     <button type="button" class="docs-action-btn-sm docs-btn-primary btn" title="Review Patient Chart" onclick="diorLoadTelemedicinePatient(<?php echo (int)$vc->patient_id; ?>)">
-                                        <i class="fas fa-chart-user"></i>
+                                        <i class="fas fa-eye"></i>
                                     </button>
                                     <button type="button" class="docs-action-btn-sm docs-btn-success btn" title="Join Video Call" onclick="diorStartVirtualVisit(<?php echo (int)$vc->patient_id; ?>)">
                                         <i class="fas fa-video"></i>

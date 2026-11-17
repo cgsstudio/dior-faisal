@@ -170,11 +170,13 @@ if (!is_array($all_patients)) {
                                     </span>
                                 </td>
                                 <td data-label="Action">
-                                    <button type="button" class="btn btn-sm btn-outline-danger border-0 p-1"
-                                        title="Delete Record"
-                                        onclick="diorDeleteTelemedRecord('<?php echo esc_js($vr['tele_uid']); ?>', this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <div class="docs-row-actions">
+                                        <button type="button" class="docs-action-btn-sm docs-btn-delete btn"
+                                            title="Delete Record"
+                                            onclick="diorDeleteTelemedRecord('<?php echo esc_js($vr['tele_uid']); ?>', this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; else: ?>
@@ -409,9 +411,11 @@ if (!is_array($all_patients)) {
                         </span>
                     </td>
                     <td data-label="Action">
-                        <button type="button" class="btn btn-sm btn-outline-danger border-0 p-1" title="Delete Record" onclick="diorDeleteTelemedRecord('${rec.tele_uid}', this)">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <div class="docs-row-actions">
+                            <button type="button" class="docs-action-btn-sm docs-btn-delete btn" title="Delete Record" onclick="diorDeleteTelemedRecord('${rec.tele_uid}', this)">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 `;
 
