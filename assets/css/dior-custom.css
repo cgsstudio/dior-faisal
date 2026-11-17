@@ -63373,3 +63373,307 @@ a.va-btn-primary:hover {
 #dior-doctor-app #dior-doc-content #tab-doc-notifications-system .timestamp-tag {
     color: var(--dior-color-text-muted) !important;
 }
+
+/* ==================================================================
+   Doctor Dashboard → Settings & Profile — tablet / mobile responsive
+   Desktop (>991.98px) is untouched: every rule below lives in a
+   max-width query, except the avatar size lock which simply restores
+   the markup's own 76px against the legacy 150px/120px !-rules.
+   ================================================================== */
+
+/* Keep the panel from ever forcing horizontal scroll. */
+#dior-doctor-app #dior-doc-content #tab-doc-settings {
+    min-width: 0 !important;
+    overflow-x: clip !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-settings .row>[class*="col"] {
+    min-width: 0 !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-settings .card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+
+/* The legacy tablet/mobile rules blow the avatar up to 150px/120px;
+   restore the markup's own 76px so the circle never overlaps text. */
+#dior-doctor-app #dior-doc-content #tab-doc-settings #dior-doctor-avatar-display-img {
+    width: 76px !important;
+    height: 76px !important;
+    max-width: 76px !important;
+    object-fit: cover !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-identity {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-identity>div:last-child,
+#dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-meta>span {
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+}
+
+/* ---------------- Tablet: ≤ 991.98px ---------------- */
+@media (max-width: 991.98px) {
+
+    /* Sidebar settings buttons become a compact 2-up grid instead of a
+       tall single column pushing the form below the fold. */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings [role="tablist"] {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-nav-btn {
+        padding: 10px 12px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-banner {
+        align-items: flex-start !important;
+    }
+}
+
+/* ---------------- Mobile: ≤ 767.98px ---------------- */
+@media (max-width: 767.98px) {
+
+    /* --- page heading --- */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings>.row:first-child {
+        margin-bottom: 16px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings>.row:first-child .h6 {
+        font-size: 17px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .breadcrumb {
+        font-size: 11.5px !important;
+        flex-wrap: wrap !important;
+        row-gap: 2px !important;
+    }
+
+    /* --- profile banner --- */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-banner {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 14px !important;
+        padding: 16px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-identity {
+        align-items: flex-start !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings #dior-doctor-avatar-display-img {
+        width: 68px !important;
+        height: 68px !important;
+        max-width: 68px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-doc-profile-display-name {
+        font-size: 15.5px !important;
+        line-height: 1.35 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-badges {
+        gap: 6px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-badges .badge {
+        font-size: 10.5px !important;
+        padding: 3px 9px !important;
+    }
+
+    /* NPI / License / Email: one per line, the • separators hidden */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-meta {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+        font-size: 12px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-meta>span:nth-child(even) {
+        display: none !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-actions {
+        width: 100% !important;
+        gap: 8px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-actions .btn {
+        flex: 1 1 140px !important;
+        font-size: 12.5px !important;
+        padding: 8px 12px !important;
+    }
+
+    /* --- settings nav --- */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-nav-btn {
+        padding: 10px 12px !important;
+        font-size: 13px !important;
+        gap: 10px !important;
+        line-height: 1.3 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-nav-btn i {
+        font-size: 16px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-nav-btn small {
+        font-size: 11px !important;
+    }
+
+    /* --- form panes --- */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-pane {
+        padding: 16px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-pane>div:first-child.d-flex {
+        padding-bottom: 10px !important;
+        margin-bottom: 14px !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-pane .fs-6 {
+        font-size: 14.5px !important;
+        line-height: 1.35 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-pane .text-secondary.small {
+        font-size: 12.5px !important;
+        line-height: 1.5 !important;
+    }
+
+    /* 16px keeps iOS from zooming into a focused field. */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .form-control,
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .form-select {
+        font-size: 16px !important;
+        min-height: 44px !important;
+        padding: 9px 12px !important;
+        border-radius: 10px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings textarea.form-control {
+        min-height: 110px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .form-label {
+        font-size: 11px !important;
+        letter-spacing: .2px !important;
+        margin-bottom: 4px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .input-group-text {
+        padding: 0 12px !important;
+        font-size: 15px !important;
+        border-radius: 10px 0 0 10px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .input-group>.form-control {
+        border-radius: 0 10px 10px 0 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .form-check-input {
+        flex-shrink: 0 !important;
+    }
+
+    /* --- save actions --- */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-pane .justify-content-end,
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-pane .justify-content-start {
+        width: 100% !important;
+        margin-top: 16px !important;
+        padding-top: 12px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-pane .justify-content-end>.btn,
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-pane .justify-content-start>.btn {
+        width: 100% !important;
+        font-size: 13px !important;
+        padding: 10px 16px !important;
+    }
+
+    /* --- alert preference rows --- */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings #doc-tab-alerts .d-flex.flex-column.gap-3>.border {
+        padding: 12px 14px !important;
+        gap: 10px !important;
+        align-items: flex-start !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings #doc-tab-alerts .d-flex.flex-column.gap-3>.border>div:first-child {
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings #doc-tab-alerts p.small {
+        font-size: 12.5px !important;
+        line-height: 1.45 !important;
+    }
+
+    /* --- practice auto-confirm switch row --- */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings #doc-tab-practice .form-check.form-switch.p-3 {
+        padding: 12px 14px !important;
+        gap: 10px !important;
+        align-items: flex-start !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings #doc-tab-practice .form-check-label {
+        font-size: 13px !important;
+    }
+
+    /* --- security guidance card keeps natural height when stacked --- */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings #doc-tab-security .h-100 {
+        height: auto !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings #doc-tab-security .list-unstyled li {
+        font-size: 12.5px !important;
+        line-height: 1.45 !important;
+    }
+
+    /* --- Google Meet status card --- */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings #doc-tab-google-meet>.d-flex {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings #doc-tab-google-meet .alert {
+        padding: 12px 14px !important;
+        font-size: 12.5px !important;
+        line-height: 1.5 !important;
+        overflow-wrap: anywhere !important;
+    }
+}
+
+/* ---------------- Small phones: ≤ 575.98px ---------------- */
+@media (max-width: 575.98px) {
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings [role="tablist"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-identity {
+        gap: 10px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-actions .btn {
+        flex: 1 1 100% !important;
+    }
+}
+
+/* ---------------- ≤ 420px ---------------- */
+@media (max-width: 420px) {
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-pane {
+        padding: 14px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-banner {
+        padding: 14px !important;
+    }
+}

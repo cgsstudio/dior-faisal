@@ -38,8 +38,8 @@ $doc_avatar = !empty($doctor['avatar_url']) ? $doctor['avatar_url'] : ('https://
     <!-- Top Profile Banner Card (100% Native Bootstrap 5) -->
     <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden bg-white">
         <div
-            class="p-3 p-md-4 bg-light border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div class="d-flex align-items-center gap-3">
+            class="p-3 p-md-4 bg-light border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3 dior-profile-banner">
+            <div class="d-flex align-items-center gap-3 dior-profile-identity">
                 <div class="position-relative flex-shrink-0">
                     <img id="dior-doctor-avatar-display-img" src="<?php echo esc_url($doc_avatar); ?>" width="76"
                         height="76"
@@ -54,7 +54,7 @@ $doc_avatar = !empty($doctor['avatar_url']) ? $doctor['avatar_url'] : ('https://
                     </button>
                 </div>
                 <div>
-                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1 dior-profile-badges">
                         <div class="fs-6 fw-bold text-dark mb-0 dior-doc-profile-display-name">
                             <?php echo esc_html($doctor['full_name'] ?? 'Dr. Provider'); ?>
                         </div>
@@ -67,7 +67,7 @@ $doc_avatar = !empty($doctor['avatar_url']) ? $doctor['avatar_url'] : ('https://
                             <i class="fas fa-certificate me-1"></i> Verified Practitioner
                         </span>
                     </div>
-                    <div class="d-flex flex-wrap align-items-center gap-3 text-secondary small">
+                    <div class="d-flex flex-wrap align-items-center gap-3 text-secondary small dior-profile-meta">
                         <span><i class="fas fa-id-card text-primary me-1"></i> NPI:
                             <?php echo esc_html($doctor['npi'] ?: 'Not Assigned'); ?></span>
                         <span>&bull;</span>
@@ -81,7 +81,7 @@ $doc_avatar = !empty($doctor['avatar_url']) ? $doctor['avatar_url'] : ('https://
             </div>
 
             <!-- Avatar Actions -->
-            <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex flex-wrap gap-2 dior-profile-actions">
                 <button type="button" class="btn btn-primary rounded-3 fw-semibold py-2 px-3 shadow-sm"
                     onclick="diorTriggerDoctorAvatarUpload()">
                     <i class="fas fa-cloud-arrow-up me-1"></i> Upload Photo
