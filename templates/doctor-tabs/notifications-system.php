@@ -178,7 +178,7 @@ foreach ($doctor_notif_rows as $row) {
                                 <span class="stat-label">System Health</span>
                                 <h3 class="stat-value text-emerald mt-1 mb-0">100%</h3>
                             </div>
-                            <div class="stat-icon-wrapper"><i class="fas fa-shield-check"></i></div>
+                            <div class="stat-icon-wrapper"><i class="fas fa-shield-halved"></i></div>
                         </div>
                         <div class="stat-footer d-flex align-items-center"
                             style="display: flex; align-items: center; margin-top: auto; padding-top: 12px;">
