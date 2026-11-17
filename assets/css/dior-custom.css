@@ -63128,3 +63128,68 @@ a.va-btn-primary:hover {
     background-image: none !important;
     color: #1A528E !important;
 }
+
+/* ==================================================================
+   Doctor Dashboard → Notifications — pagination (10 per page)
+
+   The list is paginated in the page's own script; these rules provide
+   the hide state and fit the shared .dior-table-pagination bar into the
+   feed card at every width.
+   ================================================================== */
+
+/* Pagination hide state. The row itself is display:flex !important in
+   dior-notifications.css, so the hidden state needs a class rather than
+   an inline style, and enough weight to win. */
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row.dior-notif-page-hidden {
+    display: none !important;
+}
+
+/* The row above already carries the 1px divider, so the bar needs no
+   border of its own (two borders would read as a 2px rule). */
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system #dior-sys-notif-pagination {
+    background: #FFFFFF !important;
+    border-top: none !important;
+}
+
+@media (max-width: 991.98px) {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system #dior-sys-notif-pagination {
+        padding: 12px 14px !important;
+        gap: 10px !important;
+        justify-content: space-between !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system #dior-sys-notif-pagination .dior-pagination-info {
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system #dior-sys-notif-pagination .dior-pagination-nav {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system #dior-sys-notif-pagination .dior-page-btn {
+        min-width: 32px !important;
+        height: 32px !important;
+        padding: 0 8px !important;
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 420px) {
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system #dior-sys-notif-pagination {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system #dior-sys-notif-pagination .dior-pagination-info {
+        text-align: center !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-notifications-system #dior-sys-notif-pagination .dior-pagination-nav {
+        justify-content: center !important;
+    }
+}
