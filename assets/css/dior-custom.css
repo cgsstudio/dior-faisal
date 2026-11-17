@@ -62199,20 +62199,6 @@ a.va-btn-primary:hover {
     transform: none !important;
 }
 
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm.docs-btn-delete {
-    color: #ef4444 !important;
-}
-
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm.docs-btn-delete:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm.docs-btn-delete:focus,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm.docs-btn-delete:focus-visible,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm.docs-btn-delete:active {
-    background: #fef2f2 !important;
-    background-color: #fef2f2 !important;
-    border-color: #ef4444 !important;
-    color: #dc2626 !important;
-}
-
 #dior-doctor-app #dior-doc-content #tab-doc-telemed-records .docs-row-actions .docs-action-btn-sm i {
     display: inline-flex !important;
     align-items: center !important;

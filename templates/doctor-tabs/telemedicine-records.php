@@ -171,7 +171,7 @@ if (!is_array($all_patients)) {
                                 </td>
                                 <td data-label="Action">
                                     <div class="docs-row-actions">
-                                        <button type="button" class="docs-action-btn-sm docs-btn-delete btn"
+                                        <button type="button" class="docs-action-btn-sm btn"
                                             title="Delete Record"
                                             onclick="diorDeleteTelemedRecord('<?php echo esc_js($vr['tele_uid']); ?>', this)">
                                             <i class="fas fa-trash"></i>
@@ -412,7 +412,7 @@ if (!is_array($all_patients)) {
                     </td>
                     <td data-label="Action">
                         <div class="docs-row-actions">
-                            <button type="button" class="docs-action-btn-sm docs-btn-delete btn" title="Delete Record" onclick="diorDeleteTelemedRecord('${rec.tele_uid}', this)">
+                            <button type="button" class="docs-action-btn-sm btn" title="Delete Record" onclick="diorDeleteTelemedRecord('${rec.tele_uid}', this)">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
