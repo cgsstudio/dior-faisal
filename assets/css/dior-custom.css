@@ -63685,3 +63685,300 @@ a.va-btn-primary:hover {
         padding: 14px !important;
     }
 }
+
+/* ==================================================================
+   Patient Dashboard → Appointments — Doctor-registry look on
+   mobile / tablet ONLY. Every rule lives inside a max-width query,
+   so the desktop layout is untouched.
+   ================================================================== */
+@media (max-width: 991.98px) {
+
+    /* ---------- page title + subtab pills ---------- */
+    .dior-patient-portal-wrap #tab-appointments #dior-appt-main-title {
+        font-size: 17px !important;
+        line-height: 1.3 !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .dior-subtab-nav-bar {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        gap: 8px !important;
+        padding-bottom: 10px !important;
+        margin-bottom: 16px !important;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .dior-subtab-nav-bar::-webkit-scrollbar {
+        height: 0;
+        display: none;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .dior-subtab-pill {
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+        font-size: 12px !important;
+        padding: 7px 12px !important;
+    }
+
+    /* ---------- registry card + header ---------- */
+    .dior-patient-portal-wrap #tab-appointments .docs-card {
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 14px !important;
+        overflow: hidden !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .docs-header-container {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding: 14px !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .docs-title-box {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .docs-title-box h2,
+    .dior-patient-portal-wrap #tab-appointments .docs-title-box .table-title {
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        line-height: 1.3 !important;
+        color: #0F172A !important;
+        white-space: normal !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .docs-title-line {
+        width: 32px !important;
+        height: 3px !important;
+        background: #1A528E !important;
+        border-radius: 2px !important;
+        margin-top: 6px !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .docs-actions-wrapper {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .docs-actions-wrapper .input-group {
+        width: 100% !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .docs-actions-group {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+
+    /* toolbar buttons: the doctor registry's blue icon chips instead of
+       the solid red / green / blue blocks */
+    .dior-patient-portal-wrap #tab-appointments .docs-actions-group .btn {
+        width: 38px !important;
+        min-width: 38px !important;
+        max-width: 38px !important;
+        height: 38px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: 10px !important;
+        border: 1px solid #cbdbea !important;
+        background: #FFFFFF !important;
+        color: #2b70b8 !important;
+        box-shadow: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .docs-actions-group .btn i {
+        color: inherit !important;
+        font-size: 14px !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .docs-actions-group .btn:hover,
+    .dior-patient-portal-wrap #tab-appointments .docs-actions-group .btn:focus {
+        background: #f4f9fd !important;
+        border-color: #2b70b8 !important;
+        color: #1a528e !important;
+    }
+
+    /* row actions: one blue accent, disabled stays muted */
+    .dior-patient-portal-wrap #tab-appointments .cell-actions {
+        gap: 6px !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .cell-actions .action-icon-btn {
+        color: #2b70b8 !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .cell-actions .action-icon-btn i {
+        color: inherit !important;
+        font-size: 14px !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .cell-actions .action-icon-btn:disabled i {
+        color: #94A3B8 !important;
+    }
+
+    /* ---------- status: pill badges, not coloured text ---------- */
+    .dior-patient-portal-wrap #tab-appointments .status-cell-text {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        padding: 4px 10px !important;
+        border-radius: 20px !important;
+        border: 1px solid transparent !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        line-height: 1 !important;
+        white-space: nowrap !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .status-cell-text.status-confirm,
+    .dior-patient-portal-wrap #tab-appointments .status-cell-text.status-upcoming {
+        background: #F0F6FC !important;
+        border-color: #D9E6F5 !important;
+        color: #1A528E !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .status-cell-text.status-pending {
+        background: #FFFBEB !important;
+        border-color: #F5E2BC !important;
+        color: #D97706 !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .status-cell-text.status-cancelled {
+        background: #FEF2F2 !important;
+        border-color: #F6CFCF !important;
+        color: #DC2626 !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .status-cell-text.status-completed {
+        background: #ECFDF5 !important;
+        border-color: #C8EBDC !important;
+        color: #059669 !important;
+    }
+
+    /* ---------- calendar KPI tiles ---------- */
+    .dior-patient-portal-wrap #tab-appointments #dior-subtab-calendar [style*="rgba(79, 70, 229, 0.1)"],
+    .dior-patient-portal-wrap #tab-appointments #dior-subtab-calendar [style*="rgba(14, 165, 233, 0.1)"],
+    .dior-patient-portal-wrap #tab-appointments #dior-subtab-calendar [style*="rgba(16, 185, 129, 0.1)"],
+    .dior-patient-portal-wrap #tab-appointments #dior-subtab-calendar [style*="rgba(100, 116, 139, 0.1)"] {
+        width: 48px !important;
+        height: 48px !important;
+        background: #F0F6FC !important;
+        color: #1A528E !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 10px !important;
+        font-size: 20px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments #dior-subtab-calendar h3 {
+        color: #00346C !important;
+        font-size: 24px !important;
+        line-height: 1.2 !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments #dior-subtab-calendar .card-header {
+        padding: 12px !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments #dior-subtab-calendar .card-body {
+        padding: 12px !important;
+    }
+}
+
+/* ---------- phones ---------- */
+@media (max-width: 767.98px) {
+
+    /* book pane banner: the dark gold gradient becomes a normal card */
+    .dior-patient-portal-wrap #tab-appointments .dior-booking-banner-card {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding: 14px !important;
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, .04) !important;
+        margin-bottom: 14px !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .dior-booking-banner-card>div:first-child {
+        gap: 12px !important;
+        align-items: flex-start !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .dior-booking-banner-card [style*="rgba(212, 175, 55, 0.15)"] {
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 10px !important;
+        background: #F0F6FC !important;
+        border: 1px solid #D9E6F5 !important;
+        color: #1A528E !important;
+        font-size: 18px !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .dior-booking-banner-card [style*="rgba(212, 175, 55, 0.2)"],
+    .dior-patient-portal-wrap #tab-appointments .dior-booking-banner-card [style*="rgba(16, 185, 129, 0.2)"] {
+        background: #F0F6FC !important;
+        color: #1A528E !important;
+        border: 1px solid #D9E6F5 !important;
+        border-radius: 6px !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .dior-booking-banner-card h4 {
+        color: #0F172A !important;
+        font-size: 15px !important;
+        line-height: 1.35 !important;
+        margin: 6px 0 4px !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .dior-booking-banner-card p {
+        color: #64748B !important;
+        font-size: 12.5px !important;
+        line-height: 1.5 !important;
+    }
+
+    .dior-patient-portal-wrap #tab-appointments .dior-booking-banner-card .dior-btn-gold-primary {
+        width: 100% !important;
+        justify-content: center !important;
+        background: #1A528E !important;
+        color: #FFFFFF !important;
+        border: 1px solid #1A528E !important;
+        border-radius: 10px !important;
+        font-size: 13px !important;
+        padding: 11px 16px !important;
+        box-shadow: none !important;
+    }
+
+    /* search fields: comfortable touch targets */
+    .dior-patient-portal-wrap #tab-appointments .docs-actions-wrapper .form-control,
+    .dior-patient-portal-wrap #tab-appointments .docs-actions-wrapper .input-group-text {
+        font-size: 15px !important;
+        min-height: 42px !important;
+    }
+
+    /* stacked appointment cards: doctor-style surface + spacing */
+    .dior-patient-portal-wrap #tab-appointments .docs-table-wrapper {
+        padding: 0 10px 10px !important;
+    }
+}
+
+@media (max-width: 420px) {
+
+    .dior-patient-portal-wrap #tab-appointments .docs-actions-group .btn {
+        width: 36px !important;
+        min-width: 36px !important;
+        max-width: 36px !important;
+        height: 36px !important;
+    }
+}
