@@ -61040,46 +61040,6 @@ a.va-btn-primary:hover {
     border-bottom: 0 !important;
 }
 
-/* ---------- Banner action colours (desktop + mobile) --------------
-   The "Refresh Data" button inherited a theme fill of #CC3366
-   (magenta) which clashes with the navy/white dashboard palette.
-   Pin both banner actions to the dashboard colours so no theme or
-   plugin rule can repaint them.
-   ----------------------------------------------------------------- */
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-primary {
-    background-color: #FFFFFF !important;
-    background-image: none !important;
-    border: 1px solid #1A528E !important;
-    color: #1A528E !important;
-    box-shadow: none !important;
-}
-
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-primary:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-primary:focus-visible {
-    background-color: #1A528E !important;
-    border-color: #1A528E !important;
-    color: #FFFFFF !important;
-}
-
-/* Secondary/utility action: neutral ghost instead of a filled colour. */
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:focus,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:active,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:focus-visible {
-    background-color: #FFFFFF !important;
-    background-image: none !important;
-    border: 1px solid #CBD5E1 !important;
-    color: #475569 !important;
-    box-shadow: none !important;
-}
-
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:focus-visible {
-    background-color: #F1F5F9 !important;
-    border-color: #94A3B8 !important;
-    color: #1E293B !important;
-}
 
 /* ==================================================================
    Tablet + mobile (<= 991.98px) — matches the Documents pattern
@@ -61611,4 +61571,208 @@ a.va-btn-primary:hover {
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-action-row {
         grid-template-columns: minmax(0, 1fr) !important;
     }
+}
+
+/* ==================================================================
+   Virtual Visit & Telehealth Consultation — button hover/focus lock
+
+   The active theme repaints button hover states with a magenta fill
+   (#CC3366) that is not part of this plugin's palette. Every button
+   family used on this page is pinned below so hover, focus, active
+   and disabled states stay in the navy / white / slate palette.
+
+   Scoped to #tab-doc-telemed-video — no other page is affected.
+   ================================================================== */
+
+/* ---------- Solid primary (Add Patient) -------------------------- */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-primary {
+    background-color: #00346C !important;
+    background-image: none !important;
+    border: 1px solid #00346C !important;
+    color: #FFFFFF !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-primary:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-primary:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-primary:focus-visible,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-primary:active,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-primary.active {
+    background-color: #002A57 !important;
+    background-image: none !important;
+    border-color: #002A57 !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+}
+
+/* ---------- Solid success (Start Virtual Visit) ------------------ */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-success {
+    background-color: #1A528E !important;
+    background-image: none !important;
+    border: 1px solid #1A528E !important;
+    color: #FFFFFF !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-success:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-success:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-success:focus-visible,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-success:active,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-success.active {
+    background-color: #154271 !important;
+    background-image: none !important;
+    border-color: #154271 !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+}
+
+/* ---------- Outline primary (Open Full Chart, Write Rx, Download) -- */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-primary {
+    background-color: #FFFFFF !important;
+    background-image: none !important;
+    border: 1px solid #1A528E !important;
+    color: #1A528E !important;
+}
+
+/* Soft tint on hover instead of a full colour flip. */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-primary:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-primary:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-primary:focus-visible,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-primary:active,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-primary.active {
+    background-color: #E8F0FA !important;
+    background-image: none !important;
+    border-color: #1A528E !important;
+    color: #1A528E !important;
+    box-shadow: none !important;
+}
+
+/* ---------- Outline secondary / ghost (Refresh Data) ------------- */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-secondary,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-light,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-light {
+    background-color: #FFFFFF !important;
+    background-image: none !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #475569 !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-secondary:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-secondary:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-secondary:focus-visible,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-secondary:active,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-secondary.active,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-outline-light:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .btn-light:hover {
+    background-color: #F1F5F9 !important;
+    background-image: none !important;
+    border-color: #94A3B8 !important;
+    color: #1E293B !important;
+    box-shadow: none !important;
+}
+
+/* ---------- Icon buttons in the card header --------------------- */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-icon-btn,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-icon-btn:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-icon-btn:focus-visible {
+    background: #1A528E !important;
+    background-color: #1A528E !important;
+    border: 1px solid #1A528E !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-icon-btn:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-icon-btn:active {
+    background: #154271 !important;
+    background-color: #154271 !important;
+    border-color: #154271 !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-icon-btn i,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-icon-btn:hover i {
+    color: #FFFFFF !important;
+}
+
+/* ---------- Row action buttons in the tables -------------------- */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm {
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #1A528E !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm:focus-visible,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm:active {
+    background: #E8F0FA !important;
+    background-color: #E8F0FA !important;
+    border-color: #1A528E !important;
+    color: #1A528E !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm i,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-action-btn-sm:hover i {
+    color: #1A528E !important;
+}
+
+/* ---------- Sub-tab pills (Video Consultation / Records) -------- */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-subtab-pill {
+    background-color: #FFFFFF !important;
+    background-image: none !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #1A528E !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-subtab-pill:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-subtab-pill:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-subtab-pill:focus-visible {
+    background-color: #E8F0FA !important;
+    background-image: none !important;
+    border-color: #1A528E !important;
+    color: #1A528E !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-subtab-pill.active,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-subtab-pill.active:hover {
+    background-color: #1A528E !important;
+    background-image: none !important;
+    border-color: #1A528E !important;
+    color: #FFFFFF !important;
+}
+
+/* ---------- Links inside the page header ------------------------ */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .breadcrumb-list a,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .va-breadcrumb-list a {
+    color: #1A528E !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .breadcrumb-list a:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .va-breadcrumb-list a:hover {
+    color: #00346C !important;
+    background: transparent !important;
+}
+
+/* ---------- Checkboxes / form controls -------------------------- */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .docs-checkbox,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .form-check-input {
+    accent-color: #1A528E !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .form-check-input:checked {
+    background-color: #1A528E !important;
+    border-color: #1A528E !important;
+}
+
+/* ---------- Safety net ------------------------------------------
+   Any button in this tab that still picks up a theme hover fill is
+   flattened back to a neutral surface rather than magenta.
+   ----------------------------------------------------------------- */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video button.btn:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video a.btn:hover {
+    background-image: none !important;
 }
