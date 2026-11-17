@@ -63193,3 +63193,183 @@ a.va-btn-primary:hover {
         justify-content: center !important;
     }
 }
+
+/* ==================================================================
+   Doctor Dashboard → Notifications — global palette standardisation
+
+   The page previously mixed four stat-card hues (indigo / amber / rose /
+   emerald), four blurred glows, six icon-tile colours and five badge
+   palettes. Everything below collapses those onto the shared Doctor
+   Dashboard tokens (--dior-color-*), which are already white surfaces,
+   slate text/borders and one brand blue plus the semantic
+   success / warning / danger pairs. No new colours, no gradients.
+   ================================================================== */
+
+/* ---------- Stat tiles: neutral white surfaces ------------------- */
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .stat-glow {
+    display: none !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .stat-card {
+    background: var(--dior-color-surface) !important;
+    border: 1px solid var(--dior-color-border) !important;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, .04) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .stat-label {
+    color: var(--dior-color-text-muted) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .stat-value,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .text-indigo,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .text-amber,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .text-rose,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .text-emerald {
+    color: var(--dior-color-primary-hover) !important;
+}
+
+/* One icon tile treatment for all four tiles. */
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .stat-icon-wrapper,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .stat-card-indigo .stat-icon-wrapper,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .stat-card-amber .stat-icon-wrapper,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .stat-card-rose .stat-icon-wrapper,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .stat-card-emerald .stat-icon-wrapper {
+    background: var(--dior-color-primary-soft) !important;
+    color: var(--dior-color-primary) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .stat-badge,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-indigo,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-amber,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-rose,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-emerald {
+    background: var(--dior-color-surface-muted) !important;
+    color: var(--dior-color-text-muted) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .stat-subtext {
+    color: var(--dior-color-text-muted) !important;
+}
+
+/* ---------- Notification type tiles: one accent + danger ---------- */
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .type-icon-wrapper,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-type-user .type-icon-wrapper,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-type-appointment .type-icon-wrapper,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-type-billing .type-icon-wrapper,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-type-system .type-icon-wrapper,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-type-update .type-icon-wrapper {
+    background: var(--dior-color-primary-soft) !important;
+    color: var(--dior-color-primary) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-type-security .type-icon-wrapper {
+    background: var(--dior-color-danger-soft) !important;
+    color: var(--dior-color-danger) !important;
+}
+
+/* ---------- Priority badges: warning / primary / danger / muted --- */
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-priority-high {
+    background: var(--dior-color-warning-soft) !important;
+    color: var(--dior-color-warning) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-priority-high .status-dot {
+    background: var(--dior-color-warning) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-priority-medium {
+    background: var(--dior-color-primary-soft) !important;
+    color: var(--dior-color-primary) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-priority-medium .status-dot {
+    background: var(--dior-color-primary) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-priority-critical {
+    background: var(--dior-color-danger-soft) !important;
+    color: var(--dior-color-danger) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-priority-critical .status-dot {
+    background: var(--dior-color-danger) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-priority-low {
+    background: var(--dior-color-surface-muted) !important;
+    color: var(--dior-color-text-muted) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .badge-priority-low .status-dot {
+    background: var(--dior-color-text-muted) !important;
+}
+
+/* ---------- Unread chip, inline action, filters ------------------ */
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .unread-count-chip {
+    background: var(--dior-color-primary-soft) !important;
+    color: var(--dior-color-primary) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .btn-inline-action {
+    background: var(--dior-color-primary-soft) !important;
+    background-color: var(--dior-color-primary-soft) !important;
+    color: var(--dior-color-primary) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .btn-inline-action:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .btn-inline-action:focus {
+    background: #E8F0FA !important;
+    background-color: #E8F0FA !important;
+    color: var(--dior-color-primary) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .segmented-tab {
+    color: var(--dior-color-text-muted) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .segmented-tab.active {
+    color: var(--dior-color-primary) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .count-pill {
+    background: var(--dior-color-border) !important;
+    color: var(--dior-color-text-secondary) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .segmented-tab.active .count-pill {
+    background: var(--dior-color-primary-soft) !important;
+    color: var(--dior-color-primary) !important;
+}
+
+/* ---------- Surfaces and dividers on the shared border token ------ */
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .main-feed-card > .card-header {
+    border-color: var(--dior-color-border) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row .notification-controls {
+    border-color: var(--dior-color-border) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-item-row:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .is-unread-row {
+    background: var(--dior-color-surface-muted) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .filters-bar {
+    background: var(--dior-color-surface-muted) !important;
+    border-bottom-color: var(--dior-color-border) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-title {
+    color: var(--dior-color-primary-hover) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .notification-text {
+    color: var(--dior-color-text-secondary) !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-notifications-system .timestamp-tag {
+    color: var(--dior-color-text-muted) !important;
+}

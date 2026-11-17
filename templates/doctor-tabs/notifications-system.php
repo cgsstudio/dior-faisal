@@ -207,7 +207,7 @@ foreach ($doctor_notif_rows as $row) {
                             <h4 class="card-title-text mb-0"
                                 style="font-size: 16px; font-weight: 700; color: #1e293b; margin: 0;">
                                 <i class="fas fa-bell me-2 text-primary"
-                                    style="color: #2563eb !important; margin-right: 6px;"></i>Notification Activity Feed
+                                    style="color: var(--dior-color-primary) !important; margin-right: 6px;"></i>Notification Activity Feed
                             </h4>
                             <span class="unread-count-chip" id="dior-sys-unread-chip"><?php echo $unread_count; ?>
                                 Unread</span>
@@ -416,7 +416,7 @@ foreach ($doctor_notif_rows as $row) {
                                                 <button type="button" title="Mark as Read"
                                                     onclick="diorMarkRowAsRead(this, '<?php echo esc_js($n_id); ?>')"
                                                     class="btn btn-sm btn-icon-action">
-                                                    <i class="fas fa-check text-success" style="color: #10b981;"></i>
+                                                    <i class="fas fa-check text-success" style="color: var(--dior-color-success);"></i>
                                                 </button>
                                             <?php endif; ?>
                                             <button type="button" title="Delete Notification"
