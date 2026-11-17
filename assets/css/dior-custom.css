@@ -63419,8 +63419,8 @@ a.va-btn-primary:hover {
 /* ---------------- Tablet: ≤ 991.98px ---------------- */
 @media (max-width: 991.98px) {
 
-    /* Sidebar settings buttons become a compact 2-up grid instead of a
-       tall single column pushing the form below the fold. */
+    /* The settings tabs become a compact grid instead of a tall stacked
+       list, so the active form pane starts right below the tabs. */
     #dior-doctor-app #dior-doc-content #tab-doc-settings [role="tablist"] {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -63428,7 +63428,20 @@ a.va-btn-primary:hover {
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-nav-btn {
-        padding: 10px 12px !important;
+        padding: 9px 12px !important;
+        gap: 10px !important;
+        min-height: 46px !important;
+        align-items: center !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-nav-btn>div {
+        min-width: 0 !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    /* tighter frame around the tab grid */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings>.row>[class*="col"]:first-child>.card {
+        padding: 10px !important;
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-banner {
@@ -63448,13 +63461,11 @@ a.va-btn-primary:hover {
         font-size: 17px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-settings .breadcrumb {
-        font-size: 11.5px !important;
-        flex-wrap: wrap !important;
-        row-gap: 2px !important;
+    /* --- profile banner --- */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings>.card {
+        margin-bottom: 16px !important;
     }
 
-    /* --- profile banner --- */
     #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-banner {
         flex-direction: column !important;
         align-items: stretch !important;
@@ -63488,7 +63499,7 @@ a.va-btn-primary:hover {
         padding: 3px 9px !important;
     }
 
-    /* NPI / License / Email: one per line, the • separators hidden */
+    /* contact line: full width, never overflows */
     #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-meta {
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -63507,20 +63518,23 @@ a.va-btn-primary:hover {
         padding: 8px 12px !important;
     }
 
-    /* --- settings nav --- */
+    /* --- settings nav: title-only tiles so all four tabs stay visible --- */
     #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-nav-btn {
-        padding: 10px 12px !important;
-        font-size: 13px !important;
-        gap: 10px !important;
-        line-height: 1.3 !important;
+        padding: 8px 10px !important;
+        font-size: 12px !important;
+        gap: 8px !important;
+        line-height: 1.25 !important;
+        min-height: 44px !important;
+        border-radius: 10px !important;
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-nav-btn i {
-        font-size: 16px !important;
+        font-size: 14px !important;
+        flex-shrink: 0 !important;
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-nav-btn small {
-        font-size: 11px !important;
+        display: none !important;
     }
 
     /* --- form panes --- */
@@ -63545,13 +63559,25 @@ a.va-btn-primary:hover {
         line-height: 1.5 !important;
     }
 
-    /* 16px keeps iOS from zooming into a focused field. */
+    /* 16px keeps iOS from zooming into a focused field; the legacy
+       height:42px rule is released so nothing gets clipped. */
     #dior-doctor-app #dior-doc-content #tab-doc-settings .form-control,
-    #dior-doctor-app #dior-doc-content #tab-doc-settings .form-select {
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .form-select,
+    #dior-doctor-app #dior-doc-content #tab-doc-settings input[type="text"],
+    #dior-doctor-app #dior-doc-content #tab-doc-settings input[type="email"],
+    #dior-doctor-app #dior-doc-content #tab-doc-settings input[type="password"],
+    #dior-doctor-app #dior-doc-content #tab-doc-settings input[type="tel"],
+    #dior-doctor-app #dior-doc-content #tab-doc-settings input[type="url"] {
+        height: auto !important;
         font-size: 16px !important;
-        min-height: 44px !important;
+        min-height: 46px !important;
         padding: 9px 12px !important;
         border-radius: 10px !important;
+    }
+
+    /* slightly denser form rows without touching the grid classes */
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .row {
+        --bs-gutter-y: 12px;
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-settings textarea.form-control {
@@ -63635,8 +63661,8 @@ a.va-btn-primary:hover {
 /* ---------------- Small phones: ≤ 575.98px ---------------- */
 @media (max-width: 575.98px) {
 
-    #dior-doctor-app #dior-doc-content #tab-doc-settings [role="tablist"] {
-        grid-template-columns: 1fr !important;
+    #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-settings-pane {
+        padding: 14px !important;
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-settings .dior-profile-identity {
