@@ -61040,6 +61040,47 @@ a.va-btn-primary:hover {
     border-bottom: 0 !important;
 }
 
+/* ---------- Banner action colours (desktop + mobile) --------------
+   The "Refresh Data" button inherited a theme fill of #CC3366
+   (magenta) which clashes with the navy/white dashboard palette.
+   Pin both banner actions to the dashboard colours so no theme or
+   plugin rule can repaint them.
+   ----------------------------------------------------------------- */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-primary {
+    background-color: #FFFFFF !important;
+    background-image: none !important;
+    border: 1px solid #1A528E !important;
+    color: #1A528E !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-primary:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-primary:focus-visible {
+    background-color: #1A528E !important;
+    border-color: #1A528E !important;
+    color: #FFFFFF !important;
+}
+
+/* Secondary/utility action: neutral ghost instead of a filled colour. */
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:focus,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:active,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:focus-visible {
+    background-color: #FFFFFF !important;
+    background-image: none !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #475569 !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:hover,
+#dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn-outline-secondary:focus-visible {
+    background-color: #F1F5F9 !important;
+    border-color: #94A3B8 !important;
+    color: #1E293B !important;
+}
+
 /* ==================================================================
    Tablet + mobile (<= 991.98px) — matches the Documents pattern
    ================================================================== */
@@ -61149,32 +61190,38 @@ a.va-btn-primary:hover {
         white-space: normal !important;
     }
 
-    /* Quick actions split the row evenly. */
+    /* Quick actions: two equal columns, each label kept on ONE line.
+       Grid (not flex) so the pair always spans the card with no gap
+       on the right. */
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-action-row {
-        width: 100% !important;
-        justify-content: stretch !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        align-items: stretch !important;
         gap: 8px !important;
+        width: 100% !important;
         padding-top: 0 !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-action-row .btn {
-        flex: 1 1 0 !important;
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-action-row > .btn {
+        width: 100% !important;
         min-width: 0 !important;
+        margin: 0 !important;
         justify-content: center !important;
-        white-space: normal !important;
+        white-space: nowrap !important;
         font-size: 12.5px !important;
     }
 
-    /* Patient banner stacks above its action buttons. */
+    /* Patient banner: identity on top, actions underneath, both full width. */
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-head {
-        flex-direction: column !important;
-        align-items: flex-start !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        align-items: start !important;
         gap: 12px !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-head > div:first-child {
-        min-width: 0 !important;
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-head > div {
         width: 100% !important;
+        min-width: 0 !important;
     }
 
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-head #tele-patient-name {
@@ -61183,16 +61230,22 @@ a.va-btn-primary:hover {
         overflow-wrap: anywhere !important;
     }
 
+    /* Banner actions fill the card — no dead space to their right. */
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions {
-        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        align-items: stretch !important;
         gap: 8px !important;
+        width: 100% !important;
     }
 
-    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions .btn {
-        flex: 1 1 0 !important;
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-panel-actions > .btn {
+        width: 100% !important;
         min-width: 0 !important;
+        margin: 0 !important;
         justify-content: center !important;
-        white-space: normal !important;
+        white-space: nowrap !important;
+        font-size: 12.5px !important;
     }
 
     /* ---- Card headers: stack title above the toolbar -------------- */
@@ -61551,5 +61604,11 @@ a.va-btn-primary:hover {
     #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-bs-search-group input {
         font-size: 16px !important;
         height: 42px !important;
+    }
+
+    /* Below ~420px two side-by-side labels would get cramped, so the
+       quick actions stack full-width — still one line each. */
+    #dior-doctor-app #dior-doc-content #tab-doc-telemed-video .dior-tele-action-row {
+        grid-template-columns: minmax(0, 1fr) !important;
     }
 }
