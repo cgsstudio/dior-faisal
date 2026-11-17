@@ -58541,3 +58541,544 @@ a.va-btn-primary:hover {
         box-sizing: border-box !important;
     }
 }
+
+/* ==========================================================================
+   PRESCRIPTION BUILDER + VIEW-Rx MODALS — PROJECT DESIGN ALIGNMENT (TASK 3)
+   The e-Rx popups were still on the old "black gradient + gold keyline" auth
+   styling, which does not exist anywhere else in the dashboard. This block
+   re-skins them with the same tokens the Appointments / Consultation Notes
+   screens and the standard dashboard modals use:
+     · white card header, navy title, hairline border (no gradient, no gold)
+     · 42px inputs, 8px radius, #CBD5E1 border, navy focus ring
+     · flat navy primary button, slate secondary button
+   Scope: #dior-doctor-app only. Markup is untouched.
+   ========================================================================== */
+
+/* 1. Overlay + dialog shell ------------------------------------------------ */
+#dior-doctor-app .dior-fda-modal-overlay {
+    background: rgba(15, 23, 42, 0.55) !important;
+    backdrop-filter: blur(6px) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    padding: 24px !important;
+}
+
+#dior-doctor-app .dior-fda-dialog.dior-prescription-reg-card,
+#dior-doctor-app .dior-fda-dialog.dior-view-rx-dialog {
+    border-radius: var(--dior-radius-panel, 16px) !important;
+    border: 1px solid var(--dior-color-border, #E2E8F0) !important;
+    background: var(--dior-color-surface, #FFFFFF) !important;
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16) !important;
+    font-family: var(--dior-font-body, "Montserrat", Arial, sans-serif) !important;
+    color: var(--dior-color-text, #0F172A) !important;
+}
+
+/* 2. Header: white like every other dashboard modal ------------------------ */
+#dior-doctor-app .dior-fda-header {
+    background: var(--dior-color-surface, #FFFFFF) !important;
+    background-image: none !important;
+    border-bottom: 1px solid var(--dior-color-border, #E2E8F0) !important;
+    padding: 18px 24px !important;
+    gap: 14px !important;
+}
+
+#dior-doctor-app .dior-fda-brand-icon {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 10px !important;
+    background: var(--dior-color-primary-soft, #F0F6FC) !important;
+    border: 1px solid rgba(26, 82, 142, 0.18) !important;
+    color: var(--dior-color-primary, #1A528E) !important;
+    font-size: 17px !important;
+}
+
+#dior-doctor-app .dior-fda-header-title {
+    font-family: var(--dior-font-body, "Montserrat", Arial, sans-serif) !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: var(--dior-color-primary-hover, #00346C) !important;
+    letter-spacing: 0 !important;
+    line-height: 1.3 !important;
+}
+
+#dior-doctor-app .dior-fda-header-sub {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: var(--dior-color-text-muted, #64748B) !important;
+    margin-top: 3px !important;
+}
+
+/* Close button: muted slate that darkens on hover (pitch black glyph stays). */
+#dior-doctor-app .dior-fda-close-btn {
+    color: var(--dior-color-text-muted, #64748B) !important;
+    font-size: 1.15rem !important;
+    border-radius: 8px !important;
+    padding: 6px !important;
+    transition: color 0.15s ease, background 0.15s ease !important;
+}
+
+#dior-doctor-app .dior-fda-close-btn:hover {
+    color: var(--dior-color-text, #0F172A) !important;
+    background: var(--dior-color-page, #F8FAFC) !important;
+    transform: none !important;
+    opacity: 1 !important;
+}
+
+#dior-doctor-app .dior-fda-close-btn i {
+    color: inherit !important;
+}
+
+/* 3. Body, section headings ------------------------------------------------ */
+#dior-doctor-app .dior-fda-body {
+    padding: 22px 24px !important;
+    background: var(--dior-color-surface, #FFFFFF) !important;
+}
+
+#dior-doctor-app .dior-reg-section-title {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: var(--dior-color-primary-hover, #00346C) !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    padding-bottom: 9px !important;
+    margin: 0 0 16px 0 !important;
+    border-bottom: 1px solid var(--dior-color-border, #E2E8F0) !important;
+    gap: 8px !important;
+}
+
+#dior-doctor-app .dior-reg-section-title i {
+    color: var(--dior-color-primary, #1A528E) !important;
+    font-size: 12px !important;
+}
+
+/* 4. Labels + controls (42px like the registry forms) --------------------- */
+/* Inputs share one baseline even when a long label wraps to a second line. */
+#dior-doctor-app .dior-reg-form-row {
+    align-items: end !important;
+}
+
+#dior-doctor-app .dior-form-group {
+    gap: 6px !important;
+    margin-bottom: 14px !important;
+}
+
+#dior-doctor-app .dior-form-group label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--dior-color-text-secondary, #334155) !important;
+    margin-bottom: 0 !important;
+}
+
+#dior-doctor-app .dior-req-star {
+    color: var(--dior-color-danger, #DC2626) !important;
+}
+
+#dior-doctor-app .dior-login-input,
+#dior-doctor-app .dior-reg-select,
+#dior-doctor-app .dior-reg-textarea {
+    height: 42px !important;
+    padding: 8px 13px !important;
+    font-family: var(--dior-font-body, "Montserrat", Arial, sans-serif) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: var(--dior-color-text, #0F172A) !important;
+    background: var(--dior-color-surface, #FFFFFF) !important;
+    border: 1px solid var(--dior-color-border-strong, #CBD5E1) !important;
+    border-radius: var(--dior-radius-control, 8px) !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app .dior-reg-textarea {
+    height: auto !important;
+    min-height: 84px !important;
+    padding: 11px 13px !important;
+    line-height: 1.55 !important;
+    resize: vertical !important;
+}
+
+#dior-doctor-app .dior-login-input::placeholder,
+#dior-doctor-app .dior-reg-textarea::placeholder {
+    color: var(--dior-color-text-light, #94A3B8) !important;
+    font-weight: 400 !important;
+}
+
+#dior-doctor-app .dior-login-input:focus,
+#dior-doctor-app .dior-reg-select:focus,
+#dior-doctor-app .dior-reg-textarea:focus {
+    border-color: var(--dior-color-primary-hover, #00346C) !important;
+    box-shadow: var(--dior-focus-ring, 0 0 0 3px rgba(0, 52, 108, 0.14)) !important;
+    outline: none !important;
+}
+
+/* openFDA pill keeps the project's success tokens. */
+#dior-doctor-app .dior-badge-fda-verify {
+    background: var(--dior-color-success-soft, #ECFDF5) !important;
+    color: var(--dior-color-success, #059669) !important;
+    border: 1px solid rgba(5, 150, 105, 0.25) !important;
+    border-radius: var(--dior-radius-sm, 6px) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 4px 8px !important;
+}
+
+/* 5. Autocomplete dropdown ----------------------------------------------- */
+#dior-doctor-app .dior-fda-autocomplete-dropdown {
+    border: 1px solid var(--dior-color-border, #E2E8F0) !important;
+    border-radius: var(--dior-radius-control, 8px) !important;
+    box-shadow: var(--dior-shadow-popover, 0 12px 32px rgba(15, 23, 42, 0.14)) !important;
+}
+
+#dior-doctor-app .dior-fda-autocomplete-item {
+    border-bottom: 1px solid var(--dior-color-border-light, #F1F5F9) !important;
+    padding: 11px 14px !important;
+}
+
+#dior-doctor-app .dior-fda-autocomplete-item:hover {
+    background: var(--dior-color-primary-soft, #F0F6FC) !important;
+}
+
+#dior-doctor-app .dior-fda-item-brand {
+    font-size: 13.5px !important;
+    color: var(--dior-color-text, #0F172A) !important;
+}
+
+#dior-doctor-app .dior-fda-item-generic {
+    font-size: 12px !important;
+    color: var(--dior-color-text-muted, #64748B) !important;
+}
+
+#dior-doctor-app .dior-fda-item-badge {
+    background: var(--dior-color-primary-soft, #F0F6FC) !important;
+    color: var(--dior-color-primary, #1A528E) !important;
+    border-radius: var(--dior-radius-sm, 6px) !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+}
+
+/* 6. "Add medication" strip + added-medication list ----------------------- */
+#dior-doctor-app .dior-add-med-strip {
+    background: var(--dior-color-page, #F8FAFC) !important;
+    border: 1px solid var(--dior-color-border, #E2E8F0) !important;
+    border-radius: var(--dior-radius-card, 12px) !important;
+    padding: 14px 16px !important;
+    margin: 16px 0 !important;
+}
+
+#dior-doctor-app .dior-btn-add-secondary {
+    background: var(--dior-color-surface, #FFFFFF) !important;
+    border: 1px solid var(--dior-color-border-strong, #CBD5E1) !important;
+    border-radius: var(--dior-radius-control, 8px) !important;
+    color: var(--dior-color-text-secondary, #334155) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    padding: 9px 14px !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app .dior-btn-add-secondary:hover {
+    background: var(--dior-color-page, #F8FAFC) !important;
+    border-color: var(--dior-color-primary, #1A528E) !important;
+    color: var(--dior-color-primary, #1A528E) !important;
+}
+
+#dior-doctor-app .dior-fda-prescribed-list-wrap {
+    background: var(--dior-color-primary-soft, #F0F6FC) !important;
+    border: 1px solid rgba(26, 82, 142, 0.18) !important;
+    border-radius: var(--dior-radius-card, 12px) !important;
+    padding: 14px 16px !important;
+}
+
+#dior-doctor-app .dior-fda-prescribed-list-header {
+    color: var(--dior-color-primary-hover, #00346C) !important;
+    font-size: 12.5px !important;
+    font-weight: 700 !important;
+}
+
+#dior-doctor-app .dior-fda-prescribed-chip {
+    background: var(--dior-color-surface, #FFFFFF) !important;
+    border: 1px solid var(--dior-color-border, #E2E8F0) !important;
+    border-radius: var(--dior-radius-control, 8px) !important;
+    padding: 9px 12px !important;
+}
+
+#dior-doctor-app .dior-fda-chip-badge {
+    background: var(--dior-color-primary, #1A528E) !important;
+    color: #FFFFFF !important;
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 50% !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+}
+
+#dior-doctor-app .dior-fda-chip-name {
+    color: var(--dior-color-text, #0F172A) !important;
+    font-weight: 600 !important;
+}
+
+#dior-doctor-app .dior-fda-chip-dose {
+    color: var(--dior-color-text-muted, #64748B) !important;
+    font-size: 12px !important;
+}
+
+#dior-doctor-app .dior-fda-chip-del {
+    color: var(--dior-color-danger, #DC2626) !important;
+    border-radius: var(--dior-radius-sm, 6px) !important;
+}
+
+#dior-doctor-app .dior-fda-chip-del:hover {
+    background: var(--dior-color-danger-soft, #FEF2F2) !important;
+}
+
+/* 7. Footer actions: flat navy primary, slate secondary ------------------- */
+#dior-doctor-app .dior-fda-footer {
+    background: var(--dior-color-page, #F8FAFC) !important;
+    border-top: 1px solid var(--dior-color-border, #E2E8F0) !important;
+    padding: 16px 24px !important;
+    gap: 10px !important;
+}
+
+#dior-doctor-app .dior-btn-reg-cancel {
+    background: var(--dior-color-surface, #FFFFFF) !important;
+    border: 1px solid var(--dior-color-border-strong, #CBD5E1) !important;
+    border-radius: var(--dior-radius-control, 8px) !important;
+    color: var(--dior-color-text-secondary, #334155) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    padding: 10px 18px !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app .dior-btn-reg-cancel:hover {
+    background: var(--dior-color-page, #F8FAFC) !important;
+    border-color: var(--dior-color-primary, #1A528E) !important;
+    color: var(--dior-color-primary, #1A528E) !important;
+}
+
+#dior-doctor-app .dior-btn-reg-submit {
+    background: var(--dior-color-primary, #1A528E) !important;
+    background-image: none !important;
+    border: 1px solid var(--dior-color-primary, #1A528E) !important;
+    border-radius: var(--dior-radius-control, 8px) !important;
+    color: #FFFFFF !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 10px 22px !important;
+    box-shadow: 0 2px 6px rgba(26, 82, 142, 0.22) !important;
+    gap: 8px !important;
+}
+
+#dior-doctor-app .dior-btn-reg-submit:hover {
+    background: var(--dior-color-primary-hover, #00346C) !important;
+    background-image: none !important;
+    border-color: var(--dior-color-primary-hover, #00346C) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(0, 52, 108, 0.26) !important;
+}
+
+#dior-doctor-app .dior-btn-reg-submit:focus-visible {
+    outline: none !important;
+    box-shadow: var(--dior-focus-ring, 0 0 0 3px rgba(0, 52, 108, 0.14)) !important;
+}
+
+/* 8. View-prescription modal: drop the gold accents too ------------------ */
+#dior-doctor-app .dior-view-rx-id-badge {
+    background: var(--dior-color-primary-soft, #F0F6FC) !important;
+    color: var(--dior-color-primary, #1A528E) !important;
+    border: 1px solid rgba(26, 82, 142, 0.2) !important;
+    border-radius: var(--dior-radius-sm, 6px) !important;
+    font-size: 11.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+}
+
+#dior-doctor-app .dior-view-rx-meta-bar {
+    background: var(--dior-color-page, #F8FAFC) !important;
+    border: 1px solid var(--dior-color-border, #E2E8F0) !important;
+    border-radius: var(--dior-radius-card, 12px) !important;
+}
+
+#dior-doctor-app .dior-view-meta-item .meta-label {
+    color: var(--dior-color-text-muted, #64748B) !important;
+    font-size: 11px !important;
+}
+
+#dior-doctor-app .dior-view-meta-item .meta-value {
+    color: var(--dior-color-text, #0F172A) !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+}
+
+#dior-doctor-app .dior-view-rx-card {
+    border: 1px solid var(--dior-color-border, #E2E8F0) !important;
+    border-radius: var(--dior-radius-card, 12px) !important;
+    box-shadow: var(--dior-shadow-card, 0 1px 3px rgba(15, 23, 42, 0.06)) !important;
+}
+
+#dior-doctor-app .dior-view-rx-card-index {
+    background: var(--dior-color-primary, #1A528E) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+}
+
+#dior-doctor-app .dior-view-rx-badge {
+    background: var(--dior-color-primary-soft, #F0F6FC) !important;
+    color: var(--dior-color-primary, #1A528E) !important;
+    border: 1px solid rgba(26, 82, 142, 0.18) !important;
+    border-radius: var(--dior-radius-sm, 6px) !important;
+}
+
+#dior-doctor-app .dior-view-rx-stat .label {
+    color: var(--dior-color-text-muted, #64748B) !important;
+}
+
+#dior-doctor-app .dior-view-rx-stat .val {
+    color: var(--dior-color-primary-hover, #00346C) !important;
+    font-weight: 700 !important;
+}
+
+#dior-doctor-app .dior-view-rx-notes-card {
+    background: var(--dior-color-primary-soft, #F0F6FC) !important;
+    border-left: 3px solid var(--dior-color-primary, #1A528E) !important;
+    border-radius: 0 var(--dior-radius-control, 8px) var(--dior-radius-control, 8px) 0 !important;
+}
+
+#dior-doctor-app .dior-view-notes-title {
+    color: var(--dior-color-primary-hover, #00346C) !important;
+}
+
+#dior-doctor-app .dior-view-notes-content {
+    color: var(--dior-color-text-secondary, #334155) !important;
+}
+
+#dior-doctor-app .dior-view-section-header h4,
+#dior-doctor-app .dior-view-rx-card-title h4 {
+    color: var(--dior-color-text, #0F172A) !important;
+}
+
+/* 9. Phone: stack the footer actions, keep 44px tap targets -------------- */
+@media (max-width: 680px) {
+    #dior-doctor-app .dior-fda-header {
+        padding: 14px 16px !important;
+    }
+
+    #dior-doctor-app .dior-fda-header-title {
+        font-size: 16px !important;
+    }
+
+    #dior-doctor-app .dior-fda-header-sub {
+        font-size: 11px !important;
+    }
+
+    #dior-doctor-app .dior-fda-body {
+        padding: 16px !important;
+    }
+
+    #dior-doctor-app .dior-fda-footer {
+        padding: 14px 16px !important;
+    }
+
+    #dior-doctor-app .dior-btn-reg-cancel,
+    #dior-doctor-app .dior-btn-reg-submit {
+        min-height: 44px !important;
+        justify-content: center !important;
+    }
+
+    #dior-doctor-app .dior-add-med-strip {
+        padding: 12px 14px !important;
+    }
+}
+
+/* 10. View-Rx footer: two tone-on-tone actions + footer meta --------------- */
+#dior-doctor-app .dior-fda-footer .dior-fda-footer-left {
+    margin-right: auto !important;
+}
+
+#dior-doctor-app .dior-fda-footer .dior-fda-footer-left span {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: var(--dior-color-text-muted, #64748B) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+#dior-doctor-app .dior-fda-footer .dior-fda-footer-left i {
+    color: var(--dior-color-success, #059669) !important;
+}
+
+#dior-doctor-app .dior-fda-footer .dior-fda-footer-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+}
+
+/* Print Prescription — secondary (outline) */
+#dior-doctor-app .dior-fda-footer .dior-btn-gold-secondary,
+#dior-doctor-app .dior-fda-footer .dior-fda-btn-saverx {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    height: 40px !important;
+    max-height: 40px !important;
+    padding: 0 18px !important;
+    font-family: var(--dior-font-body, "Montserrat", Arial, sans-serif) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: var(--dior-radius-control, 8px) !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+    box-shadow: none !important;
+}
+
+#dior-doctor-app .dior-fda-footer .dior-btn-gold-secondary {
+    background: var(--dior-color-surface, #FFFFFF) !important;
+    border: 1px solid var(--dior-color-border-strong, #CBD5E1) !important;
+    color: var(--dior-color-text-secondary, #334155) !important;
+    -webkit-text-fill-color: var(--dior-color-text-secondary, #334155) !important;
+}
+
+#dior-doctor-app .dior-fda-footer .dior-btn-gold-secondary:hover {
+    background: var(--dior-color-page, #F8FAFC) !important;
+    border-color: var(--dior-color-primary, #1A528E) !important;
+    color: var(--dior-color-primary, #1A528E) !important;
+    -webkit-text-fill-color: var(--dior-color-primary, #1A528E) !important;
+}
+
+/* Close — primary (flat navy, matches Save & Issue Prescription) */
+#dior-doctor-app .dior-fda-footer .dior-fda-btn-saverx {
+    background: var(--dior-color-primary, #1A528E) !important;
+    border: 1px solid var(--dior-color-primary, #1A528E) !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+    box-shadow: 0 2px 6px rgba(26, 82, 142, 0.22) !important;
+}
+
+#dior-doctor-app .dior-fda-footer .dior-fda-btn-saverx:hover {
+    background: var(--dior-color-primary-hover, #00346C) !important;
+    border-color: var(--dior-color-primary-hover, #00346C) !important;
+    color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF !important;
+}
+
+@media (max-width: 680px) {
+    #dior-doctor-app .dior-fda-footer .dior-fda-footer-actions {
+        width: 100% !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    #dior-doctor-app .dior-fda-footer .dior-btn-gold-secondary,
+    #dior-doctor-app .dior-fda-footer .dior-fda-btn-saverx {
+        width: 100% !important;
+        min-height: 44px !important;
+        height: 44px !important;
+        max-height: 44px !important;
+    }
+
+    #dior-doctor-app .dior-fda-footer .dior-fda-footer-left {
+        margin-right: 0 !important;
+        text-align: center !important;
+    }
+}

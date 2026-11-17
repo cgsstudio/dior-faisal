@@ -649,7 +649,7 @@ foreach ($patients_query as $pq) {
             <!-- Medication List Section -->
             <div class="dior-view-rx-section">
                 <div class="dior-view-section-header">
-                    <h4><i class="fa-solid fa-pills" style="color:#d4af37;"></i> Prescribed Medications</h4>
+                    <h4><i class="fa-solid fa-pills" style="color:var(--dior-color-primary, #1A528E);"></i> Prescribed Medications</h4>
                     <span class="badge"
                         style="background: rgba(44, 108, 177, 0.1); color: #2C6CB1; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;">Verified
                         Regimen</span>
@@ -661,7 +661,7 @@ foreach ($patients_query as $pq) {
 
             <!-- Clinical Instructions / Notes -->
             <div class="dior-view-rx-notes-card">
-                <div class="dior-view-notes-title"><i class="fa-solid fa-notes-medical" style="color: #d4af37;"></i>
+                <div class="dior-view-notes-title"><i class="fa-solid fa-notes-medical" style="color:var(--dior-color-primary, #1A528E);"></i>
                     Attending Physician Instructions & Notes</div>
                 <p id="dior-view-rx-notes" class="dior-view-notes-content">Take as directed with full glass of water.
                 </p>
