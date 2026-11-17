@@ -120,7 +120,7 @@ if (empty($patients)) {
                             <tr data-id="<?php echo $rid; ?>">
                                 <td class="text-center"><input type="checkbox"
                                         class="va-checkbox rv-row-check form-check-input"></td>
-                                <td>
+                                <td data-label="Patient">
                                     <div class="va-user-profile">
                                         <img src="<?php echo $avatar ?: 'https://ui-avatars.com/api/?name=' . urlencode($fname) . '&background=random'; ?>"
                                             onerror="this.src='https://ui-avatars.com/api/?name=<?php echo urlencode($fname); ?>&background=random'"
@@ -128,8 +128,8 @@ if (empty($patients)) {
                                         <span class="va-user-name"><?php echo $fname; ?></span>
                                     </div>
                                 </td>
-                                <td><?php echo $subject !== '' ? $subject : 'Patient Review'; ?></td>
-                                <td>
+                                <td data-label="Subject"><?php echo $subject !== '' ? $subject : 'Patient Review'; ?></td>
+                                <td data-label="Rating">
                                     <div style="color:#F59E0B;font-size:14px;display:flex;gap:2px;">
                                         <?php for ($i = 1; $i <= 5; $i++): ?>
                                             <i class="fa-<?php echo $i <= $rating ? 'solid' : 'regular'; ?> fa-star" <?php if ($i > $rating)
@@ -137,11 +137,11 @@ if (empty($patients)) {
                                         <?php endfor; ?>
                                     </div>
                                 </td>
-                                <td><i class="far fa-calendar va-icon-blue"></i> <?php echo $date_f; ?></td>
-                                <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                                <td data-label="Date"><i class="far fa-calendar va-icon-blue"></i> <?php echo $date_f; ?></td>
+                                <td data-label="Comment" style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
                                     title="<?php echo $comment; ?>"><?php echo $comment; ?></td>
-                                <td><span class="va-badge <?php echo $badge; ?>"><?php echo $status; ?></span></td>
-                                <td>
+                                <td data-label="Status"><span class="va-badge <?php echo $badge; ?>"><?php echo $status; ?></span></td>
+                                <td data-label="Actions">
                                     <div class="va-row-actions">
                                         <button type="button" class="va-action-btn-sm va-btn-view btn" title="View Review"
                                             data-enc="<?php echo $enc; ?>" data-name="<?php echo esc_attr($fname); ?>"
