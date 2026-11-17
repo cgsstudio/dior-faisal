@@ -132,16 +132,16 @@ foreach ($patient_notif_rows as $row) {
         <!-- Stat Cards (4-Column Grid) -->
         <div class="dior-notif-stats-row mb-4">
 
-            <!-- Stat 1: Total Notifications (Indigo) -->
+            <!-- Stat 1: Total Notifications -->
             <div class="dior-notif-stat-col">
-                <div class="stat-card stat-card-indigo">
+                <div class="stat-card stat-card-primary">
                     <div class="stat-glow"></div>
                     <div class="stat-inner">
                         <div class="d-flex justify-content-between align-items-start mb-2"
                             style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
                                 <span class="stat-label">Total Notifications</span>
-                                <h3 class="stat-value text-indigo mt-1 mb-0" id="dior-sys-total-stat">
+                                <h3 class="stat-value mt-1 mb-0" id="dior-sys-total-stat">
                                     <?php echo $total_count; ?>
                                 </h3>
                             </div>
@@ -149,7 +149,7 @@ foreach ($patient_notif_rows as $row) {
                         </div>
                         <div class="stat-footer d-flex align-items-center"
                             style="display: flex; align-items: center; margin-top: auto; padding-top: 12px;">
-                            <span class="stat-badge badge-indigo">
+                            <span class="stat-badge">
                                 <i class="fas fa-clock-rotate-left text-xs me-1"></i> Live Stream
                             </span>
                             <span class="stat-subtext ms-2" style="margin-left: 8px;">Real-time log</span>
@@ -158,16 +158,16 @@ foreach ($patient_notif_rows as $row) {
                 </div>
             </div>
 
-            <!-- Stat 2: Unread Items (Amber) -->
+            <!-- Stat 2: Unread Items -->
             <div class="dior-notif-stat-col">
-                <div class="stat-card stat-card-amber">
+                <div class="stat-card stat-card-primary">
                     <div class="stat-glow"></div>
                     <div class="stat-inner">
                         <div class="d-flex justify-content-between align-items-start mb-2"
                             style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
                                 <span class="stat-label">Unread Items</span>
-                                <h3 class="stat-value text-amber mt-1 mb-0" id="dior-sys-unread-stat">
+                                <h3 class="stat-value mt-1 mb-0" id="dior-sys-unread-stat">
                                     <?php echo $unread_count; ?>
                                 </h3>
                             </div>
@@ -175,7 +175,7 @@ foreach ($patient_notif_rows as $row) {
                         </div>
                         <div class="stat-footer d-flex align-items-center"
                             style="display: flex; align-items: center; margin-top: auto; padding-top: 12px;">
-                            <span class="stat-badge badge-amber">
+                            <span class="stat-badge">
                                 <i class="fas fa-hourglass-half text-xs me-1"></i> Pending Action
                             </span>
                             <span class="stat-subtext ms-2" style="margin-left: 8px;">Requires review</span>
@@ -184,16 +184,16 @@ foreach ($patient_notif_rows as $row) {
                 </div>
             </div>
 
-            <!-- Stat 3: Appointments & Care (Rose) -->
+            <!-- Stat 3: Appointments & Care -->
             <div class="dior-notif-stat-col">
-                <div class="stat-card stat-card-rose">
+                <div class="stat-card stat-card-primary">
                     <div class="stat-glow"></div>
                     <div class="stat-inner">
                         <div class="d-flex justify-content-between align-items-start mb-2"
                             style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
                                 <span class="stat-label">Appointments &amp; Care</span>
-                                <h3 class="stat-value text-rose mt-1 mb-0" id="dior-sys-care-stat">
+                                <h3 class="stat-value mt-1 mb-0" id="dior-sys-care-stat">
                                     <?php echo $clinical_count; ?>
                                 </h3>
                             </div>
@@ -201,7 +201,7 @@ foreach ($patient_notif_rows as $row) {
                         </div>
                         <div class="stat-footer d-flex align-items-center"
                             style="display: flex; align-items: center; margin-top: auto; padding-top: 12px;">
-                            <span class="stat-badge badge-rose">
+                            <span class="stat-badge">
                                 <i class="fas fa-heart-pulse text-xs me-1"></i> Care Stream
                             </span>
                             <span class="stat-subtext ms-2" style="margin-left: 8px;">Visits &amp; consults</span>
@@ -210,22 +210,22 @@ foreach ($patient_notif_rows as $row) {
                 </div>
             </div>
 
-            <!-- Stat 4: Account Status (Emerald) -->
+            <!-- Stat 4: Account Status -->
             <div class="dior-notif-stat-col">
-                <div class="stat-card stat-card-emerald">
+                <div class="stat-card stat-card-primary">
                     <div class="stat-glow"></div>
                     <div class="stat-inner">
                         <div class="d-flex justify-content-between align-items-start mb-2"
                             style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <div>
                                 <span class="stat-label">Account Health</span>
-                                <h3 class="stat-value text-emerald mt-1 mb-0">100%</h3>
+                                <h3 class="stat-value mt-1 mb-0">100%</h3>
                             </div>
-                            <div class="stat-icon-wrapper"><i class="fas fa-shield-check"></i></div>
+                            <div class="stat-icon-wrapper"><i class="fas fa-shield-halved"></i></div>
                         </div>
                         <div class="stat-footer d-flex align-items-center"
                             style="display: flex; align-items: center; margin-top: auto; padding-top: 12px;">
-                            <span class="stat-badge badge-emerald">
+                            <span class="stat-badge">
                                 <i class="fas fa-circle-check text-xs me-1"></i> Active State
                             </span>
                             <span class="stat-subtext ms-2" style="margin-left: 8px;">HIPAA Encrypted</span>
@@ -260,7 +260,7 @@ foreach ($patient_notif_rows as $row) {
                                 onclick="diorMarkAllSystemNotificationsRead()">
                                 <i class="fas fa-check-double me-1" style="margin-right: 4px;"></i> Mark All Read
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-action text-danger"
+                            <button type="button" class="btn btn-sm btn-outline-action"
                                 onclick="diorClearReadSystemNotifications()">
                                 <i class="fas fa-trash me-1" style="margin-right: 4px;"></i> Clear Read
                             </button>
@@ -279,7 +279,7 @@ foreach ($patient_notif_rows as $row) {
                     <div class="filters-bar px-4 py-3 border-top"
                         style="padding: 14px 24px; background: #f8fafc; border-bottom: 1px solid #E2E8F0;">
                         <div class="row align-items-center g-3">
-                            <div style="flex: 0 0 auto; display: flex; justify-content: space-between;">
+                            <div style="flex: 0 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; width: 100%;">
                                 <div class="segmented-nav">
                                     <button type="button" class="segmented-tab active btn"
                                         onclick="diorFilterSystemNotif(this, 'all')">
@@ -297,10 +297,11 @@ foreach ($patient_notif_rows as $row) {
                                             id="dior-pill-read"><?php echo $read_count; ?></span>
                                     </button>
                                 </div>
-                                <div class="input-group input-group-sm dior-bs-search-group" style="width: 240px;">
-                                    <input type="text" id="dior-emerg-search-input"
-                                        class="form-control border-start-0 ps-0" placeholder="Search records..."
-                                        aria-label="Search box" onkeyup="diorFilterEmerg()">
+                                <div class="input-group input-group-sm dior-bs-search-group" style="width: 260px; max-width: 100%;">
+                                    <input type="text" id="dior-sys-notif-search"
+                                        class="form-control border-start-0 ps-0"
+                                        placeholder="Search notifications..."
+                                        aria-label="Search notifications" onkeyup="diorSearchSystemNotifications()">
                                 </div>
 
                             </div>
@@ -429,12 +430,12 @@ foreach ($patient_notif_rows as $row) {
                                                 <button type="button" title="Mark as Read"
                                                     onclick="diorMarkRowAsRead(this, '<?php echo esc_js($n_id); ?>')"
                                                     class="btn btn-sm btn-icon-action">
-                                                    <i class="fas fa-check text-success" style="color: #059669;"></i>
+                                                    <i class="fas fa-check"></i>
                                                 </button>
                                             <?php endif; ?>
                                             <button type="button" title="Delete Notification"
                                                 onclick="diorDeleteNotificationRow(this, '<?php echo esc_js($n_id); ?>')"
-                                                class="btn btn-sm btn-icon-action text-danger">
+                                                class="btn btn-sm btn-icon-action">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
@@ -452,6 +453,9 @@ foreach ($patient_notif_rows as $row) {
 
                         </div>
                     </div>
+
+                    <!-- Pagination (10 notifications per page) -->
+                    <div class="dior-table-pagination" id="dior-patient-notif-pagination" style="display:none;"></div>
 
                 </div>
             </div>
@@ -748,4 +752,145 @@ foreach ($patient_notif_rows as $row) {
         if (icon) icon.classList.add('fa-spin');
         window.location.reload();
     }
+</script>
+
+<!-- Notification pagination: 10 per page, composed with the existing filters -->
+<script>
+(function () {
+    'use strict';
+
+    var LIST_SELECTOR = '#dior-system-notif-list .notification-item-row';
+    var BAR_ID = 'dior-patient-notif-pagination';
+    var PAGE_SIZE = 10;
+    var HIDDEN = 'dior-notif-page-hidden';
+    var currentPage = 1;
+
+    function allRows() {
+        return Array.prototype.slice.call(document.querySelectorAll(LIST_SELECTOR));
+    }
+
+    // A row counts as "filtered out" when a segmented filter or the search box
+    // set its inline display to none. Pagination never touches inline display,
+    // so the two mechanisms never fight over the same property.
+    function activeRows() {
+        return allRows().filter(function (row) {
+            return row.style.display !== 'none';
+        });
+    }
+
+    function render(page) {
+        var bar = document.getElementById(BAR_ID);
+        var rows = allRows();
+        if (!bar || rows.length === 0) {
+            if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
+            return;
+        }
+
+        var active = activeRows();
+        var total = active.length;
+        var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+        if (page > totalPages) page = totalPages;
+        if (page < 1) page = 1;
+        currentPage = page;
+
+        rows.forEach(function (row) { row.classList.add(HIDDEN); });
+
+        // Nothing to page through (or nothing matches the current filter).
+        if (total <= PAGE_SIZE) {
+            active.forEach(function (row) { row.classList.remove(HIDDEN); });
+            bar.style.display = 'none';
+            bar.innerHTML = '';
+            return;
+        }
+
+        var start = (currentPage - 1) * PAGE_SIZE;
+        var end = Math.min(start + PAGE_SIZE, total);
+        active.slice(start, end).forEach(function (row) { row.classList.remove(HIDDEN); });
+
+        var nav = '';
+        nav += '<button type="button" class="dior-page-btn" data-page="' + (currentPage - 1) + '"' +
+            (currentPage === 1 ? ' disabled' : '') + ' title="Previous Page">' +
+            '<i class="fa-solid fa-chevron-left" style="font-size:11px;"></i></button>';
+
+        if (totalPages <= 7) {
+            for (var i = 1; i <= totalPages; i++) {
+                nav += '<button type="button" class="dior-page-btn' + (i === currentPage ? ' active' : '') +
+                    '" data-page="' + i + '">' + i + '</button>';
+            }
+        } else {
+            for (var j = 1; j <= totalPages; j++) {
+                if (j === 1 || j === totalPages || (j >= currentPage - 1 && j <= currentPage + 1)) {
+                    nav += '<button type="button" class="dior-page-btn' + (j === currentPage ? ' active' : '') +
+                        '" data-page="' + j + '">' + j + '</button>';
+                } else if (j === currentPage - 2 || j === currentPage + 2) {
+                    nav += '<span style="padding:0 4px;color:#94A3B8;font-size:12px;">...</span>';
+                }
+            }
+        }
+
+        nav += '<button type="button" class="dior-page-btn" data-page="' + (currentPage + 1) + '"' +
+            (currentPage === totalPages ? ' disabled' : '') + ' title="Next Page">' +
+            '<i class="fa-solid fa-chevron-right" style="font-size:11px;"></i></button>';
+
+        bar.style.display = 'flex';
+        bar.innerHTML =
+            '<div class="dior-pagination-info">Showing <strong>' + (start + 1) + '</strong> to <strong>' +
+            end + '</strong> of <strong>' + total + '</strong> entries</div>' +
+            '<div class="dior-pagination-nav">' + nav + '</div>';
+
+        bar.querySelectorAll('.dior-page-btn[data-page]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                var target = parseInt(btn.getAttribute('data-page'), 10);
+                if (!isNaN(target) && !btn.disabled) render(target);
+            });
+        });
+    }
+
+    // Public hooks (also used by the wrappers below).
+    window.diorRenderPatientNotifPage = render;
+    window.diorResetPatientNotifPager = function () { render(1); };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { render(1); });
+    } else {
+        render(1);
+    }
+
+    // Keep pagination in step with the existing filter / search / row actions
+    // without touching their implementations.
+    function wrapAfter(name, reset) {
+        var original = window[name];
+        if (typeof original !== 'function') return;
+        window[name] = function () {
+            var result = original.apply(this, arguments);
+            if (reset) {
+                render(1);
+            } else {
+                setTimeout(function () { render(currentPage); }, 0);
+            }
+            return result;
+        };
+    }
+
+    wrapAfter('diorFilterSystemNotif', true);
+    wrapAfter('diorSearchSystemNotifications', true);
+    wrapAfter('diorUpdateNotifBadgesAndStats', false);
+
+    // Rows can also disappear a moment after an action (delete animation).
+    var list = document.getElementById('dior-system-notif-list');
+    if (list && typeof MutationObserver === 'function') {
+        var scheduled = false;
+        var observer = new MutationObserver(function () {
+            if (scheduled) return;
+            scheduled = true;
+            setTimeout(function () {
+                scheduled = false;
+                render(currentPage);
+            }, 320);
+        });
+        observer.observe(list, { childList: true });
+    }
+})();
 </script>
