@@ -65142,10 +65142,12 @@ a.va-btn-primary:hover {
 
 /* ==================================================================
    Patient Dashboard → mobile drawer header.
-   The brand block was a 150px navy strip with a 190 × 126 logo, so the
-   crest filled the whole header and the 34px close disc floated on top
-   of it. Header is now one 66px row: logo on the left, close on the
-   right, both vertically centred. Desktop sidebar untouched.
+   Header used to be a fixed 66px navy row with a 44 × 44 logo, which
+   left the crest much smaller than the Doctor Dashboard drawer (the
+   doctor logo renders at its natural size, capped to 200 × 120).
+   The header now hugs the logo the same way the doctor one does, so both
+   dashboards show the crest at the same size. Close disc stays centred
+   on the right; desktop sidebar untouched.
    ================================================================== */
 @media (max-width: 1024px) {
 
@@ -65154,10 +65156,10 @@ a.va-btn-primary:hover {
         display: flex !important;
         align-items: center !important;
         justify-content: flex-start !important;
-        height: 66px !important;
-        min-height: 66px !important;
-        max-height: 66px !important;
-        padding: 0 58px 0 16px !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        padding: 14px 58px 14px 16px !important;
         margin: 0 !important;
         background: var(--patient-navy, #00346C) !important;
         border-bottom: 1px solid rgba(255, 255, 255, .10) !important;
@@ -65182,10 +65184,11 @@ a.va-btn-primary:hover {
     .dior-patient-portal-wrap #dior-sidebar .brand-logo {
         display: block !important;
         width: auto !important;
-        height: 44px !important;
+        height: auto !important;
+        min-width: 0 !important;
         min-height: 0 !important;
-        max-height: 44px !important;
-        max-width: min(150px, 100%) !important;
+        max-height: 120px !important;
+        max-width: min(200px, 100%) !important;
         margin: 0 !important;
         padding: 0 !important;
         object-fit: contain !important;
