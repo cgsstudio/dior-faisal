@@ -70417,3 +70417,615 @@ a.va-btn-primary:hover {
         color: #FFFFFF !important;
     }
 }
+
+/* ==========================================================================
+   PATIENT DASHBOARD — SETTINGS (phone)
+
+   Mobile layout for <=767.98px plus this page's own control language:
+   "split-cap keycaps" - a 10px radius key with a segmented arrow cap on the
+   right edge and a thin inset shelf at the bottom. That is different from the
+   doctor pills, the Medical Record rectangles, the Documents soft keys, the
+   Emergency alert keys and the Feedback capsules. Desktop/tablet untouched.
+   ========================================================================== */
+@media (max-width: 767.98px) {
+
+    /* ---- 1. shell -------------------------------------------------------- */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 14px 12px 24px !important;
+        background-color: #F8FAFC !important;
+        overflow-x: clip !important;
+        overflow-y: visible !important;
+        position: relative !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-source-inner,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .section-body {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* ---- 2. page title --------------------------------------------------- */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .breadcrumb-main {
+        margin: 0 0 12px !important;
+        width: 100% !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .breadcrumb-main>.row {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .breadcrumb-title h4,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .page-title {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        line-height: 1.25 !important;
+        letter-spacing: -0.01em !important;
+        text-align: left !important;
+        color: #00346C !important;
+        white-space: normal !important;
+    }
+
+    /* ---- 3. profile header card ----------------------------------------- */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 0 16px !important;
+        padding: 0 !important;
+        border-radius: 14px !important;
+        overflow: hidden !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card .profile-cover-gradient {
+        height: 70px !important;
+        min-height: 70px !important;
+        border-radius: 14px 14px 0 0 !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card>.card-body {
+        padding: 0 14px 16px !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card>.card-body>div:first-child {
+        display: flex !important;
+        flex-direction: column !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 12px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: -36px 0 0 !important;
+        padding: 0 !important;
+    }
+
+    /* avatar block: avatar first, name block under it */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card>.card-body>div:first-child>div:first-child {
+        display: flex !important;
+        flex-direction: column !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 10px !important;
+        flex: 0 0 auto !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card .avatar-edit-wrapper {
+        width: 88px !important;
+        height: 88px !important;
+        min-width: 88px !important;
+        min-height: 88px !important;
+        margin: 0 auto !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card img.profile-avatar-img {
+        width: 88px !important;
+        height: 88px !important;
+        min-width: 88px !important;
+        min-height: 88px !important;
+        max-width: 88px !important;
+        max-height: 88px !important;
+        border-width: 3px !important;
+        border-style: solid !important;
+        border-color: #FFFFFF !important;
+        border-radius: 50% !important;
+        object-fit: cover !important;
+        display: block !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card .avatar-change-btn {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        min-height: 30px !important;
+        max-height: 30px !important;
+        padding: 0 !important;
+        right: -2px !important;
+        bottom: -2px !important;
+        border-width: 2px !important;
+        border-style: solid !important;
+        border-color: #FFFFFF !important;
+        border-radius: 50% !important;
+        line-height: 1 !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .22) !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card .avatar-change-btn i {
+        font-size: 11px !important;
+        line-height: 1 !important;
+    }
+
+    /* name block under the avatar, centred */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card .avatar-edit-wrapper+div {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        text-align: center !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card .avatar-edit-wrapper+div>div:first-child {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        width: 100% !important;
+        margin: 0 0 8px !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-settings-profile-name {
+        margin: 0 !important;
+        padding-top: 0 !important;
+        max-width: 100% !important;
+        font-size: 18px !important;
+        line-height: 1.25 !important;
+        text-align: center !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card .dior-settings-profile-name+span {
+        margin: 0 !important;
+        padding: 3px 9px !important;
+        font-size: 10.5px !important;
+        font-weight: 600 !important;
+        line-height: 1.4 !important;
+        border-radius: 999px !important;
+        white-space: nowrap !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card .avatar-edit-wrapper+div>div:last-child {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        font-size: 12px !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card .avatar-edit-wrapper+div>div:last-child>span {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        width: auto !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 5px 10px !important;
+        font-size: 11.5px !important;
+        font-weight: 600 !important;
+        line-height: 1.35 !important;
+        border-radius: 8px !important;
+        text-align: left !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-settings-profile-email {
+        min-width: 0 !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+    }
+
+    /* upload-photo row becomes a full-width key */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .profile-header-card>.card-body>div:first-child>div:last-child {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: stretch !important;
+        gap: 0 !important;
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+    }
+
+    /* ---- 4. page buttons: split-cap keycaps ----------------------------- */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-change-photo-btn {
+        position: relative !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 46px !important;
+        min-height: 46px !important;
+        margin: 0 !important;
+        padding: 0 50px 0 14px !important;
+        border-width: 1px !important;
+        border-style: solid !important;
+        border-color: #D7E3F0 !important;
+        border-radius: 10px !important;
+        background-color: #F0F6FC !important;
+        background-image: none !important;
+        color: #1A528E !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+        overflow: hidden !important;
+        box-shadow: inset 0 -2px 0 rgba(26, 82, 142, .10) !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-change-photo-btn i {
+        font-size: 12px !important;
+        color: #1A528E !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-change-photo-btn::after {
+        content: "\f061" !important;
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 38px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-family: "Font Awesome 6 Free", "Font Awesome 5 Free" !important;
+        font-weight: 900 !important;
+        font-size: 10px !important;
+        color: #1A528E !important;
+        background-color: #E4EEF8 !important;
+        border-left: 1px solid #D7E3F0 !important;
+        box-shadow: inset 0 -2px 0 rgba(26, 82, 142, .10) !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-change-photo-btn:hover,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-change-photo-btn:focus-visible {
+        background-color: #E6F0FA !important;
+        color: #00346C !important;
+        border-color: #BFD5E8 !important;
+        box-shadow: inset 0 -2px 0 rgba(26, 82, 142, .16) !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-change-photo-btn:disabled {
+        opacity: .7 !important;
+        cursor: wait !important;
+    }
+
+    /* primary keys: Save Profile + Reset Password */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-profile-settings-card button[type="submit"],
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-password-reset-card a.btn {
+        position: relative !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        margin: 0 !important;
+        padding: 0 50px 0 16px !important;
+        border-width: 0 !important;
+        border-radius: 10px !important;
+        background-color: #1A528E !important;
+        background-image: none !important;
+        color: #FFFFFF !important;
+        font-size: 13.5px !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+        text-decoration: none !important;
+        overflow: hidden !important;
+        box-shadow: inset 0 -2px 0 rgba(15, 23, 42, .22) !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-profile-settings-card button[type="submit"] i,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-password-reset-card a.btn i {
+        font-size: 12px !important;
+        color: #FFFFFF !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-profile-settings-card button[type="submit"]::after,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-password-reset-card a.btn::after {
+        content: "\f061" !important;
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 38px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-family: "Font Awesome 6 Free", "Font Awesome 5 Free" !important;
+        font-weight: 900 !important;
+        font-size: 10px !important;
+        color: #FFFFFF !important;
+        background-color: rgba(255, 255, 255, .16) !important;
+        border-left: 1px solid rgba(255, 255, 255, .26) !important;
+        box-shadow: inset 0 -2px 0 rgba(15, 23, 42, .18) !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-profile-settings-card button[type="submit"]:hover,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-password-reset-card a.btn:hover,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-profile-settings-card button[type="submit"]:focus-visible,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-password-reset-card a.btn:focus-visible {
+        background-color: #00346C !important;
+        color: #FFFFFF !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-profile-settings-card button[type="submit"]:disabled {
+        opacity: .75 !important;
+        cursor: wait !important;
+    }
+
+    /* save row */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #dior-profile-settings-form>div:last-child {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: stretch !important;
+        gap: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 14px 0 0 !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #dior-profile-settings-form>div:last-child>button {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+    }
+
+    /* ---- 5. settings cards ---------------------------------------------- */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-password-reset-card {
+        margin-top: 14px !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card>.card-header {
+        display: block !important;
+        padding: 13px 14px !important;
+        margin: 0 !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .card-title-text {
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        margin: 0 0 4px !important;
+        font-size: 14.5px !important;
+        font-weight: 700 !important;
+        line-height: 1.3 !important;
+        color: #0F172A !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .card-title-text i {
+        margin-right: 7px !important;
+        font-size: 13px !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .card-subtitle-text {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        line-height: 1.5 !important;
+        white-space: normal !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card>.card-body {
+        padding: 14px !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-profile-settings-card form {
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* ---- 6. form fields -------------------------------------------------- */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card h6 {
+        margin: 18px 0 10px !important;
+        padding: 0 !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        letter-spacing: .07em !important;
+        text-transform: uppercase !important;
+        color: #2B70B8 !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card h6:first-of-type {
+        margin-top: 0 !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-personal-details-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+        margin-bottom: 18px !important;
+        width: 100% !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .dior-form-group {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .dior-form-row-2,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .dior-form-row-3 {
+        display: flex !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        gap: 12px !important;
+        width: 100% !important;
+        margin-bottom: 12px !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .dior-form-row-2>.dior-form-group,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .dior-form-row-3>.dior-form-group {
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .form-label {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 0 5px !important;
+        font-size: 11.5px !important;
+        font-weight: 600 !important;
+        line-height: 1.35 !important;
+        color: #475569 !important;
+        text-align: left !important;
+        white-space: normal !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .form-control,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .form-select {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        height: 46px !important;
+        min-height: 46px !important;
+        margin: 0 !important;
+        padding: 11px 12px !important;
+        border-width: 1px !important;
+        border-style: solid !important;
+        border-color: #E2E8F0 !important;
+        border-radius: 10px !important;
+        background-color: #FFFFFF !important;
+        color: #0F172A !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        line-height: 1.35 !important;
+        box-shadow: none !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card select.form-select {
+        padding-right: 32px !important;
+        text-overflow: ellipsis !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card input[type="date"] {
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .form-control::placeholder {
+        color: #94A3B8 !important;
+        font-size: 14px !important;
+    }
+
+    /* focus + validation ring (only after the user touched the field) */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .form-control:focus,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .form-select:focus {
+        border-color: #2C6CB1 !important;
+        box-shadow: 0 0 0 3px rgba(44, 108, 177, .12) !important;
+        outline: none !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .form-control:user-invalid,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card .form-select:user-invalid {
+        border-color: #DC2626 !important;
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, .12) !important;
+    }
+
+    /* ---- 7. password & security card ------------------------------------ */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-password-reset-card>.card-body {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        gap: 12px !important;
+        padding: 14px !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings #patient-password-reset-card>.card-body>p {
+        margin: 0 !important;
+        font-size: 12.5px !important;
+        line-height: 1.55 !important;
+        color: #64748B !important;
+        text-align: left !important;
+        width: 100% !important;
+    }
+
+    /* ---- 8. toggles & checkboxes (tap-friendly) -------------------------- */
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-toggle-switch {
+        width: 48px !important;
+        min-width: 48px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        margin: 0 !important;
+        vertical-align: middle !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-toggle-slider {
+        border-radius: 999px !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-toggle-slider:before {
+        width: 22px !important;
+        height: 22px !important;
+        left: 3px !important;
+        bottom: 3px !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .dior-toggle-switch input:checked+.dior-toggle-slider:before {
+        transform: translateX(20px) !important;
+    }
+
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card input[type="checkbox"],
+    #dior-patient-portal-app#dior-patient-portal-app #tab-settings .settings-form-card input[type="radio"] {
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        min-height: 18px !important;
+        margin: 0 6px 0 0 !important;
+        padding: 0 !important;
+        flex: 0 0 auto !important;
+        accent-color: #1A528E !important;
+        vertical-align: middle !important;
+    }
+}
