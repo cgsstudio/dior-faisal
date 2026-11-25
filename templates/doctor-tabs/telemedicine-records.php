@@ -452,50 +452,57 @@ if (!is_array($all_patients)) {
     function diorDeleteTelemedRecord(teleUid, btn) {
         if (!teleUid) return;
         var row = document.getElementById('tele-row-' + teleUid) || (btn ? btn.closest('tr') : null);
+        var fd = new FormData();
+        fd.append('action', 'dior_doctor_delete_virtual_visit_record');
+        fd.append('nonce', '<?php echo esc_js($doctor_nonce); ?>');
+        fd.append('tele_uid', teleUid);
 
         var doDelete = function () {
-            if (row) {
-                row.style.transition = 'all 0.3s ease';
-                row.style.opacity = '0';
-                row.style.transform = 'translateX(20px)';
-                setTimeout(function () { row.remove(); }, 300);
-            }
-
-            var fd = new FormData();
-            fd.append('action', 'dior_doctor_delete_virtual_visit_record');
-            fd.append('nonce', '<?php echo esc_js($doctor_nonce); ?>');
-            fd.append('tele_uid', teleUid);
-
             fetch('<?php echo esc_js($ajax_url); ?>', {
                 method: 'POST',
                 credentials: 'same-origin',
                 body: fd
-            }).then(function (r) { return r.json(); }).then(function (d) {
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (result) {
+                if (!result || !result.success) {
+                    throw new Error((result && result.data && result.data.message) || 'The virtual visit record could not be removed.');
+                }
+                if (row) {
+                    row.style.transition = 'all 0.3s ease';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(20px)';
+                    setTimeout(function () { row.remove(); }, 300);
+                }
                 if (window.Swal) {
                     Swal.fire({
                         position: 'top-end',
                         icon: 'success',
-                        title: 'Record Deleted',
+                        title: 'Record Removed',
+                        text: result.data && result.data.message ? result.data.message : 'The record was removed from the active list.',
                         showConfirmButton: false,
-                        timer: 1500
+                        timer: 1800
                     });
                 }
-            }).catch(function () { });
+            })
+            .catch(function (error) {
+                if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.message || 'Please try again.' });
+            });
         };
 
         if (window.Swal) {
             Swal.fire({
-                title: 'Delete Virtual Visit Record?',
-                text: 'This visit record will be permanently deleted.',
+                title: 'Remove Virtual Visit Record?',
+                text: 'The record will be removed from the active list. Clinical history will be retained for compliance.',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#64748b',
-                confirmButtonText: 'Yes, delete!'
+                confirmButtonText: 'Yes, remove'
             }).then(function (res) {
                 if (res.isConfirmed) doDelete();
             });
-        } else if (confirm('Are you sure you want to delete this virtual visit record?')) {
+        } else if (confirm('Remove this virtual visit record from the active list? Clinical history will be retained.')) {
             doDelete();
         }
     }
