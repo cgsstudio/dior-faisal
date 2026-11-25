@@ -185,9 +185,9 @@ foreach ($patients_query as $pq) {
                         placeholder="Search records..." aria-label="Search prescriptions">
                 </div>
                 <button type="button" class="va-icon-btn va-btn-primary btn" id="pr-add-btn"
-                    title="Add Medication Prescription (FDA Approved)" aria-label="Add new prescription"
+                    title="Add Medication Prescription (FDA Approved)" aria-label="New Prescription"
                     onclick="diorOpenFdaPrescriptionModal()">
-                    <i class="fas fa-plus"></i>
+                    <i class="fas fa-plus" aria-hidden="true"></i><span class="ms-2">New Prescription</span>
                 </button>
                 <button type="button" class="va-icon-btn va-btn-success btn" id="pr-export-btn"
                     title="Export CSV" aria-label="Export prescriptions to CSV"
