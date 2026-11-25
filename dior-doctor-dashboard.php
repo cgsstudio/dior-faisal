@@ -1572,78 +1572,77 @@ class Dior_Doctor_Dashboard
 
     public static function ajax_delete_notification()
     {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(["message" => "Unauthorized"], 403);
-        }
+        if (!is_user_logged_in()) wp_send_json_error(["message" => "Unauthorized"], 403);
         $uid = get_current_user_id();
-        $nids = isset($_POST['notif_ids']) && is_array($_POST['notif_ids']) ? array_map('sanitize_text_field', $_POST['notif_ids']) : [];
-        $nid = sanitize_text_field($_POST["notif_id"] ?? $_POST["notification_id"] ?? "");
-        if (!empty($nid) && !in_array($nid, $nids, true)) {
-            $nids[] = $nid;
-        }
-
-        if (empty($nids)) {
-            wp_send_json_error(["message" => "Notification ID required."]);
-        }
+        $nids = isset($_POST['notif_ids']) && is_array($_POST['notif_ids'])
+            ? array_values(array_filter(array_map('sanitize_text_field', $_POST['notif_ids'])))
+            : [];
+        $nid = sanitize_text_field(wp_unslash($_POST["notif_id"] ?? $_POST["notification_id"] ?? ""));
+        if ($nid !== '' && !in_array($nid, $nids, true)) $nids[] = $nid;
+        if (!$nids) wp_send_json_error(["message" => "Notification ID required."], 400);
 
         global $wpdb;
         $table = $wpdb->prefix . 'dior_notifications';
         $has_table = ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table);
+        $deleted = 0;
 
         foreach ($nids as $target_id) {
             if ($has_table) {
-                $wpdb->query($wpdb->prepare(
-                    "DELETE FROM $table WHERE (notification_uid = %s OR id = %d) AND (doctor_id = %d OR user_id = %d)",
-                    $target_id,
-                    (int)$target_id,
-                    $uid,
-                    $uid
+                $result = $wpdb->query($wpdb->prepare(
+                    "DELETE FROM $table WHERE (notification_uid=%s OR id=%d) AND (doctor_id=%d OR user_id=%d)",
+                    $target_id, ctype_digit($target_id) ? (int)$target_id : 0, $uid, $uid
                 ));
+                if ($result > 0) $deleted += (int)$result;
             }
         }
 
-        $ns = get_user_meta($uid, "dior_doctor_notifications", true);
-        if (is_array($ns)) {
-            $filtered = [];
-            foreach ($ns as $n) {
-                if (!in_array($n["id"] ?? '', $nids, true)) {
-                    $filtered[] = $n;
-                }
-            }
-            update_user_meta($uid, "dior_doctor_notifications", $filtered);
+        $notifications = get_user_meta($uid, "dior_doctor_notifications", true);
+        if (is_array($notifications)) {
+            $before = count($notifications);
+            $notifications = array_values(array_filter($notifications, static function ($item) use ($nids) {
+                return !in_array((string)($item["id"] ?? ''), $nids, true);
+            }));
+            $meta_deleted = $before - count($notifications);
+            update_user_meta($uid, "dior_doctor_notifications", $notifications);
+            $deleted += $meta_deleted;
         }
 
-        wp_send_json_success(["message" => "Notification permanently deleted."]);
+        if (!$deleted) wp_send_json_error(["message" => "Notification not found or already deleted."], 404);
+        if (class_exists('Dior_Audit_Service')) {
+            foreach ($nids as $target_id) Dior_Audit_Service::log('doctor_notification_delete', 'notification', $target_id, null, 'success');
+        }
+        wp_send_json_success(["message" => $deleted . " notification(s) permanently deleted."]);
     }
 
     public static function ajax_clear_read_notifications()
     {
-        if (!is_user_logged_in()) {
-            wp_send_json_error(["message" => "Unauthorized"], 403);
-        }
+        if (!is_user_logged_in()) wp_send_json_error(["message" => "Unauthorized"], 403);
         $uid = get_current_user_id();
 
         global $wpdb;
         $table = $wpdb->prefix . 'dior_notifications';
+        $deleted = 0;
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table) {
-            $wpdb->query($wpdb->prepare(
-                "DELETE FROM $table WHERE is_read = 1 AND (doctor_id = %d OR user_id = %d)",
-                $uid,
-                $uid
+            $result = $wpdb->query($wpdb->prepare(
+                "DELETE FROM $table WHERE is_read=1 AND (doctor_id=%d OR user_id=%d)",
+                $uid, $uid
             ));
+            if ($result !== false) $deleted += (int)$result;
         }
 
-        $ns = get_user_meta($uid, "dior_doctor_notifications", true);
-        if (is_array($ns)) {
-            $remaining = [];
-            foreach ($ns as $n) {
-                if (empty($n["is_read"])) {
-                    $remaining[] = $n;
-                }
-            }
+        $notifications = get_user_meta($uid, "dior_doctor_notifications", true);
+        if (is_array($notifications)) {
+            $remaining = array_values(array_filter($notifications, static function ($item) {
+                return empty($item["is_read"]);
+            }));
+            $deleted += count($notifications) - count($remaining);
             update_user_meta($uid, "dior_doctor_notifications", $remaining);
         }
-        wp_send_json_success(["message" => "Read notifications cleared successfully."]);
+
+        if ($deleted && class_exists('Dior_Audit_Service')) {
+            Dior_Audit_Service::log('doctor_notifications_clear_read', 'notification', 'read-notifications', null, 'success', ['deleted_count' => $deleted]);
+        }
+        wp_send_json_success(["message" => $deleted . " read notification(s) permanently deleted.", "deleted" => $deleted]);
     }
 
 
