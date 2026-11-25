@@ -196,7 +196,9 @@ class Dior_Doctor_Dynamic {
         $prescriptions = self::table('prescriptions');
         $has_encounter = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$encounters} WHERE appointment_id = %s LIMIT 1", $uid));
         $has_prescription = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$prescriptions} WHERE appointment_uid = %s LIMIT 1", $uid));
-        if ($has_encounter || $has_prescription) {
+        $telemedicine = self::table('telemedicine');
+        $has_telemedicine = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$telemedicine} WHERE appointment_uid = %s AND is_deleted=0 LIMIT 1", $uid));
+        if ($has_encounter || $has_prescription || $has_telemedicine) {
             wp_send_json_error(['message' => 'This appointment is linked to a retained clinical record and cannot be permanently deleted.'], 409);
         }
 
