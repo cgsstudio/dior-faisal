@@ -19,7 +19,7 @@ $sql = "SELECT t.*, p.first_name, p.last_name, a.appt_date, a.appt_time, u.displ
         LEFT JOIN {$wpdb->prefix}dior_patients p ON p.user_id = t.patient_id 
         LEFT JOIN {$wpdb->prefix}dior_appointments a ON a.appt_uid = t.appointment_uid 
         LEFT JOIN {$wpdb->users} u ON u.ID = t.doctor_id 
-        WHERE t.doctor_id IN ($placeholders) 
+        WHERE t.doctor_id IN ($placeholders) AND t.is_deleted=0
         ORDER BY t.created_at DESC, t.id DESC LIMIT 200";
 $virtual_records = $wpdb->get_results($wpdb->prepare($sql, ...$doctor_ids), ARRAY_A);
 
