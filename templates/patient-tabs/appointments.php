@@ -158,7 +158,7 @@
                                 </div>
                                 <div class="docs-actions-group">
                                     <button type="button" aria-label="Delete selected items"
-                                        class="btn btn-sm btn-danger btn" title="Delete Selected">
+                                        class="btn btn-sm btn-danger btn" title="Delete Selected" onclick="diorBulkDeleteStaticRows(this)">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     <button type="button" aria-label="Export to CSV" class="btn btn-sm btn-success btn"
