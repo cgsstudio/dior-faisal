@@ -1818,6 +1818,7 @@ class Dior_Doctor_Dashboard
 
     public static function ajax_delete_notification()
     {
+        Dior_Auth_Service::verify_ajax_nonce("dior_doctor_nonce");
         if (!is_user_logged_in()) wp_send_json_error(["message" => "Unauthorized"], 403);
         $uid = get_current_user_id();
         $nids = isset($_POST['notif_ids']) && is_array($_POST['notif_ids'])
@@ -1862,6 +1863,7 @@ class Dior_Doctor_Dashboard
 
     public static function ajax_clear_read_notifications()
     {
+        Dior_Auth_Service::verify_ajax_nonce("dior_doctor_nonce");
         if (!is_user_logged_in()) wp_send_json_error(["message" => "Unauthorized"], 403);
         $uid = get_current_user_id();
 
