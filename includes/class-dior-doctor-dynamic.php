@@ -78,6 +78,7 @@ class Dior_Doctor_Dynamic {
             room_url VARCHAR(500) NULL,
             status VARCHAR(30) NOT NULL DEFAULT 'Scheduled',
             notes TEXT NULL,
+            is_deleted TINYINT(1) NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL,
             updated_at DATETIME NOT NULL,
             PRIMARY KEY (id),
@@ -138,14 +139,27 @@ class Dior_Doctor_Dynamic {
 
     public static function patients($doctor_id=0) {
         global $wpdb;
-        $doctor_id = $doctor_id ?: self::doctor_id();
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' ORDER BY created_at DESC"), ARRAY_A);
-        if (!$rows) {
-            $users = get_users(['role__in'=>['patient','subscriber','customer'],'number'=>500]);
-            foreach ($users as $u) {
-                $pid = get_user_meta($u->ID,'patient_id',true) ?: 'DM-' . (10000+$u->ID);
-                $rows[] = ['id'=>0,'user_id'=>$u->ID,'patient_uid'=>$pid,'first_name'=>$u->first_name,'last_name'=>$u->last_name,'email'=>$u->user_email,'phone'=>get_user_meta($u->ID,'phone',true),'status'=>'active','avatar_url'=>get_user_meta($u->ID,'dior_profile_image',true)];
-            }
+        $table = self::table('patients');
+        $table_exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table;
+        if ($table_exists) {
+            // An empty relational result is authoritative; do not repopulate deleted users from wp_users.
+            return $wpdb->get_results("SELECT * FROM {$table} WHERE status <> 'deleted' ORDER BY created_at DESC", ARRAY_A) ?: [];
+        }
+
+        // Legacy fallback is used only before the relational patient table exists.
+        $users = get_users([
+            'role__in' => ['patient', 'subscriber', 'customer'],
+            'number' => 500,
+            'meta_query' => [
+                'relation' => 'OR',
+                ['key' => 'dior_patient_status', 'compare' => 'NOT EXISTS'],
+                ['key' => 'dior_patient_status', 'value' => 'deleted', 'compare' => '!='],
+            ],
+        ]);
+        $rows = [];
+        foreach ($users as $u) {
+            $pid = get_user_meta($u->ID, 'patient_id', true) ?: 'DM-' . (10000 + $u->ID);
+            $rows[] = ['id'=>0,'user_id'=>$u->ID,'patient_uid'=>$pid,'first_name'=>$u->first_name,'last_name'=>$u->last_name,'email'=>$u->user_email,'phone'=>get_user_meta($u->ID,'phone',true),'status'=>'active','avatar_url'=>get_user_meta($u->ID,'dior_profile_image',true)];
         }
         return $rows;
     }
@@ -169,11 +183,32 @@ class Dior_Doctor_Dynamic {
     }
 
     public static function ajax_appointment_delete() {
-        self::auth(); global $wpdb; $uid=sanitize_text_field($_POST['appt_uid']??''); $a=Dior_Appointment_Service::get_appointment($uid);
-        if(!$a || !self::doctor_can_manage_appointment($a)) wp_send_json_error(['message'=>'Appointment not found or access denied.']);
-        $ok=$wpdb->delete($wpdb->prefix.'dior_appointments',['appt_uid'=>$uid],['%s']);
-        if($ok!==false){ if(class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('appointment_delete','appointment',$uid,(int)$a['patient_id'],'success'); wp_send_json_success(['message'=>'Appointment permanently deleted.']); }
-        wp_send_json_error(['message'=>'Unable to delete appointment.']);
+        self::auth();
+        global $wpdb;
+        $uid = sanitize_text_field(wp_unslash($_POST['appt_uid'] ?? ''));
+        $appointment = $uid ? Dior_Appointment_Service::get_appointment($uid) : null;
+        if (!$appointment || !self::doctor_can_manage_appointment($appointment)) {
+            wp_send_json_error(['message' => 'Appointment not found or access denied.'], 403);
+        }
+
+        // Preserve any clinical encounter and prescription linked to this appointment.
+        $encounters = self::table('encounters');
+        $prescriptions = self::table('prescriptions');
+        $has_encounter = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$encounters} WHERE appointment_id = %s LIMIT 1", $uid));
+        $has_prescription = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$prescriptions} WHERE appointment_uid = %s LIMIT 1", $uid));
+        if ($has_encounter || $has_prescription) {
+            wp_send_json_error(['message' => 'This appointment is linked to a retained clinical record and cannot be permanently deleted.'], 409);
+        }
+
+        $deleted = $wpdb->delete(self::table('appointments'), ['appt_uid' => $uid], ['%s']);
+        if ($deleted !== 1) {
+            if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('appointment_delete', 'appointment', $uid, (int)$appointment['patient_id'], 'error');
+            wp_send_json_error(['message' => 'Appointment was not deleted. Please refresh and try again.'], 500);
+        }
+
+        // Keep appointment history and audit events as the permanent activity trail.
+        if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('appointment_delete', 'appointment', $uid, (int)$appointment['patient_id'], 'success');
+        wp_send_json_success(['message' => 'Appointment permanently deleted.']);
     }
     public static function ajax_appointment_update() {
         self::auth(); global $wpdb; 
@@ -257,9 +292,67 @@ class Dior_Doctor_Dynamic {
     }
 
     public static function ajax_patient_status(){ self::auth(); global $wpdb; $pid=(int)($_POST['patient_id']??0); self::ensure_patient_row($pid); if(!self::patient_belongs_to_doctor($pid,self::doctor_id())) wp_send_json_error(['message'=>'Access denied.'],403); self::ensure_patient_row($pid); $status=sanitize_key($_POST['status']??'active'); if(!in_array($status,['active','inactive','blocked'],true)) wp_send_json_error(['message'=>'Invalid status.']); $wpdb->update(self::table('patients'),['status'=>$status,'updated_at'=>current_time('mysql')],['user_id'=>$pid]); update_user_meta($pid,'dior_patient_status',$status); wp_send_json_success(['message'=>'Patient status updated.']); }
-    public static function ajax_patient_delete(){ self::auth(); global $wpdb; $pid=(int)($_POST['patient_id']??0); self::ensure_patient_row($pid); if(!self::patient_belongs_to_doctor($pid,self::doctor_id())) wp_send_json_error(['message'=>'Access denied.'],403); $wpdb->update(self::table('patients'),['status'=>'deleted','updated_at'=>current_time('mysql')],['user_id'=>$pid]); update_user_meta($pid,'dior_patient_status','deleted'); wp_send_json_success(['message'=>'Patient removed from the database.']); }
-    public static function ajax_patient_bulk_delete(){ self::auth(); $ids=array_map('intval',(array)($_POST['patient_ids']??[])); if(!$ids) wp_send_json_error(['message'=>'Select at least one patient.']); foreach($ids as $id){ if(self::patient_belongs_to_doctor($id,self::doctor_id())){ $_POST['patient_id']=$id; self::delete_patient_quiet($id); } } wp_send_json_success(['message'=>'Selected patients deleted.']); }
-    private static function delete_patient_quiet($id){ global $wpdb; $wpdb->update(self::table('patients'),['status'=>'deleted','updated_at'=>current_time('mysql')],['user_id'=>(int)$id]); update_user_meta($id,'dior_patient_status','deleted'); }
+    /**
+     * Patient account removal is a deactivation/pseudonymization workflow.
+     * Clinical records remain linked to the stable user ID for retention and audit.
+     */
+    private static function delete_patient_quiet($id) {
+        global $wpdb;
+        $id = absint($id);
+        if (!$id || !get_userdata($id)) return false;
+
+        self::ensure_patient_row($id);
+        $updated = $wpdb->update(self::table('patients'), [
+            'status' => 'deleted',
+            'updated_at' => current_time('mysql'),
+        ], ['user_id' => $id], ['%s', '%s'], ['%d']);
+
+        if ($updated === false) return false;
+        update_user_meta($id, 'dior_patient_status', 'deleted');
+
+        // Prevent further portal use without deleting PHI, clinical history or linked records.
+        wp_update_user([
+            'ID' => $id,
+            'user_pass' => wp_generate_password(48, true, true),
+            'user_email' => 'closed-patient-' . $id . '@invalid.example',
+            'display_name' => 'Closed Patient #' . $id,
+            'first_name' => '',
+            'last_name' => '',
+        ]);
+        foreach (['phone', 'billing_phone', 'dior_profile_image', 'profile_image', 'dior_profile_image_id'] as $meta_key) {
+            delete_user_meta($id, $meta_key);
+        }
+
+        if (class_exists('Dior_Audit_Service')) {
+            Dior_Audit_Service::log('patient_account_closed', 'patient', 'patient-' . $id, $id, 'success', ['retention' => 'clinical_records_preserved']);
+        }
+        return true;
+    }
+
+    public static function ajax_patient_delete() {
+        self::auth();
+        $pid = absint($_POST['patient_id'] ?? 0);
+        if (!$pid || !self::patient_belongs_to_doctor($pid, self::doctor_id())) {
+            wp_send_json_error(['message' => 'Access denied.'], 403);
+        }
+        if (!self::delete_patient_quiet($pid)) {
+            wp_send_json_error(['message' => 'Patient account could not be closed. No records were removed.'], 500);
+        }
+        wp_send_json_success(['message' => 'Patient account closed. Clinical records and audit history have been retained.']);
+    }
+
+    public static function ajax_patient_bulk_delete() {
+        self::auth();
+        $ids = array_values(array_unique(array_filter(array_map('absint', (array)($_POST['patient_ids'] ?? [])))));
+        if (!$ids) wp_send_json_error(['message' => 'Select at least one patient.'], 400);
+
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if (self::patient_belongs_to_doctor($id, self::doctor_id()) && self::delete_patient_quiet($id)) $deleted++;
+        }
+        if (!$deleted) wp_send_json_error(['message' => 'No selected patient accounts could be closed.'], 403);
+        wp_send_json_success(['message' => $deleted . ' patient account(s) closed. Clinical records and audit history were retained.', 'deleted' => $deleted]);
+    }
 
     public static function ajax_patient_add() {
         self::auth();
@@ -724,7 +817,23 @@ class Dior_Doctor_Dynamic {
         if (!$updated) wp_send_json_error(['message' => 'Document not found or no changes were made.']);
         wp_send_json_success(['message' => 'Document details updated.']);
     }
-    public static function ajax_document_delete(){ self::auth(); global $wpdb; $id=(int)($_POST['id']??0); $doc=$wpdb->get_row($wpdb->prepare('SELECT * FROM '.self::table('documents').' WHERE id=%d',$id),ARRAY_A); if(!$doc||!self::patient_belongs_to_doctor($doc['patient_id'],self::doctor_id())) wp_send_json_error(['message'=>'Access denied.']); $wpdb->delete(self::table('documents'),['id'=>$id],['%d']); wp_send_json_success(['message'=>'Document deleted.']); }
+    public static function ajax_document_delete() {
+        self::auth();
+        global $wpdb;
+        $id = absint($_POST['id'] ?? 0);
+        $doc = $id ? $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . self::table('documents') . ' WHERE id=%d AND is_deleted=0', $id), ARRAY_A) : null;
+        if (!$doc || !self::patient_belongs_to_doctor($doc['patient_id'], self::doctor_id())) {
+            wp_send_json_error(['message' => 'Document not found or access denied.'], 403);
+        }
+
+        // Clinical documents are retained but removed from active dashboard listings.
+        $updated = $wpdb->update(self::table('documents'), ['is_deleted' => 1, 'updated_at' => current_time('mysql')], ['id' => $id], ['%d', '%s'], ['%d']);
+        if ($updated === false || $updated < 1) {
+            wp_send_json_error(['message' => 'Document could not be archived.'], 500);
+        }
+        if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('document_archived', 'document', $doc['doc_uid'] ?? (string)$id, (int)$doc['patient_id'], 'success');
+        wp_send_json_success(['message' => 'Document removed from the active list. Clinical file retained for compliance.']);
+    }
 
     public static function ajax_review_save(){
         self::auth();
@@ -769,16 +878,18 @@ class Dior_Doctor_Dynamic {
             wp_send_json_success(['message' => 'Review created successfully.', 'id' => $wpdb->insert_id]);
         }
     }
-    public static function ajax_review_delete(){
+    public static function ajax_review_delete() {
         self::auth();
         global $wpdb;
-        $id = (int)($_POST['id'] ?? 0);
-        $r = $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . self::table('reviews') . ' WHERE id=%d', $id), ARRAY_A);
+        $id = absint($_POST['id'] ?? 0);
+        $r = $id ? $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . self::table('reviews') . ' WHERE id=%d', $id), ARRAY_A) : null;
         if (!$r || (!current_user_can('manage_options') && !in_array((int)$r['doctor_id'], self::doctor_scope_ids(), true))) {
-            wp_send_json_error(['message' => 'Access denied.'], 403);
+            wp_send_json_error(['message' => 'Review not found or access denied.'], 403);
         }
-        $wpdb->delete(self::table('reviews'), ['id' => $id], ['%d']);
-        wp_send_json_success(['message' => 'Review deleted.']);
+        $deleted = $wpdb->delete(self::table('reviews'), ['id' => $id], ['%d']);
+        if ($deleted !== 1) wp_send_json_error(['message' => 'Review was not deleted.'], 500);
+        if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('review_delete', 'review', $r['review_uid'], (int)$r['patient_id'], 'success');
+        wp_send_json_success(['message' => 'Review permanently deleted.']);
     }
     public static function ajax_review_bulk_delete(){
         self::auth();
@@ -791,16 +902,58 @@ class Dior_Doctor_Dynamic {
         foreach ($ids as $id) {
             $r = $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . self::table('reviews') . ' WHERE id=%d', $id), ARRAY_A);
             if ($r && (current_user_can('manage_options') || in_array((int)$r['doctor_id'], self::doctor_scope_ids(), true))) {
-                $wpdb->delete(self::table('reviews'), ['id' => $id], ['%d']);
-                $deleted++;
+                if ($wpdb->delete(self::table('reviews'), ['id' => $id], ['%d']) === 1) {
+                    $deleted++;
+                    if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('review_delete', 'review', $r['review_uid'], (int)$r['patient_id'], 'success');
+                }
             }
         }
         wp_send_json_success(['message' => "$deleted review(s) deleted."]);
     }
     public static function ajax_review_get(){ self::auth(); global $wpdb; $id=(int)($_POST['id']??0); $r=$wpdb->get_row($wpdb->prepare('SELECT * FROM '.self::table('reviews').' WHERE id=%d',$id),ARRAY_A); if(!$r)wp_send_json_error(['message'=>'Review not found.']); wp_send_json_success(['review'=>$r,'patient'=>self::patient($r['patient_id'])]); }
 
-    public static function ajax_telemed_save(){ self::auth(); global $wpdb; $pid=(int)($_POST['patient_id']??0); $appt=sanitize_text_field($_POST['appointment_uid']??''); if(!$pid||!self::patient_belongs_to_doctor($pid,self::doctor_id()))wp_send_json_error(['message'=>'Access denied.']);$id=(int)($_POST['id']??0);$data=['appointment_uid'=>$appt,'patient_id'=>$pid,'doctor_id'=>self::doctor_id(),'room_url'=>esc_url_raw($_POST['room_url']??''),'status'=>sanitize_text_field($_POST['status']??'Scheduled'),'notes'=>sanitize_textarea_field($_POST['notes']??''),'updated_at'=>current_time('mysql')];if($id)$wpdb->update(self::table('telemedicine'),$data,['id'=>$id]);else{$data['tele_uid']='TEL-'.wp_generate_uuid4();$data['created_at']=current_time('mysql');$wpdb->insert(self::table('telemedicine'),$data);$id=$wpdb->insert_id;}wp_send_json_success(['message'=>'Telemedicine record saved.','id'=>$id]);}
-    public static function ajax_telemed_delete(){self::auth();global $wpdb;$id=(int)($_POST['id']??0);$r=$wpdb->get_row($wpdb->prepare('SELECT * FROM '.self::table('telemedicine').' WHERE id=%d',$id),ARRAY_A);if(!$r||(!current_user_can('manage_options')&&!in_array((int)$r['doctor_id'],self::doctor_scope_ids(),true)))wp_send_json_error(['message'=>'Access denied.']);$wpdb->delete(self::table('telemedicine'),['id'=>$id],['%d']);wp_send_json_success(['message'=>'Telemedicine record deleted.']);}
+    public static function ajax_telemed_save() {
+        self::auth();
+        global $wpdb;
+        $pid = absint($_POST['patient_id'] ?? 0);
+        $appt = sanitize_text_field(wp_unslash($_POST['appointment_uid'] ?? ''));
+        if (!$pid || !self::patient_belongs_to_doctor($pid, self::doctor_id())) wp_send_json_error(['message' => 'Access denied.'], 403);
+        $id = absint($_POST['id'] ?? 0);
+        $data = [
+            'appointment_uid' => $appt,
+            'patient_id' => $pid,
+            'doctor_id' => self::doctor_id(),
+            'room_url' => esc_url_raw($_POST['room_url'] ?? ''),
+            'status' => sanitize_text_field($_POST['status'] ?? 'Scheduled'),
+            'notes' => sanitize_textarea_field($_POST['notes'] ?? ''),
+            'updated_at' => current_time('mysql'),
+        ];
+        if ($id) {
+            $updated = $wpdb->update(self::table('telemedicine'), $data, ['id' => $id, 'is_deleted' => 0]);
+            if ($updated === false) wp_send_json_error(['message' => 'Telemedicine record could not be updated.'], 500);
+        } else {
+            $data['tele_uid'] = 'TEL-' . wp_generate_uuid4();
+            $data['created_at'] = current_time('mysql');
+            $data['is_deleted'] = 0;
+            if (!$wpdb->insert(self::table('telemedicine'), $data)) wp_send_json_error(['message' => 'Telemedicine record could not be saved.'], 500);
+            $id = (int)$wpdb->insert_id;
+        }
+        wp_send_json_success(['message' => 'Telemedicine record saved.', 'id' => $id]);
+    }
+
+    public static function ajax_telemed_delete() {
+        self::auth();
+        global $wpdb;
+        $id = absint($_POST['id'] ?? 0);
+        $r = $id ? $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . self::table('telemedicine') . ' WHERE id=%d AND is_deleted=0', $id), ARRAY_A) : null;
+        if (!$r || (!current_user_can('manage_options') && !in_array((int)$r['doctor_id'], self::doctor_scope_ids(), true))) {
+            wp_send_json_error(['message' => 'Access denied.'], 403);
+        }
+        $updated = $wpdb->update(self::table('telemedicine'), ['is_deleted' => 1, 'updated_at' => current_time('mysql')], ['id' => $id], ['%d', '%s'], ['%d']);
+        if ($updated === false || $updated < 1) wp_send_json_error(['message' => 'Telemedicine record could not be archived.'], 500);
+        if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('telemedicine_archived', 'telemedicine', $r['tele_uid'], (int)$r['patient_id'], 'success');
+        wp_send_json_success(['message' => 'Telemedicine record removed from the active list.']);
+    }
 
     public static function ajax_notification_read(){self::auth();global $wpdb;$id=(int)($_POST['id']??0);$ids=self::doctor_scope_ids();$in=implode(',',array_fill(0,count($ids),'%d'));$args=array_merge([current_time('mysql'),$id],$ids);$wpdb->query($wpdb->prepare('UPDATE '.self::table('notifications')." SET is_read=1,read_at=%s WHERE id=%d AND doctor_id IN ($in)",...$args));wp_send_json_success(['message'=>'Notification marked as read.']);}
     public static function ajax_notification_all_read(){self::auth();global $wpdb;$ids=self::doctor_scope_ids();$in=implode(',',array_fill(0,count($ids),'%d'));$args=array_merge([current_time('mysql')],$ids);$wpdb->query($wpdb->prepare('UPDATE '.self::table('notifications')." SET is_read=1,read_at=%s WHERE doctor_id IN ($in)",...$args));wp_send_json_success(['message'=>'All notifications marked as read.']);}
@@ -923,8 +1076,11 @@ class Dior_Doctor_Dynamic {
         if (!$owner || (!current_user_can('manage_options') && !in_array($owner, self::doctor_scope_ids(), true))) {
             wp_send_json_error(['message' => 'You cannot delete this medicine.'], 403);
         }
-        $wpdb->delete(self::table('medicines'), ['id' => $id], ['%d']);
-        wp_send_json_success(['message' => 'Medicine deleted.']);
+        $row = $wpdb->get_row($wpdb->prepare('SELECT medicine_uid FROM ' . self::table('medicines') . ' WHERE id=%d', $id), ARRAY_A);
+        $deleted = $wpdb->delete(self::table('medicines'), ['id' => $id], ['%d']);
+        if ($deleted !== 1) wp_send_json_error(['message' => 'Medicine was not deleted.'], 500);
+        if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('medicine_delete', 'medicine', $row['medicine_uid'] ?? (string)$id, null, 'success');
+        wp_send_json_success(['message' => 'Medicine permanently deleted.']);
     }
 
     public static function ajax_medicine_bulk_delete()
@@ -947,8 +1103,10 @@ class Dior_Doctor_Dynamic {
             if (!$owner || (!current_user_can('manage_options') && !in_array($owner, $scope, true))) {
                 continue;
             }
-            if ($wpdb->delete(self::table('medicines'), ['id' => $id], ['%d'])) {
+            $row = $wpdb->get_row($wpdb->prepare('SELECT medicine_uid FROM ' . self::table('medicines') . ' WHERE id=%d', $id), ARRAY_A);
+            if ($wpdb->delete(self::table('medicines'), ['id' => $id], ['%d']) === 1) {
                 $deleted++;
+                if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('medicine_delete', 'medicine', $row['medicine_uid'] ?? (string)$id, null, 'success');
             }
         }
 
@@ -962,7 +1120,7 @@ class Dior_Doctor_Dynamic {
     public static function render_appointments($doctor_id=0){$doctor_id=$doctor_id?:self::doctor_id();$a=Dior_Appointment_Service::get_doctor_appointments($doctor_id);foreach($a as &$r){$r['patient_name']=self::patient_name($r['patient_id']??0);$p=self::patient($r['patient_id']??0);$r['patient_uid']=$p['patient_uid']??'';}return $a;}
     public static function render_documents(){global $wpdb;$ids=self::doctor_scope_ids();$in=implode(',',array_fill(0,count($ids),'%d'));$rows=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table('documents')." WHERE author_id IN ($in) AND is_deleted=0 ORDER BY id DESC",...$ids),ARRAY_A);foreach($rows as &$r)$r['patient_name']=self::patient_name($r['patient_id']);return $rows;}
     public static function render_reviews(){global $wpdb;$ids=self::doctor_scope_ids();$in=implode(',',array_fill(0,count($ids),'%d'));$rows=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table('reviews')." WHERE doctor_id IN ($in) ORDER BY id DESC",...$ids),ARRAY_A);foreach($rows as &$r)$r['patient_name']=self::patient_name($r['patient_id']);return $rows;}
-    public static function render_telemedicine(){global $wpdb;$ids=self::doctor_scope_ids();$in=implode(',',array_fill(0,count($ids),'%d'));$rows=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table('telemedicine')." WHERE doctor_id IN ($in) ORDER BY id DESC",...$ids),ARRAY_A);foreach($rows as &$r)$r['patient_name']=self::patient_name($r['patient_id']);return $rows;}
+    public static function render_telemedicine(){global $wpdb;$ids=self::doctor_scope_ids();if(!$ids)return [];$in=implode(',',array_fill(0,count($ids),'%d'));$rows=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table('telemedicine')." WHERE doctor_id IN ($in) AND is_deleted=0 ORDER BY id DESC",...$ids),ARRAY_A);foreach($rows as &$r)$r['patient_name']=self::patient_name($r['patient_id']);return $rows;}
     public static function render_notifications($type='all'){global $wpdb;$ids=self::doctor_scope_ids();$in=implode(',',array_fill(0,count($ids),'%d'));$where="doctor_id IN ($in)";$args=$ids;if($type==='alerts'){$where.=" AND type='appointment'";}elseif($type==='system'){$where.=" AND type<>'appointment'";}return $wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table('notifications')." WHERE $where ORDER BY id DESC LIMIT 100",...$args),ARRAY_A);}
 }
 Dior_Doctor_Dynamic::init();
