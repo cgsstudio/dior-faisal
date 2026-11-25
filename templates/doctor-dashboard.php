@@ -34,7 +34,7 @@
 
                     <div class="dior-nav-item has-submenu" id="appointments-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'appointments-menu-item')" title="Appointments">
+                            onclick="diorToggleSubmenu(event, 'appointments-menu-item'); if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-appointments')" title="Appointments">
                             <i class="far fa-calendar"></i><span class="nav-label">Appointments</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -55,7 +55,7 @@
                     </div>
                     <div class="dior-nav-item has-submenu" id="patients-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'patients-menu-item')" title="Patients">
+                            onclick="diorToggleSubmenu(event, 'patients-menu-item'); if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-patients-all')" title="Patients">
                             <i class="fas fa-users"></i><span class="nav-label">Patients</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -82,7 +82,7 @@
                             class="fas fa-chart-line"></i><span class="nav-label">Analytics</span></button>
                     <div class="dior-nav-item has-submenu" id="accounts-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'accounts-menu-item')" title="Accounts">
+                            onclick="diorToggleSubmenu(event, 'accounts-menu-item'); if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-bill-list')" title="Accounts">
                             <i class="fas fa-wallet"></i><span class="nav-label">Accounts</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -116,7 +116,7 @@
                             Prescriptions</span></button>
                     <div class="dior-nav-item has-submenu" id="pharmacy-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'pharmacy-menu-item')" title="Pharmacy">
+                            onclick="diorToggleSubmenu(event, 'pharmacy-menu-item'); if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-pharmacy-list')" title="Pharmacy">
                             <i class="fas fa-pills"></i><span class="nav-label">Pharmacy</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -131,7 +131,7 @@
                     </div>
                     <div class="dior-nav-item has-submenu" id="documents-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'documents-menu-item')" title="Documents & Report">
+                            onclick="diorToggleSubmenu(event, 'documents-menu-item'); if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-documents-upload')" title="Documents & Report">
                             <i class="fas fa-file-medical"></i><span class="nav-label">Documents & Report</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -144,7 +144,7 @@
                     </div>
                     <div class="dior-nav-item has-submenu" id="telemedicine-menu-item">
                         <button type="button" class="dior-nav-btn btn"
-                            onclick="diorToggleSubmenu(event, 'telemedicine-menu-item')" title="Telemedicine">
+                            onclick="diorToggleSubmenu(event, 'telemedicine-menu-item'); if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-telemed-video')" title="Telemedicine">
                             <i class="fas fa-video"></i><span class="nav-label">Telemedicine</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>

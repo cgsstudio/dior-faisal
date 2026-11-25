@@ -320,164 +320,20 @@
         </button>
     </div>
 
-    <!-- Main Card -->
+    <!-- Invoice details are shown only when a real invoice record is selected.
+         Do not display fabricated clinic, patient, or payment information. -->
     <div class="dior-invoice-card">
-        
-        <div id="invoice-pdf-content" style="background: #ffffff; padding-bottom: 20px;">
-            <!-- Header -->
-            <div class="dior-invoice-header">
-                <h2>INVOICE #345766</h2>
-                <span class="dior-status-paid">Paid</span>
-            </div>
-            
-            <!-- Info Section -->
-            <div class="dior-invoice-info">
-                <div class="dior-company-info">
-                    <img src="https://diormedical.com/wp-content/uploads/2026/08/logo.png" alt="MediDash Logo">
-                    <h3>MediDash Hospital</h3>
-                    <p class="dior-address-text">
-                        D 103, MediDash Hospital<br>
-                        Opp. Town Hall<br>
-                        Sardar Patel Road<br>
-                        Ahmedabad - 380015
-                    </p>
-                </div>
-                <div class="dior-client-info">
-                    <h3 class="bill-to">BILL TO</h3>
-                    <h4>Jayesh Patel</h4>
-                    <p class="dior-address-text">
-                        207, Prem Sagar Appt.<br>
-                        Near Income Tax Office<br>
-                        Ashram Road<br>
-                        Ahmedabad - 380057
-                    </p>
-                    <div class="dior-invoice-meta">
-                        <div class="meta-item"><span class="meta-label">Invoice Date:</span> <span class="meta-value">14th July 2023</span></div>
-                        <div class="meta-item"><span class="meta-label">Due Date:</span> <span class="meta-value">28th July 2023</span></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Table Section -->
-            <div class="dior-invoice-table-section">
-                <div style="overflow-x: auto;">
-                    <table class="dior-invoice-table table table-hover">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Description</th>
-                                <th class="text-center">Quantity</th>
-                                <th class="text-center">Unit Price</th>
-                                <th class="text-center">Charges</th>
-                                <th class="text-center">Discount</th>
-                                <th class="text-end">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td style="font-weight: 500; color: #1e293b;">Visiting Charges</td>
-                                <td class="text-center">-</td>
-                                <td class="text-center">-</td>
-                                <td class="text-center">$100</td>
-                                <td class="text-center">-</td>
-                                <td class="text-end" style="font-weight: 600;">$100</td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td style="font-weight: 500; color: #1e293b;">Medicines</td>
-                                <td class="text-center">10</td>
-                                <td class="text-center">$15</td>
-                                <td class="text-center">$150</td>
-                                <td class="text-center">5%</td>
-                                <td class="text-end" style="font-weight: 600;">$1000</td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td style="font-weight: 500; color: #1e293b;">X-ray Reports</td>
-                                <td class="text-center">4</td>
-                                <td class="text-center">$600</td>
-                                <td class="text-center">$70</td>
-                                <td class="text-center">5%</td>
-                                <td class="text-end" style="font-weight: 600;">$1200</td>
-                            </tr>
-                            <tr>
-                                <td>4</td>
-                                <td style="font-weight: 500; color: #1e293b;">MRI</td>
-                                <td class="text-center">2</td>
-                                <td class="text-center">$245</td>
-                                <td class="text-center">$125</td>
-                                <td class="text-center">10%</td>
-                                <td class="text-end" style="font-weight: 600;">$480</td>
-                            </tr>
-                            <tr>
-                                <td>5</td>
-                                <td style="font-weight: 500; color: #1e293b;">Other Charges</td>
-                                <td class="text-center">-</td>
-                                <td class="text-center">-</td>
-                                <td class="text-center">-</td>
-                                <td class="text-center">-</td>
-                                <td class="text-end" style="font-weight: 600;">$300</td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="6" class="text-end"><strong style="color: #1e293b;">Subtotal</strong></td>
-                                <td class="text-end"><strong style="color: #1e293b;">$2600</strong></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Summary & Payment -->
-            <div class="dior-invoice-summary-section">
-                <div class="dior-payment-info">
-                    <h3 class="section-title">Payment Information</h3>
-                    <div class="dior-payment-details">
-                        <div class="detail-row">
-                            <span class="label">Payment Method:</span>
-                            <span class="value">Credit Card</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="label">Payment Terms:</span>
-                            <span class="value">Due on Receipt</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="label">Note:</span>
-                            <span class="value">Thank you for your business!</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="dior-totals-box">
-                    <div class="dior-totals-row">
-                        <span>Subtotal:</span>
-                        <span style="font-weight: 600; color: #1e293b;">$2,600.00</span>
-                    </div>
-                    <div class="dior-totals-row">
-                        <span>Discount:</span>
-                        <span style="font-weight: 600; color: #ef4444;">-$100.00</span>
-                    </div>
-                    <div class="dior-totals-row">
-                        <span>Tax (10%):</span>
-                        <span style="font-weight: 600; color: #1e293b;">$160.00</span>
-                    </div>
-                    <div class="dior-totals-row total">
-                        <span>Total:</span>
-                        <span>$2,760.00</span>
-                    </div>
-                </div>
-            </div>
+        <div class="text-center py-5 px-3" role="status">
+            <i class="fas fa-file-invoice-dollar" aria-hidden="true" style="font-size:36px;color:#94a3b8;margin-bottom:16px;"></i>
+            <h3 style="font-size:18px;font-weight:700;color:#1e293b;">No Invoice Selected</h3>
+            <p style="max-width:520px;margin:8px auto 0;color:#64748b;line-height:1.6;">
+                Select an actual invoice from the Bill List to view its details. Invoice information will appear here when a real record is available.
+            </p>
+            <button type="button" class="dior-btn dior-btn-primary btn mt-3"
+                onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-bill-list');">
+                <i class="fas fa-receipt me-1"></i> Go to Bill List
+            </button>
         </div>
-        
-        <!-- Actions -->
-        <div class="dior-invoice-actions">
-            <button class="dior-btn dior-btn-primary btn" onclick="window.print()"><i class="fas fa-print me-1"></i> Print</button>
-            <button class="dior-btn dior-btn-info btn" id="download-invoice-pdf"><i class="fas fa-file-pdf me-1"></i> Download PDF</button>
-            <button class="dior-btn dior-btn-secondary btn"><i class="fas fa-envelope me-1"></i> Email Invoice</button>
-        </div>
-        
     </div>
 
 </section>

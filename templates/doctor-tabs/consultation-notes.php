@@ -70,8 +70,9 @@ if (empty($patients)) {
                     <input type="text" id="cn-search" class="dior-search-input form-control border-start-0 ps-0"
                         placeholder="Search records...">
                 </div>
-                <button class="va-icon-btn va-btn-primary btn" id="cn-add-btn" title="Add New Consultation Note">
-                    <i class="fas fa-plus"></i>
+                <button type="button" class="va-icon-btn va-btn-primary btn" id="cn-add-btn" title="Add New Consultation Note"
+                    aria-label="Add Note">
+                    <i class="fas fa-plus" aria-hidden="true"></i><span class="ms-2">Add Note</span>
                 </button>
                 <button class="va-icon-btn va-btn-info btn" id="cn-refresh-btn" title="Refresh">
                     <i class="fas fa-rotate-right"></i>
