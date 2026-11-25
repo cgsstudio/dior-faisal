@@ -3300,7 +3300,7 @@ class Dior_Medical_Auth
         $inserted = $wpdb->insert($table, [
             'appt_uid'       => $appt_uid,
             'patient_id'     => $patient_id,
-            'doctor_id'      => $doctor_id ?: 1957,
+            'doctor_id'      => $doctor_id,
             'condition_name' => $reason ?: 'Telehealth Consultation',
             'visit_type'     => 'Video Visit (HD)',
             'status'         => 'Pending',
@@ -4289,7 +4289,7 @@ class Dior_Medical_Auth
         $condition = sanitize_text_field($_POST['condition'] ?? ($_POST['treatment'] ?? 'Urgent Care Telehealth'));
         $type = sanitize_text_field($_POST['type'] ?? ($_POST['visit_type'] ?? 'Video Visit (HD)'));
         $provider_raw = sanitize_text_field($_POST['provider'] ?? ($_POST['doctor'] ?? ($_POST['doctor_name'] ?? '')));
-        $doctor_id_raw = intval($_POST['doctorId'] ?? ($_POST['doctor_id'] ?? 1957));
+        $doctor_id_raw = absint($_POST['doctorId'] ?? ($_POST['doctor_id'] ?? 0));
         $date = sanitize_text_field($_POST['date'] ?? ($_POST['bookingDate'] ?? current_time('Y-m-d')));
         $time = sanitize_text_field($_POST['time'] ?? '09:00 AM - 10:00 AM');
         $notes = sanitize_textarea_field($_POST['notes'] ?? ($_POST['patient_note'] ?? ''));
@@ -4328,7 +4328,7 @@ class Dior_Medical_Auth
                     'patient_name' => $patient_name,
                     'patient_email' => $patient_email ?: (($u = get_userdata($user_id)) ? $u->user_email : ''),
                     'patient_phone' => $patient_phone,
-                    'doctor_id' => $doctor_id_raw ?: ($doctor_user_id ?: 1957),
+                    'doctor_id' => ($doctor_id_raw ?: $doctor_user_id),
                     'doctor_user_id' => $doctor_user_id,
                     'provider' => $doctor_name,
                     'condition' => $condition,
@@ -4368,7 +4368,7 @@ class Dior_Medical_Auth
 
         $new_apt = Dior_Appointment_Service::book_appointment([
             'patient_id' => $user_id,
-            'doctor_id' => $doctor_id_raw ?: ($doctor_user_id ?: 1957),
+            'doctor_id' => ($doctor_id_raw ?: $doctor_user_id),
             'doctor_user_id' => $doctor_user_id,
             'provider' => $doctor_name,
             'condition' => $condition,
@@ -4422,7 +4422,7 @@ class Dior_Medical_Auth
             $sync_doc_id = $doctor_id_raw;
             if (!$sync_doc_id) {
                 $sync_doc_id = $wpdb->get_var("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpddb_doctor' AND post_status = 'publish' ORDER BY ID ASC LIMIT 1");
-                $sync_doc_id = $sync_doc_id ?: 1957;
+                $sync_doc_id = $sync_doc_id ?: 0;
             }
             $sync_clinic_id = 1970;
             $table_clinics = $wpdb->prefix . 'wpddb_clinics';
