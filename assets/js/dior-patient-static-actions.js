@@ -683,60 +683,81 @@
         if (!wrapper) return;
         var table = wrapper.querySelector('table');
         if (!table) return;
-        var checkedBoxes = table.querySelectorAll('tbody input[type="checkbox"]:checked');
-        if (checkedBoxes.length === 0) {
-            Swal.fire({ icon: 'info', title: 'No Rows Selected', text: 'Please select at least one row to delete.' });
+
+        var checkedBoxes = Array.from(table.querySelectorAll('tbody input[type="checkbox"]:checked'));
+        if (!checkedBoxes.length) {
+            if (window.Swal) Swal.fire({ icon: 'info', title: 'No Rows Selected', text: 'Please select at least one row to delete.' });
+            return;
+        }
+
+        var isAppointmentTable = ['dior-today-appointments-table', 'dior-upcoming-appointments-table', 'dior-past-appointments-table'].indexOf(table.id) !== -1;
+        if (!isAppointmentTable) {
+            if (window.Swal) Swal.fire({ icon: 'info', title: 'Secure Delete Required', text: 'This table does not have a bulk-delete endpoint. No records were removed.' });
+            return;
+        }
+
+        var rows = checkedBoxes.map(function(cb) { return cb.closest('tr'); }).filter(Boolean);
+        var ids = rows.map(function(row) {
+            var id = row.getAttribute('data-record-id') || (row.querySelector('[data-appt-uid]') && row.querySelector('[data-appt-uid]').getAttribute('data-appt-uid')) || '';
+            return String(id).trim();
+        }).filter(Boolean);
+
+        if (!ids.length) {
+            if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: 'Appointment IDs are missing. No records were removed.' });
+            return;
+        }
+
+        var cfg = window.dior_vars || window.dior_patient_dashboard || {};
+        var ajaxUrl = cfg.ajax_url || window.ajaxurl || '/wp-admin/admin-ajax.php';
+        var nonce = cfg.nonce || cfg.portal_nonce || '';
+        if (!ajaxUrl || !nonce) {
+            if (window.Swal) Swal.fire({ icon: 'error', title: 'Session Expired', text: 'Refresh the page and try again.' });
             return;
         }
 
         var performDelete = function() {
-            var ids = [];
-            checkedBoxes.forEach(function(cb) {
-                var row = cb.closest('tr');
-                if (row) {
-                    var rid = row.getAttribute('data-record-id') || (row.querySelector('[data-appt-uid]') && row.querySelector('[data-appt-uid]').getAttribute('data-appt-uid')) || '';
-                    if (rid) ids.push(rid.trim());
-                    row.remove();
-                }
-            });
+            var body = new FormData();
+            body.append('action', 'dior_patient_bulk_delete_appointments');
+            body.append('nonce', nonce);
+            ids.forEach(function(id) { body.append('ids[]', id); });
 
-            if ((table.id === 'dior-today-appointments-table' || table.id === 'dior-upcoming-appointments-table' || table.id === 'dior-past-appointments-table') && ids.length) {
-                var cfg = window.dior_vars || window.dior_patient_dashboard || {};
-                var ajaxUrl = cfg.ajax_url || (window.ajaxurl || '/wp-admin/admin-ajax.php');
-                var nonce = cfg.nonce || cfg.portal_nonce || '';
-                if (ajaxUrl) {
-                    var body = new FormData();
-                    body.append('action', 'dior_patient_bulk_delete_appointments');
-                    if (nonce) body.append('nonce', nonce);
-                    ids.forEach(function(id) { body.append('ids[]', id); });
-                    fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body });
-                }
-            }
-            var masterCb = table.querySelector('thead input[type="checkbox"]');
-            if (masterCb) masterCb.checked = false;
-            
-            // Try updating count if exists
-            var countEl = wrapper.querySelector('[id*="-page-count"]');
-            if (countEl) {
-                var total = table.querySelectorAll('tbody tr:not(.dior-empty-state)').length;
-                countEl.innerText = '0 selected / ' + total + ' total';
-            }
+            fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body })
+                .then(function(response) { return response.json(); })
+                .then(function(result) {
+                    if (!result || !result.success) {
+                        throw new Error((result && result.data && result.data.message) || 'Selected appointments could not be deleted.');
+                    }
+
+                    rows.forEach(function(row) { row.remove(); });
+                    var masterCb = table.querySelector('thead input[type="checkbox"]');
+                    if (masterCb) masterCb.checked = false;
+                    var countEl = wrapper.querySelector('[id*="-page-count"]');
+                    if (countEl) {
+                        var total = table.querySelectorAll('tbody tr:not(.dior-empty-state)').length;
+                        countEl.innerText = '0 selected / ' + total + ' total';
+                    }
+
+                    if (window.Swal) {
+                        var info = result.data && result.data.retained ? result.data.message : 'Selected appointments deleted successfully.';
+                        Swal.fire({ position: 'top-end', icon: result.data && result.data.retained ? 'info' : 'success', title: result.data && result.data.retained ? 'Some Records Retained' : 'Records Deleted', text: info, showConfirmButton: false, timer: 1800 });
+                    }
+                })
+                .catch(function(error) {
+                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.message || 'Please try again.' });
+                });
         };
 
         if (window.Swal) {
             Swal.fire({
                 title: 'Are you sure?',
-                text: 'You are about to delete ' + checkedBoxes.length + ' selected record(s).',
+                text: 'You are about to delete ' + rows.length + ' selected appointment(s).',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Yes, delete them!'
             }).then(function(result) {
-                if (result.isConfirmed) {
-                    performDelete();
-                    Swal.fire({ position: 'top-end', icon: 'success', title: 'Records Deleted', showConfirmButton: false, timer: 1500 });
-                }
+                if (result.isConfirmed) performDelete();
             });
         }
     };
