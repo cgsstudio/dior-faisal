@@ -122,7 +122,7 @@
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="8" class="dior-empty-state">No billing records available.</td>
+                            <td colspan="9" class="dior-empty-state">No billing records available.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
