@@ -1974,6 +1974,7 @@ class Dior_Medical_Auth
         formData.append('nonce', diorPortalNonce);
         formData.append('doctorId', diorBookingState.doctorId);
         formData.append('doctor_name', diorBookingState.doctorName);
+        formData.append('clinicId', diorBookingState.clinicId);
         formData.append('date', diorBookingState.date || '');
         formData.append('time', diorBookingState.time || '');
         formData.append('condition', diorBookingState.departmentName);
@@ -4263,6 +4264,7 @@ class Dior_Medical_Auth
         }
         $existing_profile = Dior_Patient_Portal_Data::get_patient_profile($user_id);
         $user_intake = get_user_meta($user_id, 'dior_hipaa_intake', true);
+        $user_intake = is_array($user_intake) ? $user_intake : [];
         if (empty($existing_profile['dob'])) {
             if (!empty($user_intake['dob'])) {
                 update_user_meta($user_id, 'dob', sanitize_text_field($user_intake['dob']));
@@ -4427,12 +4429,13 @@ class Dior_Medical_Auth
                 $sync_doc_id = $wpdb->get_var("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpddb_doctor' AND post_status = 'publish' ORDER BY ID ASC LIMIT 1");
                 $sync_doc_id = $sync_doc_id ?: 0;
             }
-            $sync_clinic_id = 0;
+            $sync_doc_id = $doctor_id_raw;
+            $sync_clinic_id = absint($_POST['clinicId'] ?? 0);
             $table_clinics = $wpdb->prefix . 'wpddb_clinics';
-            if ($wpdb->get_var("SHOW TABLES LIKE '$table_clinics'") == $table_clinics) {
-                $found_clinic = $wpdb->get_var("SELECT id FROM $table_clinics LIMIT 1");
-                if ($found_clinic)
-                    $sync_clinic_id = $found_clinic;
+            if ($sync_clinic_id && $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_clinics)) === $table_clinics) {
+                $sync_clinic_id = absint($wpdb->get_var($wpdb->prepare("SELECT id FROM $table_clinics WHERE id = %d LIMIT 1", $sync_clinic_id)));
+            } else {
+                $sync_clinic_id = 0;
             }
 
             if ($sync_doc_id && $sync_clinic_id) {
