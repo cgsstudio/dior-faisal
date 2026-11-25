@@ -5212,18 +5212,17 @@ class Dior_Medical_Auth
             wp_send_json_error(['message' => 'No insurance claims selected.']);
         }
 
-        $claims = get_user_meta($user_id, 'dior_insurance_claims', true);
-        if (is_array($claims)) {
-            $claims = array_values(array_filter($claims, function ($claim) use ($record_ids) {
-                return !in_array((string) ($claim['claim_id'] ?? ''), $record_ids, true);
-            }));
-            update_user_meta($user_id, 'dior_insurance_claims', $claims);
-        }
+        // Insurance claim history can be subject to insurer/legal retention requirements.
+        // Hide selected claims from the patient portal while retaining the source record.
+        $hidden = get_user_meta($user_id, 'dior_hidden_insurance_ids', true);
+        $hidden = is_array($hidden) ? $hidden : [];
+        $hidden = array_values(array_unique(array_merge($hidden, $record_ids)));
+        update_user_meta($user_id, 'dior_hidden_insurance_ids', $hidden);
 
         if (class_exists('Dior_Audit_Service')) {
-            foreach ($record_ids as $rid) Dior_Audit_Service::log('patient_insurance_delete', 'insurance_claim', $rid, $user_id, 'success');
+            foreach ($record_ids as $rid) Dior_Audit_Service::log('patient_insurance_hidden', 'insurance_claim', $rid, $user_id, 'success', ['retention' => 'claim_record_preserved']);
         }
-        wp_send_json_success(['message' => count($record_ids) . ' insurance claim(s) permanently deleted.']);
+        wp_send_json_success(['message' => count($record_ids) . ' insurance claim(s) removed from your dashboard. Claim records are retained for compliance.']);
     }
 
     /**
