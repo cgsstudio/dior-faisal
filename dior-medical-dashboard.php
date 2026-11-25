@@ -4264,16 +4264,20 @@ class Dior_Medical_Auth
         $existing_profile = Dior_Patient_Portal_Data::get_patient_profile($user_id);
         $user_intake = get_user_meta($user_id, 'dior_hipaa_intake', true);
         if (empty($existing_profile['dob'])) {
-            $dob_val = !empty($user_intake['dob']) ? $user_intake['dob'] : '1990-01-01';
-            update_user_meta($user_id, 'dob', $dob_val);
+            if (!empty($user_intake['dob'])) {
+                update_user_meta($user_id, 'dob', sanitize_text_field($user_intake['dob']));
+            }
         }
         if (empty($existing_profile['gender'])) {
-            $gender_val = !empty($user_intake['gender']) ? $user_intake['gender'] : 'Declined to state';
-            update_user_meta($user_id, 'gender', $gender_val);
+            if (!empty($user_intake['gender'])) {
+                update_user_meta($user_id, 'gender', sanitize_text_field($user_intake['gender']));
+            }
         }
         if (empty($existing_profile['address'])) {
-            $addr_val = !empty($user_intake['address']) ? $user_intake['address'] : 'Telehealth Patient - On File';
-            update_user_meta($user_id, 'address', $addr_val);
+            $intake_address = $user_intake['address'] ?? ($user_intake['address_line1'] ?? '');
+            if ($intake_address !== '') {
+                update_user_meta($user_id, 'address', sanitize_text_field($intake_address));
+            }
         }
 
         // Validate personal profile completion
@@ -4286,34 +4290,33 @@ class Dior_Medical_Auth
             ], 400);
         }
 
-        $condition = sanitize_text_field($_POST['condition'] ?? ($_POST['treatment'] ?? 'Urgent Care Telehealth'));
+        $condition = sanitize_text_field($_POST['condition'] ?? ($_POST['treatment'] ?? ''));
         $type = sanitize_text_field($_POST['type'] ?? ($_POST['visit_type'] ?? 'Video Visit (HD)'));
         $provider_raw = sanitize_text_field($_POST['provider'] ?? ($_POST['doctor'] ?? ($_POST['doctor_name'] ?? '')));
         $doctor_id_raw = absint($_POST['doctorId'] ?? ($_POST['doctor_id'] ?? 0));
-        $date = sanitize_text_field($_POST['date'] ?? ($_POST['bookingDate'] ?? current_time('Y-m-d')));
-        $time = sanitize_text_field($_POST['time'] ?? '09:00 AM - 10:00 AM');
+        $date = sanitize_text_field($_POST['date'] ?? ($_POST['bookingDate'] ?? ''));
+        $time = sanitize_text_field($_POST['time'] ?? '');
         $notes = sanitize_textarea_field($_POST['notes'] ?? ($_POST['patient_note'] ?? ''));
 
         // Resolve Doctor WP User ID & Name
         $doctor_user_id = 0;
-        $doctor_name = $provider_raw ?: 'Dr. Marcus Sterling, DO';
+        $doctor_name = $provider_raw;
 
         if (class_exists('Dior_Doctor_Resolver')) {
-            $doctor_user_id = Dior_Doctor_Resolver::resolve_doctor_user_id($doctor_id_raw ?: $provider_raw);
+            $doctor_user_id = Dior_Doctor_Resolver::resolve_doctor_user_id($doctor_id_raw);
         }
-        if (!$doctor_user_id) {
-            $doctor_user_id = 4;
-        }
-
-        if ($doctor_id_raw && is_numeric($doctor_id_raw)) {
-            $doc_post = get_post($doctor_id_raw);
-            if ($doc_post && $doc_post->post_type === 'wpddb_doctor') {
-                $doctor_name = $doc_post->post_title;
-            }
+        $doc_post = get_post($doctor_id_raw);
+        if ($doc_post && $doc_post->post_type === 'wpddb_doctor' && $doc_post->post_status === 'publish') {
+            $doctor_name = $doc_post->post_title;
         } elseif ($doctor_user_id) {
             $du = get_userdata($doctor_user_id);
-            if ($du)
+            if ($du) {
                 $doctor_name = $du->display_name;
+            }
+        }
+
+        if (!$doctor_name || (!$doctor_user_id && (!$doc_post || $doc_post->post_type !== 'wpddb_doctor' || $doc_post->post_status !== 'publish'))) {
+            wp_send_json_error(['message' => 'The selected doctor is no longer available. Please select another doctor.'], 400);
         }
 
         // DocBooker Stripe Checkout: redirect to Stripe BEFORE creating the appointment
@@ -4354,7 +4357,7 @@ class Dior_Medical_Auth
         }
 
         if (stripos($type, 'phone') !== false) {
-            $join_url = 'tel:' . preg_replace('/[^0-9+]/', '', $patient_phone ?: '+13105550100');
+            $join_url = 'tel:' . preg_replace('/[^0-9+]/', '', $patient_phone);
         } else {
             // Create a scheduled Zoom meeting first; retain Google Meet as a safe fallback.
             $zoom_meeting_url = class_exists('Dior_Zoom_Meetings')
@@ -4413,8 +4416,8 @@ class Dior_Medical_Auth
                 $wpdb->insert($table_patients, [
                     'full_name' => $user_obj->display_name,
                     'email' => $user_obj->user_email,
-                    'phone' => get_user_meta($user_id, 'phone', true) ?: '(555) 000-0000',
-                    'dob' => get_user_meta($user_id, 'dob', true) ?: '1990-01-01',
+                    'phone' => get_user_meta($user_id, 'phone', true),
+                    'dob' => get_user_meta($user_id, 'dob', true),
                     'patient_code' => 'DM-' . (10000 + ($user_id % 90000))
                 ]);
                 $docbooker_patient_id = $wpdb->insert_id;
@@ -4424,7 +4427,7 @@ class Dior_Medical_Auth
                 $sync_doc_id = $wpdb->get_var("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpddb_doctor' AND post_status = 'publish' ORDER BY ID ASC LIMIT 1");
                 $sync_doc_id = $sync_doc_id ?: 0;
             }
-            $sync_clinic_id = 1970;
+            $sync_clinic_id = 0;
             $table_clinics = $wpdb->prefix . 'wpddb_clinics';
             if ($wpdb->get_var("SHOW TABLES LIKE '$table_clinics'") == $table_clinics) {
                 $found_clinic = $wpdb->get_var("SELECT id FROM $table_clinics LIMIT 1");
@@ -4432,7 +4435,8 @@ class Dior_Medical_Auth
                     $sync_clinic_id = $found_clinic;
             }
 
-            $wpdb->insert($table_bookings, [
+            if ($sync_doc_id && $sync_clinic_id) {
+                $wpdb->insert($table_bookings, [
                 'booking_id' => 'BK-' . rand(100000, 999999),
                 'patient_id' => $docbooker_patient_id ?: $user_id,
                 'doctor_id' => $sync_doc_id,
@@ -4446,7 +4450,8 @@ class Dior_Medical_Auth
                 'time' => $time,
                 'patient_note' => ($type . ' - ' . ($notes ?: $condition)),
                 'status' => 'approved'
-            ]);
+                ]);
+            }
         }
 
         // Multi-Channel Notifications: In-App Dashboard & Anti-Spam Luxury HTML Email (with localhost fallback)
