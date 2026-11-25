@@ -833,7 +833,11 @@ class Dior_Doctor_Dashboard
             "SELECT id FROM {$wpdb->prefix}dior_prescriptions WHERE appointment_uid=%s LIMIT 1",
             $uid
         ));
-        if ($has_encounter || $has_prescription) {
+        $has_telemedicine = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}dior_telemedicine WHERE appointment_uid=%s AND is_deleted=0 LIMIT 1",
+            $uid
+        ));
+        if ($has_encounter || $has_prescription || $has_telemedicine) {
             wp_send_json_error(["message" => "This appointment is linked to a retained clinical record and cannot be permanently deleted."], 409);
         }
 
