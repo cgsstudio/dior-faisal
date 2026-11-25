@@ -362,17 +362,13 @@
         var row = button.closest('tr');
         if (!row) return;
         if (type !== 'document') {
+            // Clinical telemedicine sessions must remain available for retention/audit.
             var label = type === 'telemedicine' ? 'telemedicine session' : (type === 'emergency contact' ? 'emergency contact' : 'feedback');
-            Swal.fire({
-                title: 'Delete ' + label + '?',
-                text: 'Are you sure you want to delete this ' + label + '?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#dc2626',
-                confirmButtonText: 'Delete'
-            }).then(function(r) {
-                if (r.isConfirmed) row.remove();
-            });
+            if (type === 'telemedicine') {
+                if (window.Swal) Swal.fire({ icon: 'info', title: 'Clinical Record Retained', text: 'Telemedicine session records cannot be permanently deleted from the patient portal because they may form part of the medical record.' });
+                return;
+            }
+            if (window.Swal) Swal.fire({ icon: 'warning', title: 'Use the Record Action', text: 'This record must be deleted through its secure server action. The page will not remove it locally.' });
             return;
         }
         var docId = row.getAttribute('data-doc-id') || '';
@@ -836,8 +832,8 @@
                 method: 'POST',
                 credentials: 'same-origin',
                 body: fd
-            }).then(function(r) { return r.json(); })
-            .then(function(res) {
+            }).then(function(r) { return r.json(); }).then(function(res) {
+                if (!res || !res.success) throw new Error((res && res.data && res.data.message) || 'Emergency contact could not be deleted.');
                 row.remove();
                 var tbody = document.getElementById('dior-emerg-tbody');
                 if (tbody) {
@@ -856,9 +852,8 @@
                     Swal.fire({ position: 'top-end', icon: 'success', title: 'Emergency contact removed.', showConfirmButton: false, timer: 1500 });
                 }
             }).catch(function(err) {
-                row.remove();
                 if (window.Swal) {
-                    Swal.fire({ position: 'top-end', icon: 'success', title: 'Contact removed.', showConfirmButton: false, timer: 1500 });
+                    Swal.fire({ icon: 'error', title: 'Delete Failed', text: err.message || 'Emergency contact could not be deleted.' });
                 }
             });
         };
