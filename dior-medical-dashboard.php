@@ -5080,6 +5080,7 @@ class Dior_Medical_Auth
 
         $deleted = 0;
         $retained = 0;
+        $deleted_ids = [];
         foreach ($record_ids as $rid) {
             $appointment = $wpdb->get_row($wpdb->prepare(
                 "SELECT * FROM $appt_table WHERE patient_id=%d AND (appt_uid=%s OR id=%d) AND is_deleted=0 LIMIT 1",
@@ -5107,6 +5108,8 @@ class Dior_Medical_Auth
             $removed = $wpdb->delete($appt_table, ['id' => (int)$appointment['id'], 'patient_id' => $user_id], ['%d', '%d']);
             if ($removed === 1) {
                 $deleted++;
+                $deleted_ids[] = (string)$appointment['id'];
+                if ($uid !== '') $deleted_ids[] = $uid;
                 if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('patient_appointment_delete', 'appointment', $uid ?: $rid, $user_id, 'success');
             }
         }
@@ -5130,6 +5133,7 @@ class Dior_Medical_Auth
             'message' => $deleted . ' appointment(s) permanently deleted.' . ($retained ? ' ' . $retained . ' linked clinical appointment(s) were retained.' : ''),
             'deleted' => $deleted,
             'retained' => $retained,
+            'deleted_ids' => array_values(array_unique($deleted_ids)),
         ]);
     }
 
