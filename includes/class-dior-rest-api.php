@@ -298,6 +298,12 @@ class Dior_Medical_REST_API
             'paged' => $page,
             'orderby' => 'registered',
             'order' => 'DESC',
+            // Closed patient accounts remain linked to retained clinical records but are not listed as active patients.
+            'meta_query' => [
+                'relation' => 'OR',
+                ['key' => 'dior_patient_status', 'compare' => 'NOT EXISTS'],
+                ['key' => 'dior_patient_status', 'value' => 'deleted', 'compare' => '!='],
+            ],
         ];
 
         if (!empty($search)) {
