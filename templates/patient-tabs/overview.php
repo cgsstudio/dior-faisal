@@ -188,30 +188,32 @@ $dior_overview_book_url = trailingslashit($dior_overview_dashboard_url) . '#tab=
             </div>
             <?php
             $health_goals = get_user_meta($user_id, 'dior_health_goals', true);
-            $default_goals = [
-              ['name' => 'Weight Loss', 'val' => '75.5 / 60 Kg', 'pct' => 45],
-              ['name' => 'Water Intake', 'val' => '1500 / 2500 ml', 'pct' => 55],
-              ['name' => 'Sleep', 'val' => '7 / 8 hrs', 'pct' => 85],
-            ];
-            $display_goals = !empty($health_goals) && is_array($health_goals) ? $health_goals : $default_goals;
+            $display_goals = !empty($health_goals) && is_array($health_goals) ? $health_goals : [];
             ?>
             <div id="dior-goals-card-body"
               class="goals-list-wrap dior-card-scrollable d-flex flex-column gap-3 flex-grow-1 dior-scroll-200 pe-1">
-              <?php foreach ($display_goals as $g_idx => $goal):
-                $pct = min(100, max(0, (int) ($goal['pct'] ?? 50)));
-                ?>
-                <div class="goal mb-2" data-goal-index="<?php echo esc_attr($g_idx); ?>">
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="fw-bold text-dark small"><?php echo esc_html($goal['name']); ?></span>
-                    <span class="text-secondary small"><?php echo esc_html($goal['val']); ?></span>
-                  </div>
-                  <div class="progress dior-progress-sm rounded-pill bg-light">
-                    <div class="progress-bar rounded-pill dior-progress-orange" role="progressbar"
-                      style="width: <?php echo esc_attr($pct); ?>%;" aria-valuenow="<?php echo esc_attr($pct); ?>"
-                      aria-valuemin="0" aria-valuemax="100"></div>
-                  </div>
+              <?php if (empty($display_goals)): ?>
+                <div class="d-flex flex-column align-items-center justify-content-center text-center text-muted py-4 my-auto">
+                  <i class="fas fa-bullseye fs-3 mb-2 text-secondary opacity-50"></i>
+                  <span class="small fw-semibold">No health goals added yet.</span>
                 </div>
-              <?php endforeach; ?>
+              <?php else: ?>
+                <?php foreach ($display_goals as $g_idx => $goal):
+                  $pct = min(100, max(0, (int) ($goal['pct'] ?? 50)));
+                  ?>
+                  <div class="goal mb-2" data-goal-index="<?php echo esc_attr($g_idx); ?>">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-bold text-dark small"><?php echo esc_html($goal['name']); ?></span>
+                      <span class="text-secondary small"><?php echo esc_html($goal['val']); ?></span>
+                    </div>
+                    <div class="progress dior-progress-sm rounded-pill bg-light">
+                      <div class="progress-bar rounded-pill dior-progress-orange" role="progressbar"
+                        style="width: <?php echo esc_attr($pct); ?>%;" aria-valuenow="<?php echo esc_attr($pct); ?>"
+                        aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              <?php endif; ?>
             </div>
           </div>
         </div>

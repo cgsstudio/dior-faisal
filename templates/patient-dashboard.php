@@ -23,8 +23,8 @@
                 <!-- Close control for the mobile drawer. Hidden on desktop by the
                      stylesheet, shown while the drawer is open, and wired to the
                      same close helper as the backdrop. -->
-                <button type="button" class="dior-side-close btn" id="dior-side-close" onclick="diorCloseMobileDrawer()"
-                    aria-label="Close sidebar" title="Close menu">&times;</button>
+                <button type="button" class="dior-side-close bg-transparent border-0 text-white p-0 shadow-none" id="dior-side-close" onclick="diorCloseMobileDrawer()"
+                    aria-label="Close sidebar" title="Close menu"><i class="fas fa-times fs-5"></i></button>
             </div>
 
             <!-- Navigation Links -->
@@ -76,10 +76,12 @@
                         <i class="fas fa-wallet"></i>
                         <span class="nav-label">Billing &amp; Payment</span>
                     </button>
+                    <?php /* Temporarily hidden from menu
                     <button type="button" class="dior-nav-btn btn" data-tab="insurance">
                         <i class="fas fa-shield-heart"></i>
                         <span class="nav-label">Insurance Claim</span>
                     </button>
+                    */ ?>
                     <button type="button" class="dior-nav-btn btn" data-tab="documents">
                         <i class="fas fa-file-lines"></i>
                         <span class="nav-label">Documents &amp; Report</span>

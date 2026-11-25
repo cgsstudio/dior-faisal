@@ -31,8 +31,9 @@
                                     class="docs-icon-btn docs-btn-primary btn" title="Add Insurance Policy">
                                     <i class="fas fa-plus"></i>
                                 </button>
-                                <button type="button" aria-label="Export to CSV" class="docs-icon-btn docs-btn-success btn"
-                                    title="Export to CSV" onclick="diorDownloadInsuranceCSV()">
+                                <button type="button" aria-label="Export to CSV"
+                                    class="docs-icon-btn docs-btn-success btn" title="Export to CSV"
+                                    onclick="diorDownloadInsuranceCSV()">
                                     <i class="fas fa-file-arrow-down"></i>
                                 </button>
                                 <button type="button" aria-label="Refresh data" class="docs-icon-btn docs-btn-info btn"
@@ -104,12 +105,13 @@
                                         <td>
                                             <div class="cell-content">
                                                 <div class="badge-solid col-indigo">
-                                                    <?php echo esc_html($claim['status'] ?? 'Under Review'); ?></div>
+                                                    <?php echo esc_html($claim['status'] ?? 'Under Review'); ?>
+                                                </div>
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="cell-actions"><button type="button"
-                                                    class="action-icon-btn edit-btn btn" title="View Claim"
+                                            <div class="cell-actions"><button type="button" class="action-icon-btn edit-btn btn"
+                                                    title="View Claim"
                                                     onclick="diorOpenInsuranceModal(<?php echo $claim_args; ?>)">
                                                     <i class="fas fa-eye text-primary"></i></button></div>
                                         </td>
@@ -136,8 +138,8 @@
 
 </section>
 
-<div class="dior-billing-modal-backdrop dior-insurance-modal-backdrop" id="diorInsuranceModal"
-    role="dialog" aria-modal="true" aria-labelledby="diorInsuranceModalTitle">
+<div class="dior-billing-modal-backdrop dior-insurance-modal-backdrop" id="diorInsuranceModal" role="dialog"
+    aria-modal="true" aria-labelledby="diorInsuranceModalTitle">
     <div class="modal-content dior-ic-7903a9dded">
         <div class="modal-header details-modal-header dior-ic-feb0429751">
             <div class="header-left dior-ic-fbd29a13bb">
@@ -202,8 +204,8 @@
                     </div>
                     <div class="col-lg-6 col-md-6 col-sm-12">
                         <div class="detail-field-card dior-ic-57d219ccba">
-                            <div class="field-label-group dior-ic-b85bb26d7d"><span
-                                    class="field-label">Submitted</span></div>
+                            <div class="field-label-group dior-ic-b85bb26d7d"><span class="field-label">Submitted</span>
+                            </div>
                             <div class="field-value-wrapper"><span class="field-value dior-ic-3b2d8e2576"
                                     id="insModalSubmitted"></span></div>
                         </div>

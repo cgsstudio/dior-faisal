@@ -1012,7 +1012,7 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
         window.diorCloseMobileDrawer = function() {
             const sb = document.getElementById('dior-sidebar');
             const bg = document.getElementById('dior-drawer-backdrop');
-            if (sb) sb.classList.remove('mobile-open');
+            if (sb) sb.classList.remove('mobile-open', 'open');
             if (bg) bg.classList.remove('active');
             document.body.style.overflow = '';
         };

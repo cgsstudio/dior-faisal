@@ -287,8 +287,8 @@
                                         </tr>
                                     <?php endforeach; ?>
                                     <?php if (empty($today_mock)): ?>
-                                        <tr class="dior-empty-state">
-                                            <td colspan="8" class="text-center text-muted py-4">
+                                        <tr>
+                                            <td colspan="8" class="dior-empty-state text-center text-muted py-4">
                                                 <i class="far fa-calendar-xmark fs-3 d-block mb-2 text-secondary opacity-50"></i>
                                                 <span class="small fw-semibold">No appointments scheduled for today.</span>
                                             </td>
@@ -456,8 +456,8 @@
                                         </tr>
                                     <?php endforeach; ?>
                                     <?php if (empty($upcoming_mock)): ?>
-                                        <tr class="dior-empty-state">
-                                            <td colspan="8" class="text-center text-muted py-4">
+                                        <tr>
+                                            <td colspan="8" class="dior-empty-state text-center text-muted py-4">
                                                 <i class="far fa-calendar-xmark fs-3 d-block mb-2 text-secondary opacity-50"></i>
                                                 <span class="small fw-semibold">No upcoming appointments found.</span>
                                             </td>
@@ -576,8 +576,8 @@
                                         </tr>
                                     <?php endforeach; ?>
                                     <?php if (empty($past_mock)): ?>
-                                        <tr class="dior-empty-state">
-                                            <td colspan="8" class="text-center text-muted py-4">
+                                        <tr>
+                                            <td colspan="8" class="dior-empty-state text-center text-muted py-4">
                                                 <i class="far fa-calendar-xmark fs-3 d-block mb-2 text-secondary opacity-50"></i>
                                                 <span class="small fw-semibold">No past appointments found.</span>
                                             </td>

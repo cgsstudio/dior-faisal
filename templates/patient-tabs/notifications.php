@@ -11,56 +11,6 @@ if (class_exists('Dior_Patient_Portal_Data') && method_exists('Dior_Patient_Port
     $patient_notif_rows = Dior_Patient_Portal_Data::get_patient_notifications($user_id);
 }
 
-// Fallback high-quality notifications if user has no live entries yet
-if (empty($patient_notif_rows)) {
-    $patient_notif_rows = [
-        [
-            'id' => 'welcome_portal_01',
-            'title' => 'Welcome to Dior Medical Portal',
-            'message' => 'Your secure HIPAA-compliant patient portal is active. You can review your medical records, book visits, and manage prescriptions anytime.',
-            'type' => 'system',
-            'action_url' => '#tab=overview',
-            'icon' => 'fa-bell',
-            'is_read' => 0,
-            'created_at' => current_time('mysql'),
-            'timestamp' => time()
-        ],
-        [
-            'id' => 'telemed_consult_02',
-            'title' => 'Upcoming Telehealth Consultation Ready',
-            'message' => 'Your next virtual consultation room is prepared. Check your scheduled time and prepare your medical questions.',
-            'type' => 'appointment',
-            'action_url' => '#tab=telemedicine',
-            'icon' => 'fa-calendar-check',
-            'is_read' => 0,
-            'created_at' => date('Y-m-d H:i:s', time() - 3600),
-            'timestamp' => time() - 3600
-        ],
-        [
-            'id' => 'intake_form_03',
-            'title' => 'Medical Intake Questionnaire Received',
-            'message' => 'Your health history submission has been securely recorded and encrypted in your permanent medical file.',
-            'type' => 'intake',
-            'action_url' => '#tab=medical_record',
-            'icon' => 'fa-clipboard-list',
-            'is_read' => 1,
-            'created_at' => date('Y-m-d H:i:s', time() - 86400),
-            'timestamp' => time() - 86400
-        ],
-        [
-            'id' => 'rx_meds_04',
-            'title' => 'Prescription Summary Available',
-            'message' => 'Your electronic prescription records and dosage instructions are accessible in the Prescriptions section.',
-            'type' => 'prescription',
-            'action_url' => '#tab=docs_meds',
-            'icon' => 'fa-prescription-bottle-medical',
-            'is_read' => 1,
-            'created_at' => date('Y-m-d H:i:s', time() - 172800),
-            'timestamp' => time() - 172800
-        ]
-    ];
-}
-
 // Compute notification metrics
 $total_count = count($patient_notif_rows);
 $unread_count = 0;
@@ -264,6 +214,10 @@ foreach ($patient_notif_rows as $row) {
                                 onclick="diorClearReadSystemNotifications()">
                                 <i class="fas fa-trash me-1" style="margin-right: 4px;"></i> Clear Read
                             </button>
+                            <button type="button" class="btn btn-sm btn-outline-action text-danger"
+                                onclick="diorDeleteAllSystemNotifications()">
+                                <i class="fas fa-trash-can me-1" style="margin-right: 4px;"></i> Delete All
+                            </button>
                             <button type="button" class="btn btn-sm btn-outline-action"
                                 onclick="diorDownloadPatientNotifCSV()">
                                 <i class="fas fa-file-arrow-down me-1" style="margin-right: 4px;"></i> Export CSV
@@ -385,7 +339,8 @@ foreach ($patient_notif_rows as $row) {
                                     ?>
                                     <div class="notification-item-row <?php echo $is_unread ? 'is-unread-row' : ''; ?> <?php echo esc_attr($type_class); ?>"
                                         data-read-state="<?php echo esc_attr($read_state); ?>"
-                                        data-notif-id="<?php echo esc_attr($n_id); ?>">
+                                        data-notif-id="<?php echo esc_attr($n_id); ?>"
+                                        data-is-clinical="<?php echo in_array($n_type_raw, ['appointment', 'intake', 'questionnaire', 'clinical', 'prescription'], true) ? '1' : '0'; ?>">
 
                                         <?php if ($is_unread): ?>
                                             <div class="unread-strip"></div>
@@ -453,6 +408,9 @@ foreach ($patient_notif_rows as $row) {
                         </div>
                     </div>
 
+                    <!-- Pagination (10 notifications per page) -->
+                    <div class="dior-table-pagination" id="dior-patient-notif-pagination" style="display:none;"></div>
+
                 </div>
             </div>
         </div>
@@ -510,6 +468,10 @@ foreach ($patient_notif_rows as $row) {
         const statUnread = document.getElementById('dior-sys-unread-stat');
         if (statUnread) statUnread.textContent = unread;
 
+        const careRows = document.querySelectorAll('#dior-system-notif-list .notification-item-row[data-is-clinical="1"]');
+        const statCare = document.getElementById('dior-sys-care-stat');
+        if (statCare) statCare.textContent = careRows.length;
+
         const chip = document.getElementById('dior-sys-unread-chip');
         if (chip) chip.textContent = unread + ' Unread';
 
@@ -532,6 +494,15 @@ foreach ($patient_notif_rows as $row) {
                 b.style.display = 'none';
             }
         });
+
+        const list = document.getElementById('dior-system-notif-list');
+        if (list && total === 0 && !document.getElementById('dior-empty-notif-box')) {
+            list.innerHTML = '<div class="p-5 text-center text-muted dior-empty-state" id="dior-empty-notif-box">' +
+                '<i class="fas fa-bell-slash fa-3x mb-3 text-secondary opacity-50"></i>' +
+                '<h5 class="fw-bold text-dark">No notifications right now</h5>' +
+                '<p class="text-secondary small mb-0">You\'re all caught up! New clinical updates, appointments, and messages will appear here.</p>' +
+                '</div>';
+        }
     }
 
     function diorMarkRowAsRead(btn, notifId) {
@@ -720,6 +691,73 @@ foreach ($patient_notif_rows as $row) {
         }
     }
 
+    function diorDeleteAllSystemNotifications() {
+        const allRows = document.querySelectorAll('#dior-system-notif-list .notification-item-row');
+        if (allRows.length === 0) {
+            if (window.Swal) {
+                Swal.fire({ icon: 'info', title: 'No Notifications', text: 'There are no notifications to delete.' });
+            }
+            return;
+        }
+
+        const notifIds = Array.from(allRows).map(r => r.dataset.notifId).filter(Boolean);
+
+        const doDeleteAll = function () {
+            allRows.forEach(row => {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 300);
+            });
+
+            setTimeout(() => {
+                diorUpdateNotifBadgesAndStats();
+            }, 350);
+
+            const ajaxUrl = (window.dior_patient_dashboard && window.dior_patient_dashboard.ajax_url) || '/diormedical/wp-admin/admin-ajax.php';
+            const nonce = (window.dior_patient_dashboard && window.dior_patient_dashboard.portal_nonce) || '';
+
+            const body = new URLSearchParams({
+                action: 'dior_patient_bulk_delete_notifications',
+                nonce: nonce
+            });
+            notifIds.forEach(id => body.append('notif_ids[]', id));
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                body: body.toString()
+            }).then(res => res.json()).then(() => {
+                if (window.Swal) {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'All notifications deleted',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            }).catch(() => { });
+        };
+
+        if (window.Swal) {
+            Swal.fire({
+                title: 'Delete All Notifications?',
+                text: `You are about to permanently remove all ${allRows.length} notification(s).`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#DC2626',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, delete all!'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    doDeleteAll();
+                }
+            });
+        } else {
+            doDeleteAll();
+        }
+    }
+
     function diorDownloadPatientNotifCSV() {
         const rows = document.querySelectorAll('#dior-system-notif-list .notification-item-row');
         let csvContent = "data:text/csv;charset=utf-8,Title,Message,Date,Status\n";
@@ -748,4 +786,123 @@ foreach ($patient_notif_rows as $row) {
         if (icon) icon.classList.add('fa-spin');
         window.location.reload();
     }
+</script>
+
+<!-- Notification pagination: 10 per page, composed with the existing filters -->
+<script>
+(function () {
+    'use strict';
+
+    var LIST_SELECTOR = '#dior-system-notif-list .notification-item-row';
+    var BAR_ID = 'dior-patient-notif-pagination';
+    var PAGE_SIZE = 10;
+    var HIDDEN = 'd-none';
+    var currentPage = 1;
+
+    function allRows() {
+        return Array.prototype.slice.call(document.querySelectorAll(LIST_SELECTOR));
+    }
+
+    function activeRows() {
+        return allRows().filter(function (row) {
+            return row.style.display !== 'none';
+        });
+    }
+
+    function render(page) {
+        var bar = document.getElementById(BAR_ID);
+        var rows = allRows();
+        if (!bar || rows.length === 0) {
+            if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
+            return;
+        }
+
+        var active = activeRows();
+        var total = active.length;
+        var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+        if (page > totalPages) page = totalPages;
+        if (page < 1) page = 1;
+        currentPage = page;
+
+        rows.forEach(function (row) { row.classList.add(HIDDEN); });
+
+        if (total <= PAGE_SIZE) {
+            active.forEach(function (row) { row.classList.remove(HIDDEN); });
+            bar.style.display = 'none';
+            bar.innerHTML = '';
+            return;
+        }
+
+        var start = (currentPage - 1) * PAGE_SIZE;
+        var end = Math.min(start + PAGE_SIZE, total);
+        active.slice(start, end).forEach(function (row) { row.classList.remove(HIDDEN); });
+
+        var nav = '';
+        nav += '<button type="button" class="dior-page-btn" data-page="' + (currentPage - 1) + '"' +
+            (currentPage === 1 ? ' disabled' : '') + ' title="Previous Page">' +
+            '<i class="fa-solid fa-chevron-left" style="font-size:11px;"></i></button>';
+
+        if (totalPages <= 7) {
+            for (var i = 1; i <= totalPages; i++) {
+                nav += '<button type="button" class="dior-page-btn' + (i === currentPage ? ' active' : '') +
+                    '" data-page="' + i + '">' + i + '</button>';
+            }
+        } else {
+            for (var j = 1; j <= totalPages; j++) {
+                if (j === 1 || j === totalPages || (j >= currentPage - 1 && j <= currentPage + 1)) {
+                    nav += '<button type="button" class="dior-page-btn' + (j === currentPage ? ' active' : '') +
+                        '" data-page="' + j + '">' + j + '</button>';
+                } else if (j === currentPage - 2 || j === currentPage + 2) {
+                    nav += '<span class="px-1 text-secondary small">...</span>';
+                }
+            }
+        }
+
+        nav += '<button type="button" class="dior-page-btn" data-page="' + (currentPage + 1) + '"' +
+            (currentPage === totalPages ? ' disabled' : '') + ' title="Next Page">' +
+            '<i class="fa-solid fa-chevron-right" style="font-size:11px;"></i></button>';
+
+        bar.style.display = 'flex';
+        bar.innerHTML =
+            '<div class="dior-pagination-info">Showing <strong>' + (start + 1) + '</strong> to <strong>' +
+            end + '</strong> of <strong>' + total + '</strong> entries</div>' +
+            '<div class="dior-pagination-nav">' + nav + '</div>';
+
+        bar.querySelectorAll('.dior-page-btn[data-page]').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                var target = parseInt(btn.getAttribute('data-page'), 10);
+                if (!isNaN(target) && !btn.disabled) render(target);
+            });
+        });
+    }
+
+    window.diorRenderPatientNotifPage = render;
+    window.diorResetPatientNotifPager = function () { render(1); };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { render(1); });
+    } else {
+        render(1);
+    }
+
+    function wrapAfter(name, reset) {
+        var original = window[name];
+        if (typeof original !== 'function') return;
+        window[name] = function () {
+            var result = original.apply(this, arguments);
+            if (reset) {
+                render(1);
+            } else {
+                setTimeout(function () { render(currentPage); }, 0);
+            }
+            return result;
+        };
+    }
+
+    wrapAfter('diorFilterSystemNotif', true);
+    wrapAfter('diorSearchSystemNotifications', true);
+    wrapAfter('diorUpdateNotifBadgesAndStats', false);
+})();
 </script>

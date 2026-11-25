@@ -221,6 +221,10 @@ foreach ($doctor_notif_rows as $row) {
                                 onclick="diorClearReadSystemNotifications()">
                                 <i class="fas fa-trash me-1" style="margin-right: 4px;"></i> Clear Read
                             </button>
+                            <button type="button" class="btn btn-sm btn-outline-action text-danger"
+                                onclick="diorDeleteAllSystemNotifications()">
+                                <i class="fas fa-trash-can me-1" style="margin-right: 4px;"></i> Delete All
+                            </button>
                             <button type="button" class="btn btn-sm btn-outline-action"
                                 onclick="diorDownloadDoctorNotifCSV()">
                                 <i class="fas fa-file-arrow-down me-1" style="margin-right: 4px;"></i> Export CSV
@@ -526,6 +530,15 @@ foreach ($doctor_notif_rows as $row) {
                 b.style.display = 'none';
             }
         });
+
+        const list = document.getElementById('dior-system-notif-list');
+        if (list && total === 0 && !document.getElementById('dior-empty-notif-box')) {
+            list.innerHTML = '<div class="p-5 text-center text-muted dior-empty-state" id="dior-empty-notif-box">' +
+                '<i class="fas fa-bell-slash fa-3x mb-3 text-secondary opacity-50"></i>' +
+                '<h5 class="fw-bold text-dark">No notifications right now</h5>' +
+                '<p class="text-secondary small mb-0">You\'re all caught up! New clinical updates, appointments, and patient messages will appear here.</p>' +
+                '</div>';
+        }
     }
 
     function diorMarkRowAsRead(btn, notifId) {
@@ -711,6 +724,73 @@ foreach ($doctor_notif_rows as $row) {
             });
         } else {
             doClear();
+        }
+    }
+
+    function diorDeleteAllSystemNotifications() {
+        const allRows = document.querySelectorAll('#dior-system-notif-list .notification-item-row');
+        if (allRows.length === 0) {
+            if (window.Swal) {
+                Swal.fire({ icon: 'info', title: 'No Notifications', text: 'There are no notifications to delete.' });
+            }
+            return;
+        }
+
+        const notifIds = Array.from(allRows).map(r => r.dataset.notifId).filter(Boolean);
+
+        const doDeleteAll = function () {
+            allRows.forEach(row => {
+                row.style.transition = 'all 0.3s ease';
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 300);
+            });
+
+            setTimeout(() => {
+                diorUpdateNotifBadgesAndStats();
+            }, 350);
+
+            const ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
+            const nonce = '<?php echo esc_js($doctor_nonce); ?>';
+
+            const body = new URLSearchParams({
+                action: 'dior_doctor_delete_notification',
+                nonce: nonce
+            });
+            notifIds.forEach(id => body.append('notif_ids[]', id));
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                body: body.toString()
+            }).then(res => res.json()).then(() => {
+                if (window.Swal) {
+                    Swal.fire({
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'All notifications deleted',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            }).catch(() => { });
+        };
+
+        if (window.Swal) {
+            Swal.fire({
+                title: 'Delete All Notifications?',
+                text: `You are about to permanently remove all ${allRows.length} notification(s).`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, delete all!'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    doDeleteAll();
+                }
+            });
+        } else {
+            doDeleteAll();
         }
     }
 

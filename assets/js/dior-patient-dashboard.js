@@ -3080,141 +3080,106 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
                 inst:    element.getAttribute('data-rx-inst')    || ''
             };
 
-            // Resolve jsPDF constructor (bundled inside html2pdf.bundle.min.js)
-            var JsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
-            if (!JsPDF) {
-                // Fallback: open print window
-                var printWin = window.open('', '_blank');
-                if (printWin) {
-                    printWin.document.write('<html><body style="font-family:Arial;padding:40px"><h2>Dior Medical — Prescription</h2><b>ID:</b> ' + d.id + '<br><b>Medication:</b> ' + d.name + '<br><b>Doctor:</b> ' + d.doctor + '<br><b>Date:</b> ' + d.date + '<br><b>Condition:</b> ' + d.disease + '<br><b>Status:</b> ' + d.status + (d.inst ? '<br><b>Instructions:</b> ' + d.inst : '') + '</body></html>');
-                    printWin.document.close();
-                    printWin.print();
-                }
-                return;
-            }
-
             var today = new Date().toISOString().slice(0, 10);
             var cleanFileName = 'Dior-Prescription-' + String(d.id).replace(/[^a-zA-Z0-9]/g, '-') + '.pdf';
 
-            var doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-
-            var pageW = doc.internal.pageSize.getWidth();   // 210 mm
-            var pageH = doc.internal.pageSize.getHeight();  // 297 mm
-            var lm = 18, rm = 18;                           // left/right margin
-            var cw = pageW - lm - rm;                       // content width
-            var y = 20;                                     // current Y cursor
-
-            // ── Helper: wrap long text ──────────────────────────
-            function wrapText(text, maxWidth) {
-                return doc.splitTextToSize(text || '', maxWidth);
+            function escRxHtml(val) {
+                return String(val == null ? '' : val)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
             }
 
-            // ── HEADER ───────────────────────────────────────────
-            // Brand name
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(20);
-            doc.setTextColor(0, 52, 108);       // #00346C
-            doc.text('Dior Medical', lm, y);
-
-            // Prescription ID (right-aligned)
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
-            doc.setTextColor(100, 116, 139);    // #64748b
-            doc.text('Prescription ID', pageW - rm, y - 4, { align: 'right' });
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
-            doc.setTextColor(0, 52, 108);
-            doc.text(d.id, pageW - rm, y + 1, { align: 'right' });
-
-            // Tagline
-            y += 5;
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8.5);
-            doc.setTextColor(100, 116, 139);
-            doc.text('HIPAA-Compliant Healthcare Platform', lm, y);
-
-            // Divider line
-            y += 5;
-            doc.setDrawColor(0, 52, 108);
-            doc.setLineWidth(0.7);
-            doc.line(lm, y, pageW - rm, y);
-            y += 8;
-
-            // ── PRESCRIPTION TITLE ────────────────────────────────
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(14);
-            doc.setTextColor(15, 23, 42);       // #0f172a
-            var titleLines = wrapText(d.title, cw);
-            doc.text(titleLines, lm, y);
-            y += (titleLines.length * 7) + 4;
-
-            // ── DETAILS TABLE ─────────────────────────────────────
+            var patientName = (window.dior_patient_dashboard && window.dior_patient_dashboard.patient && window.dior_patient_dashboard.patient.name) || '';
             var rows = [
-                ['Medication',         d.name    || '—'],
-                ['Prescribed By',      d.doctor  || '—'],
-                ['Date Prescribed',    d.date    || '—'],
-                ['Condition/Diagnosis',d.disease || '—'],
-                ['Status',             d.status  || '—']
+                ['Medication', d.name || '—'],
+                ['Prescribed By', d.doctor || '—'],
+                ['Date Prescribed', d.date || '—'],
+                ['Condition / Diagnosis', d.disease || '—'],
+                ['Status', d.status || '—']
             ];
+            if (patientName) {
+                rows.unshift(['Patient', patientName]);
+            }
             if (d.inst) {
                 rows.push(['Instructions', d.inst]);
             }
 
-            var col1W = cw * 0.36;
-            var col2W = cw * 0.64;
-            var rowH  = 9;
-            var cellPadX = 4, cellPadY = 6;
+            var rowsHtml = rows.map(function (r, idx) {
+                var bg = idx % 2 === 0 ? '#f8fafc' : '#ffffff';
+                return '<tr style="background:' + bg + ';">' +
+                    '<td style="width:34%;padding:10px 14px;border:1px solid #cbd5e1;font-weight:700;color:#334155;font-size:13px;vertical-align:top;">' + escRxHtml(r[0]) + '</td>' +
+                    '<td style="width:66%;padding:10px 14px;border:1px solid #cbd5e1;color:#0f172a;font-size:13px;vertical-align:top;white-space:pre-wrap;">' + escRxHtml(r[1]) + '</td>' +
+                    '</tr>';
+            }).join('');
 
-            rows.forEach(function (row, i) {
-                var label = row[0];
-                var value = row[1];
-                var valueLines = wrapText(value, col2W - cellPadX * 2);
-                var thisRowH = Math.max(rowH, valueLines.length * 5.5 + cellPadY * 1.5);
+            var pdfHtml =
+                '<div style="font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#ffffff;padding:28px 32px;box-sizing:border-box;width:100%;">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #00346C;padding-bottom:14px;margin-bottom:20px;">' +
+                        '<div>' +
+                            '<div style="font-size:22px;font-weight:700;color:#00346C;line-height:1.2;">Dior Medical</div>' +
+                            '<div style="font-size:11px;color:#64748b;margin-top:4px;">HIPAA-Compliant Healthcare Platform</div>' +
+                        '</div>' +
+                        '<div style="text-align:right;">' +
+                            '<div style="font-size:11px;color:#64748b;text-transform:uppercase;">Prescription ID</div>' +
+                            '<div style="font-size:14px;font-weight:700;color:#00346C;margin-top:2px;">' + escRxHtml(d.id) + '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:16px;">' + escRxHtml(d.title) + '</div>' +
+                    '<table style="width:100%;border-collapse:collapse;margin-bottom:22px;">' +
+                        '<tbody>' + rowsHtml + '</tbody>' +
+                    '</table>' +
+                    '<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0;padding-top:12px;font-size:11px;color:#94a3b8;">' +
+                        '<span>Generated by Dior Medical Patient Portal</span>' +
+                        '<span>Printed: ' + escRxHtml(today) + '</span>' +
+                    '</div>' +
+                '</div>';
 
-                // Row background
-                if (i % 2 === 0) {
-                    doc.setFillColor(241, 245, 249);  // #f1f5f9
+            function openRxPrintFallback() {
+                var printWin = window.open('', '_blank');
+                if (printWin) {
+                    printWin.document.write('<html><head><title>Prescription #' + escRxHtml(d.id) + '</title></head><body style="margin:20px;background:#fff;">' + pdfHtml + '</body></html>');
+                    printWin.document.close();
+                    printWin.focus();
+                    setTimeout(function () { printWin.print(); }, 250);
                 } else {
-                    doc.setFillColor(255, 255, 255);
+                    window.print();
                 }
-                doc.rect(lm, y, cw, thisRowH, 'F');
+            }
 
-                // Cell borders
-                doc.setDrawColor(203, 213, 225);      // #cbd5e1
-                doc.setLineWidth(0.3);
-                doc.rect(lm, y, col1W, thisRowH, 'S');
-                doc.rect(lm + col1W, y, col2W, thisRowH, 'S');
+            if (typeof html2pdf === 'undefined' || !html2pdf) {
+                openRxPrintFallback();
+                return;
+            }
 
-                // Label
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(10);
-                doc.setTextColor(51, 65, 85);         // #334155
-                doc.text(label, lm + cellPadX, y + cellPadY);
+            var holder = document.createElement('div');
+            holder.style.position = 'fixed';
+            holder.style.left = '0';
+            holder.style.top = '0';
+            holder.style.width = '750px';
+            holder.style.background = '#FFFFFF';
+            holder.style.zIndex = '-999999';
+            holder.style.opacity = '1';
+            holder.style.pointerEvents = 'none';
+            holder.innerHTML = pdfHtml;
+            document.body.appendChild(holder);
 
-                // Value
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10);
-                doc.setTextColor(15, 23, 42);
-                doc.text(valueLines, lm + col1W + cellPadX, y + cellPadY);
-
-                y += thisRowH;
-            });
-
-            // ── FOOTER ────────────────────────────────────────────
-            y += 8;
-            doc.setDrawColor(226, 232, 240);    // #e2e8f0
-            doc.setLineWidth(0.3);
-            doc.line(lm, y, pageW - rm, y);
-            y += 5;
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8.5);
-            doc.setTextColor(148, 163, 184);    // #94a3b8
-            doc.text('Generated by Dior Medical Patient Portal', lm, y);
-            doc.text('Printed: ' + today, pageW - rm, y, { align: 'right' });
-
-            // ── SAVE ──────────────────────────────────────────────
-            doc.save(cleanFileName);
+            html2pdf().set({
+                margin: [8, 8, 8, 8],
+                filename: cleanFileName,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, scrollX: 0, windowWidth: 794 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(holder.firstElementChild || holder).save()
+                .then(function () {
+                    if (holder.parentNode) holder.parentNode.removeChild(holder);
+                })
+                .catch(function (err) {
+                    console.error('Prescription PDF export failed:', err);
+                    if (holder.parentNode) holder.parentNode.removeChild(holder);
+                    openRxPrintFallback();
+                });
         };
 
         function diorInitThemeMode() {

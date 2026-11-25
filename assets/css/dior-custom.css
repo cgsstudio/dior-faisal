@@ -31397,7 +31397,7 @@ body .media-modal .media-modal-close .media-modal-icon::before {
 
 /* Telemedicine ACTIONS column alignment */
 #tab-telemedicine #dior-tele-table th:last-child,
-#tab-telemedicine #dior-tele-table td:last-child {
+#tab-telemedicine #dior-tele-table td:last-child:not(.dior-empty-state):not([colspan]) {
     text-align: center !important;
     vertical-align: middle !important;
     width: 146px !important;
@@ -65691,9 +65691,9 @@ a.va-btn-primary:hover {
 
     /* actions column sits on the right edge of the card */
     #dior-patient-portal-app#dior-patient-portal-app #tab-docs_meds table.docs-table th:last-child,
-    #dior-patient-portal-app#dior-patient-portal-app #tab-docs_meds table.docs-table td:last-child,
+    #dior-patient-portal-app#dior-patient-portal-app #tab-docs_meds table.docs-table td:last-child:not(.dior-empty-state):not([colspan]),
     #dior-patient-portal-app#dior-patient-portal-app #tab-telemedicine table.docs-table th:last-child,
-    #dior-patient-portal-app#dior-patient-portal-app #tab-telemedicine #dior-tele-table td:last-child {
+    #dior-patient-portal-app#dior-patient-portal-app #tab-telemedicine #dior-tele-table td:last-child:not(.dior-empty-state):not([colspan]) {
         width: 1% !important;
         min-width: 0 !important;
         max-width: none !important;
@@ -65710,7 +65710,7 @@ a.va-btn-primary:hover {
         min-width: 1060px !important;
     }
 
-    #dior-patient-portal-app#dior-patient-portal-app #tab-telemedicine #dior-tele-table td:last-child {
+    #dior-patient-portal-app#dior-patient-portal-app #tab-telemedicine #dior-tele-table td:last-child:not(.dior-empty-state):not([colspan]) {
         width: 1% !important;
         min-width: 0 !important;
     }
@@ -71767,12 +71767,12 @@ body .dior-bs-alert-modal .dior-modal-del-goal-btn {
         min-height: 34px !important;
         max-height: 34px !important;
         padding: 0 !important;
-        border: 1px solid rgba(255, 255, 255, 0.35) !important;
+        border: 0 !important;
         border-radius: 50% !important;
-        background: rgba(255, 255, 255, 0.14) !important;
+        background: transparent !important;
         color: #FFFFFF !important;
         font-family: Montserrat, sans-serif !important;
-        font-size: 25px !important;
+        font-size: 20px !important;
         font-weight: 400 !important;
         line-height: 1 !important;
         text-align: center !important;
@@ -71781,8 +71781,8 @@ body .dior-bs-alert-modal .dior-modal-del-goal-btn {
 
     .dior-patient-portal-wrap #dior-sidebar .dior-side-close:hover,
     .dior-patient-portal-wrap #dior-sidebar .dior-side-close:focus-visible {
-        background: rgba(255, 255, 255, 0.24) !important;
-        border-color: rgba(255, 255, 255, 0.55) !important;
+        background: rgba(255, 255, 255, 0.14) !important;
+        border: 0 !important;
         color: #FFFFFF !important;
         outline: none !important;
     }

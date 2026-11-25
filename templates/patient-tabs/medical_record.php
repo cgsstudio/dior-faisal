@@ -44,9 +44,9 @@
                                         <div class="flex-grow-1 overflow-hidden dior-ic-aea598fd73">
                                             <div class="d-flex align-items-center justify-content-between mb-1 dior-ic-bce91fe330">
                                                 <span class="text-xs text-muted font-weight-600 text-uppercase text-truncate dior-ic-d48d9220c2">Care Phase</span>
-                                                <span class="badge bg-info-subtle text-info rounded-pill text-2xs dior-ic-c37f987d84">Live Care</span>
+                                                <span class="badge bg-info-subtle text-info rounded-pill text-2xs dior-ic-c37f987d84"><?php echo !empty($appointments[0]['condition']) ? 'Live Care' : 'None'; ?></span>
                                             </div>
-                                            <h5 class="mb-0 font-weight-bold text-dark text-truncate dior-ic-c4e98ce9b3"><?php echo esc_html($appointments[0]['condition'] ?? 'Active Care'); ?></h5>
+                                            <h5 class="mb-0 font-weight-bold text-dark text-truncate dior-ic-c4e98ce9b3"><?php echo esc_html(!empty($appointments[0]['condition']) ? $appointments[0]['condition'] : '—'); ?></h5>
                                         </div>
                                     </div>
                                 </div>
@@ -60,9 +60,9 @@
                                         <div class="flex-grow-1 overflow-hidden dior-ic-aea598fd73">
                                             <div class="d-flex align-items-center justify-content-between mb-1 dior-ic-bce91fe330">
                                                 <span class="text-xs text-muted font-weight-600 text-uppercase text-truncate dior-ic-d48d9220c2">Lead Physician</span>
-                                                <span class="badge bg-purple-subtle text-purple rounded-pill text-2xs dior-ic-f6785667b0">Cardiology</span>
+                                                <span class="badge bg-purple-subtle text-purple rounded-pill text-2xs dior-ic-f6785667b0"><?php echo esc_html(!empty($appointments[0]['specialty']) ? $appointments[0]['specialty'] : (!empty($appointments[0]['provider']) ? 'Assigned' : 'None')); ?></span>
                                             </div>
-                                            <h5 class="mb-0 font-weight-bold text-dark text-truncate dior-ic-c4e98ce9b3"><?php echo esc_html($appointments[0]['provider'] ?? 'Attending Physician'); ?></h5>
+                                            <h5 class="mb-0 font-weight-bold text-dark text-truncate dior-ic-c4e98ce9b3"><?php echo esc_html(!empty($appointments[0]['provider']) ? $appointments[0]['provider'] : 'Not Assigned'); ?></h5>
                                         </div>
                                     </div>
                                 </div>
@@ -165,10 +165,17 @@
                                         ];
                                     }
                                     foreach (($questionnaires ?? []) as $questionnaire) {
+                                        $q_status = strtolower(trim((string) ($questionnaire['status'] ?? '')));
+                                        if (!in_array($q_status, ['submitted', 'completed'], true)) {
+                                            continue;
+                                        }
+                                        if (empty($questionnaire['type']) && empty($questionnaire['submitted_at']) && empty($questionnaire['symptoms']) && empty($questionnaire['consent_signed'])) {
+                                            continue;
+                                        }
                                         $timeline_events[] = [
-                                            'date' => $questionnaire['updated_at'] ?? current_time('mysql'),
+                                            'date' => $questionnaire['updated_at'] ?? ($questionnaire['submitted_at'] ?? current_time('mysql')),
                                             'type' => 'QUESTIONNAIRE',
-                                            'title' => $questionnaire['title'] ?? 'Clinical Intake Form',
+                                            'title' => $questionnaire['title'] ?? ($questionnaire['name'] ?? 'Clinical Intake Form'),
                                             'doctor' => 'Patient / Clinical Intake',
                                             'description' => 'Status: ' . ($questionnaire['status'] ?? 'Submitted') . ' — Clinical information on file.',
                                             'icon' => 'fa-clipboard-check',

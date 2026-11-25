@@ -20,19 +20,12 @@ $patient_rx_rows = $prescriptions;
 
 // Billing/Payments are dynamic from database and user meta — no static overwrite.
 
-if (empty($documents)) {
-    $documents = [
-        ['id'=>'DOC-1001','title'=>'Blood Test Report','category'=>'Laboratory','date'=>$design_today,'size'=>'1.2 MB','author'=>'Dr. Sarah Smith','type'=>'PDF','file_type'=>'PDF'],
-        ['id'=>'DOC-1002','title'=>'Consultation Summary','category'=>'Clinical','date'=>$design_today,'size'=>'840 KB','author'=>'Dr. James Chen','type'=>'PDF','file_type'=>'PDF'],
-        ['id'=>'DOC-1003','title'=>'Medication Report','category'=>'Prescription','date'=>wp_date('Y-m-d', current_time('timestamp') - 3 * DAY_IN_SECONDS),'size'=>'620 KB','author'=>'Dr. Helen Miller','type'=>'PDF','file_type'=>'PDF'],
-    ];
+// Documents and questionnaires are dynamic from database and user meta — no static overwrite.
+if (!isset($documents) || !is_array($documents)) {
+    $documents = [];
 }
-
-if (empty($questionnaires)) {
-    $questionnaires = [
-        ['id'=>'Q-1001','title'=>'General Health Intake','status'=>'Submitted','updated_at'=>$design_today],
-        ['id'=>'Q-1002','title'=>'Pre-Consultation Questionnaire','status'=>'Pending','updated_at'=>$design_today],
-    ];
+if (!isset($questionnaires) || !is_array($questionnaires)) {
+    $questionnaires = [];
 }
 
 // Notifications are dynamic from database and user meta — no static overwrite.
@@ -113,19 +106,9 @@ if (!isset($appointments) || !is_array($appointments)) {
 
 // Removed static payments synthetic row generator to preserve dynamic billing data.
 
-for ($i = count($documents); $i < 10; $i++) {
-    $types = ['Lab Report','Imaging Report','Visit Summary','Prescription Report','Discharge Summary','Insurance Report','Clinical Note'];
-    $type = $types[$i - 3] ?? 'Medical Report';
-    $documents[] = [
-        'id'=>'DOC-'.(1004+$i),'title'=>$type.' '.($i-2),'category'=>'Medical Record',
-        'date'=>wp_date('Y-m-d', current_time('timestamp') - ($i * DAY_IN_SECONDS)),
-        'size'=>(500+$i*70).' KB','author'=>$design_doctors[$i][0],'type'=>'PDF','file_type'=>'PDF'
-    ];
-}
+// Removed static documents synthetic row generator to preserve dynamic document data.
 
-for ($i = count($questionnaires); $i < 10; $i++) {
-    $questionnaires[] = ['id'=>'Q-'.(1003+$i),'title'=>['Medication History','Allergy Assessment','Lifestyle Intake','Travel Health Form','Consent Form','Wellness Review','Follow-up Assessment','Telehealth Consent'][$i-2] ?? 'Health Questionnaire','status'=>($i % 3 === 0 ? 'Pending' : 'Submitted'),'updated_at'=>wp_date('Y-m-d', current_time('timestamp') - $i * DAY_IN_SECONDS)];
-}
+// Removed static questionnaires synthetic row generator to preserve dynamic questionnaire data.
 
 // Removed static notifications synthetic row generator to preserve dynamic notifications.
 

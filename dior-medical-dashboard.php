@@ -2162,18 +2162,23 @@ class Dior_Medical_Auth
     <div class="dior-reg-card-container">
 
         <?php if (is_user_logged_in()): ?>
-        <div class="dior-login-header">
-            <h3 class="dior-reg-title">Already Signed In</h3>
-            <p class="dior-reg-subtitle">You are currently signed in to your account.</p>
+        <div class="text-center mb-4">
+            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 mb-3 d-inline-flex align-items-center gap-2">
+                <i class="fas fa-circle-check"></i> Active Session
+            </span>
+            <h3 class="h4 fw-bold text-dark mb-1">Already Signed In</h3>
+            <p class="text-secondary small mb-0">You are currently signed in to your account.</p>
         </div>
-        <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
-            <a href="<?php echo esc_url(home_url('/patient-dashboard/')); ?>" class="dior-btn-reg-submit"
-                style="text-decoration:none; display:flex; align-items:center; justify-content:center;">
-                <span>Go to Patient Dashboard &rarr;</span>
+        <div class="d-flex flex-column flex-sm-row align-items-stretch gap-2 mt-4">
+            <a href="<?php echo esc_url(home_url('/patient-dashboard/')); ?>"
+                class="btn btn-primary text-white rounded-3 fw-semibold py-2 px-3 shadow-sm flex-fill d-inline-flex align-items-center justify-content-center gap-2 text-decoration-none text-nowrap">
+                <span>Go to Patient Dashboard</span>
+                <i class="fas fa-arrow-right"></i>
             </a>
-            <a href="<?php echo esc_url(wp_logout_url(self::portal_login_url())); ?>" class="dior-btn-google"
-                style="text-decoration:none; text-align:center;">
-                Sign Out / Switch Account
+            <a href="<?php echo esc_url(wp_logout_url(self::portal_login_url())); ?>"
+                class="btn btn-outline-secondary rounded-3 fw-semibold py-2 px-3 flex-fill d-inline-flex align-items-center justify-content-center gap-2 text-decoration-none text-nowrap">
+                <i class="fas fa-right-from-bracket"></i>
+                <span>Sign Out / Switch Account</span>
             </a>
         </div>
         <?php else: ?>
@@ -4844,26 +4849,44 @@ class Dior_Medical_Auth
             wp_send_json_error(['message' => 'Authentication required.']);
 
         $notif_id = sanitize_text_field($_POST['notif_id'] ?? '');
-        $notifications = Dior_Patient_Portal_Data::get_patient_notifications($user_id);
-
-        foreach ($notifications as &$n) {
-            if ($n['id'] === $notif_id) {
-                $n['is_read'] = true;
-                break;
+        $meta_notifs = get_user_meta($user_id, 'dior_notifications', true);
+        if (is_array($meta_notifs)) {
+            foreach ($meta_notifs as &$n) {
+                if (!is_array($n)) {
+                    continue;
+                }
+                $computed_id = $n['id'] ?? ('notif_meta_' . md5(($n['title'] ?? '') . ($n['created_at'] ?? '')));
+                if ($computed_id === $notif_id || ($n['id'] ?? '') === $notif_id) {
+                    $n['is_read'] = true;
+                }
             }
+            unset($n);
+            update_user_meta($user_id, 'dior_notifications', $meta_notifs);
         }
 
-        update_user_meta($user_id, 'dior_notifications', $notifications);
         global $wpdb;
         $table = $wpdb->prefix . 'dior_notifications';
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table) {
-            $wpdb->query($wpdb->prepare(
-                "UPDATE $table SET is_read = 1, read_at = %s WHERE notification_uid = %s AND (user_id = %d OR patient_id = %d)",
-                current_time('mysql'),
-                $notif_id,
-                $user_id,
-                $user_id
-            ));
+            if (strpos($notif_id, 'notif_row_') === 0) {
+                $row_id = (int) substr($notif_id, 10);
+                if ($row_id > 0) {
+                    $wpdb->query($wpdb->prepare(
+                        "UPDATE $table SET is_read = 1, read_at = %s WHERE id = %d AND (user_id = %d OR patient_id = %d)",
+                        current_time('mysql'),
+                        $row_id,
+                        $user_id,
+                        $user_id
+                    ));
+                }
+            } else {
+                $wpdb->query($wpdb->prepare(
+                    "UPDATE $table SET is_read = 1, read_at = %s WHERE notification_uid = %s AND (user_id = %d OR patient_id = %d)",
+                    current_time('mysql'),
+                    $notif_id,
+                    $user_id,
+                    $user_id
+                ));
+            }
         }
         wp_send_json_success(['message' => 'Notification marked as read.']);
     }
@@ -4921,7 +4944,11 @@ class Dior_Medical_Auth
         $meta_notifs = get_user_meta($user_id, 'dior_notifications', true);
         if (is_array($meta_notifs)) {
             $meta_notifs = array_values(array_filter($meta_notifs, function ($n) use ($notif_ids) {
-                return !in_array($n['id'] ?? '', $notif_ids, true);
+                if (!is_array($n)) {
+                    return false;
+                }
+                $computed_id = $n['id'] ?? ('notif_meta_' . md5(($n['title'] ?? '') . ($n['created_at'] ?? '')));
+                return !in_array($n['id'] ?? '', $notif_ids, true) && !in_array($computed_id, $notif_ids, true);
             }));
             update_user_meta($user_id, 'dior_notifications', $meta_notifs);
         }
@@ -4931,12 +4958,24 @@ class Dior_Medical_Auth
         $table = $wpdb->prefix . 'dior_notifications';
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table) {
             foreach ($notif_ids as $nid) {
-                $wpdb->query($wpdb->prepare(
-                    "DELETE FROM $table WHERE notification_uid = %s AND (user_id = %d OR patient_id = %d)",
-                    $nid,
-                    $user_id,
-                    $user_id
-                ));
+                if (strpos($nid, 'notif_row_') === 0) {
+                    $row_id = (int) substr($nid, 10);
+                    if ($row_id > 0) {
+                        $wpdb->query($wpdb->prepare(
+                            "DELETE FROM $table WHERE id = %d AND (user_id = %d OR patient_id = %d)",
+                            $row_id,
+                            $user_id,
+                            $user_id
+                        ));
+                    }
+                } else {
+                    $wpdb->query($wpdb->prepare(
+                        "DELETE FROM $table WHERE notification_uid = %s AND (user_id = %d OR patient_id = %d)",
+                        $nid,
+                        $user_id,
+                        $user_id
+                    ));
+                }
             }
         }
 
