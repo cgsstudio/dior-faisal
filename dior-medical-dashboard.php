@@ -4305,7 +4305,7 @@ class Dior_Medical_Auth
         $doctor_name = $provider_raw;
 
         if (class_exists('Dior_Doctor_Resolver')) {
-            $doctor_user_id = Dior_Doctor_Resolver::resolve_doctor_user_id($doctor_id_raw);
+            $doctor_user_id = Dior_Doctor_Resolver::resolve_doctor_user_id($doctor_id_raw ?: $provider_raw);
         }
         $doc_post = get_post($doctor_id_raw);
         if ($doc_post && $doc_post->post_type === 'wpddb_doctor' && $doc_post->post_status === 'publish') {
