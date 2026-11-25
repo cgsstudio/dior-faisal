@@ -756,7 +756,7 @@ foreach ($patients_query as $pq) {
             var nonce = cfg.nonce || '<?php echo esc_js(wp_create_nonce('dior_doctor_nonce')); ?>';
 
             if (!rxId) {
-                tr.remove();
+                Swal.fire({ icon: 'error', title: 'Delete Failed', text: 'Prescription ID is missing. No record was removed.' });
                 return;
             }
 
@@ -775,7 +775,7 @@ foreach ($patients_query as $pq) {
                 if (data && data.success) {
                     tr.style.opacity = '0.4';
                     setTimeout(function () { tr.remove(); }, 300);
-                    Swal.fire({ icon: 'success', title: 'Deleted', text: 'Prescription record removed.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+                    Swal.fire({ icon: 'success', title: 'Archived', text: 'Prescription removed from the active list. Clinical record retained.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
                 } else {
                     Swal.fire({ icon: 'error', title: 'Delete Failed', text: (data && data.data && data.data.message) ? data.data.message : 'Unable to delete prescription.' });
                 }
