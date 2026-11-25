@@ -1,3 +1,102 @@
+<?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+global $wpdb;
+$doctor_id = get_current_user_id();
+$is_admin  = current_user_can('administrator') || current_user_can('manage_options');
+$table_appts    = $wpdb->prefix . 'dior_appointments';
+$table_patients = $wpdb->prefix . 'dior_patients';
+
+$cr_rows = [];
+if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_appts)) === $table_appts) {
+    if ($is_admin) {
+        $cr_rows = $wpdb->get_results(
+            "SELECT a.*, p.first_name, p.last_name, p.avatar_url, u.display_name AS user_display_name, doc.display_name AS doctor_name
+             FROM $table_appts a
+             LEFT JOIN $table_patients p ON (p.user_id = a.patient_id OR p.id = a.patient_id)
+             LEFT JOIN {$wpdb->users} u ON u.ID = a.patient_id
+             LEFT JOIN {$wpdb->users} doc ON doc.ID = a.doctor_id
+             WHERE a.is_deleted = 0
+             ORDER BY a.appt_date DESC, a.created_at DESC
+             LIMIT 250",
+            ARRAY_A
+        );
+    } else {
+        $allowed_ids = class_exists('Dior_Doctor_Resolver')
+            ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id)
+            : [$doctor_id];
+        $allowed_ids = array_values(array_unique(array_filter(array_map('intval', (array) $allowed_ids))));
+        if (empty($allowed_ids)) {
+            $allowed_ids = [(int) $doctor_id];
+        }
+        $placeholders = implode(',', array_fill(0, count($allowed_ids), '%d'));
+        $cr_rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT a.*, p.first_name, p.last_name, p.avatar_url, u.display_name AS user_display_name, doc.display_name AS doctor_name
+             FROM $table_appts a
+             LEFT JOIN $table_patients p ON (p.user_id = a.patient_id OR p.id = a.patient_id)
+             LEFT JOIN {$wpdb->users} u ON u.ID = a.patient_id
+             LEFT JOIN {$wpdb->users} doc ON doc.ID = a.doctor_id
+             WHERE a.is_deleted = 0 AND a.doctor_id IN ($placeholders)
+             ORDER BY a.appt_date DESC, a.created_at DESC
+             LIMIT 250",
+            ...$allowed_ids
+        ), ARRAY_A);
+    }
+}
+
+$total_consultations  = count($cr_rows);
+$outpatient_visits    = 0;
+$inpatient_admissions = 0;
+$completed_count      = 0;
+$monthly_opd          = array_fill(0, 12, 0);
+$monthly_ipd          = array_fill(0, 12, 0);
+$condition_counts     = [];
+$current_year         = (int) current_time('Y');
+
+foreach ($cr_rows as $r) {
+    $vtype  = strtolower((string) ($r['visit_type'] ?? $r['type'] ?? ''));
+    $status = strtolower((string) ($r['status'] ?? ''));
+    $is_ipd = (strpos($vtype, 'inpatient') !== false || strpos($vtype, 'ipd') !== false);
+
+    if ($is_ipd) {
+        $inpatient_admissions++;
+    } else {
+        $outpatient_visits++;
+    }
+    if ($status === 'completed') {
+        $completed_count++;
+    }
+
+    $dt = $r['appt_date'] ?? ($r['created_at'] ?? '');
+    $ts = $dt ? strtotime($dt) : false;
+    if ($ts && (int) date('Y', $ts) === $current_year) {
+        $m_idx = (int) date('n', $ts) - 1;
+        if ($is_ipd) {
+            $monthly_ipd[$m_idx]++;
+        } else {
+            $monthly_opd[$m_idx]++;
+        }
+    }
+
+    $cond = trim((string) ($r['condition_name'] ?? $r['condition'] ?? $r['visit_type'] ?? 'General Consultation'));
+    if ($cond === '') {
+        $cond = 'General Consultation';
+    }
+    $condition_counts[$cond] = ($condition_counts[$cond] ?? 0) + 1;
+}
+
+arsort($condition_counts);
+$condition_counts = array_slice($condition_counts, 0, 5, true);
+$disease_labels   = array_keys($condition_counts);
+$disease_series   = array_values($condition_counts);
+
+$opd_pct       = $total_consultations > 0 ? (int) round(($outpatient_visits / $total_consultations) * 100) : 0;
+$ipd_pct       = $total_consultations > 0 ? (int) round(($inpatient_admissions / $total_consultations) * 100) : 0;
+$recovery_rate = $total_consultations > 0 ? round(($completed_count / $total_consultations) * 100, 1) . '%' : '0%';
+$recent_reports = array_slice($cr_rows, 0, 20);
+?>
 <section class="dior-tab-panel" id="tab-doc-analytics" style="display: none;">
     <!-- Breadcrumb Header -->
     <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -23,7 +122,7 @@
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <span class="text-muted small fw-bold text-uppercase d-block mb-1">Total Consultations</span>
-                        <h2 class="fw-bold mb-0" style="color:#1A528E;">1,420</h2>
+                        <h2 class="fw-bold mb-0" style="color:#1A528E;"><?php echo esc_html(number_format_i18n($total_consultations)); ?></h2>
                     </div>
                     <div class="rounded-3 d-flex align-items-center justify-content-center"
                         style="width: 48px; height: 48px; background: rgba(26, 82, 142, 0.10); color: #1A528E; font-size: 20px;">
@@ -33,9 +132,9 @@
                 <div class="d-flex align-items-center gap-2 mt-3 pt-1">
                     <span class="badge rounded-pill px-2 py-1 small fw-semibold"
                         style="background: rgba(26, 82, 142, 0.10); color: #1A528E;">
-                        <i class="fas fa-arrow-trend-up me-1"></i>+12.4%
+                        <i class="fas fa-database me-1"></i>Live
                     </span>
-                    <span class="text-muted small">vs last month</span>
+                    <span class="text-muted small">All records</span>
                 </div>
             </div>
         </div>
@@ -46,7 +145,7 @@
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <span class="text-muted small fw-bold text-uppercase d-block mb-1">Outpatient Visits</span>
-                        <h2 class="fw-bold mb-0" style="color:#2C6CB1;">980</h2>
+                        <h2 class="fw-bold mb-0" style="color:#2C6CB1;"><?php echo esc_html(number_format_i18n($outpatient_visits)); ?></h2>
                     </div>
                     <div class="rounded-3 d-flex align-items-center justify-content-center"
                         style="width: 48px; height: 48px; background: rgba(44, 108, 177, 0.10); color: #2C6CB1; font-size: 20px;">
@@ -55,7 +154,7 @@
                 </div>
                 <div class="d-flex align-items-center gap-2 mt-3 pt-1">
                     <span class="badge rounded-pill px-2 py-1 small fw-semibold" style="background:rgba(44,108,177,.12);color:#2C6CB1;border:1px solid rgba(44,108,177,.16);">
-                        <i class="fas fa-circle-check me-1"></i>69% Total
+                        <i class="fas fa-circle-check me-1"></i><?php echo esc_html($opd_pct); ?>% Total
                     </span>
                     <span class="text-muted small">OPD Volume</span>
                 </div>
@@ -68,7 +167,7 @@
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <span class="text-muted small fw-bold text-uppercase d-block mb-1">Inpatient Admissions</span>
-                        <h2 class="fw-bold mb-0" style="color: #477EAB;">440</h2>
+                        <h2 class="fw-bold mb-0" style="color: #477EAB;"><?php echo esc_html(number_format_i18n($inpatient_admissions)); ?></h2>
                     </div>
                     <div class="rounded-3 d-flex align-items-center justify-content-center"
                         style="width: 48px; height: 48px; background: rgba(71, 126, 171, 0.12); color: #477EAB; font-size: 20px;">
@@ -78,20 +177,20 @@
                 <div class="d-flex align-items-center gap-2 mt-3 pt-1">
                     <span class="badge rounded-pill px-2 py-1 small fw-semibold"
                         style="background: rgba(71, 126, 171, 0.12); color: #477EAB;">
-                        <i class="fas fa-hotel me-1"></i>31% Total
+                        <i class="fas fa-hotel me-1"></i><?php echo esc_html($ipd_pct); ?>% Total
                     </span>
                     <span class="text-muted small">IPD Ward</span>
                 </div>
             </div>
         </div>
 
-        <!-- 4. Recovery Rate -->
+        <!-- 4. Completion Rate -->
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
             <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 h-100 bg-white d-flex flex-column justify-content-between">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
-                        <span class="text-muted small fw-bold text-uppercase d-block mb-1">Recovery Rate</span>
-                        <h2 class="fw-bold mb-0" style="color: #7198BC;">94.2%</h2>
+                        <span class="text-muted small fw-bold text-uppercase d-block mb-1">Completion Rate</span>
+                        <h2 class="fw-bold mb-0" style="color: #7198BC;"><?php echo esc_html($recovery_rate); ?></h2>
                     </div>
                     <div class="rounded-3 d-flex align-items-center justify-content-center"
                         style="width: 48px; height: 48px; background: rgba(113, 152, 188, 0.14); color: #7198BC; font-size: 20px;">
@@ -198,168 +297,70 @@
                     </tr>
                 </thead>
                 <tbody id="dior-clinical-reports-tbody">
-                    <!-- Row 1 -->
-                    <tr>
-                        <td style="text-align: center;">
-                            <input type="checkbox" class="form-check-input dior-clinical-row-check">
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=80"
-                                    class="rounded-circle object-fit-cover shadow-sm" style="width: 36px; height: 36px;" alt="John Doe">
-                                <span class="fw-semibold text-dark">John Doe</span>
-                            </div>
-                        </td>
-                        <td class="text-secondary">Dr. Sarah Smith</td>
-                        <td class="text-secondary">Fever &amp; Fatigue</td>
-                        <td class="text-secondary">2024-03-10</td>
-                        <td>
-                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 small fw-semibold">
-                                Recovered
-                            </span>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center justify-content-center gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-primary rounded-2 p-1 px-2 border-0 dior-action-edit" title="Edit record">
-                                    <i class="fas fa-pen small"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger rounded-2 p-1 px-2 border-0 dior-action-del" title="Delete record">
-                                    <i class="far fa-trash-can small"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 2 -->
-                    <tr>
-                        <td style="text-align: center;">
-                            <input type="checkbox" class="form-check-input dior-clinical-row-check">
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=80"
-                                    class="rounded-circle object-fit-cover shadow-sm" style="width: 36px; height: 36px;" alt="Jane Smith">
-                                <span class="fw-semibold text-dark">Jane Smith</span>
-                            </div>
-                        </td>
-                        <td class="text-secondary">Dr. Mike Johnson</td>
-                        <td class="text-secondary">Acute Bronchitis</td>
-                        <td class="text-secondary">2024-03-12</td>
-                        <td>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 small fw-semibold">
-                                Under Treatment
-                            </span>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center justify-content-center gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-primary rounded-2 p-1 px-2 border-0 dior-action-edit" title="Edit record">
-                                    <i class="fas fa-pen small"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger rounded-2 p-1 px-2 border-0 dior-action-del" title="Delete record">
-                                    <i class="far fa-trash-can small"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 3 -->
-                    <tr>
-                        <td style="text-align: center;">
-                            <input type="checkbox" class="form-check-input dior-clinical-row-check">
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=80"
-                                    class="rounded-circle object-fit-cover shadow-sm" style="width: 36px; height: 36px;" alt="Robert Wilson">
-                                <span class="fw-semibold text-dark">Robert Wilson</span>
-                            </div>
-                        </td>
-                        <td class="text-secondary">Dr. Emily Brown</td>
-                        <td class="text-secondary">Hypertension Crisis</td>
-                        <td class="text-secondary">2024-03-15</td>
-                        <td>
-                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 small fw-semibold">
-                                Critical
-                            </span>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center justify-content-center gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-primary rounded-2 p-1 px-2 border-0 dior-action-edit" title="Edit record">
-                                    <i class="fas fa-pen small"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger rounded-2 p-1 px-2 border-0 dior-action-del" title="Delete record">
-                                    <i class="far fa-trash-can small"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 4 -->
-                    <tr>
-                        <td style="text-align: center;">
-                            <input type="checkbox" class="form-check-input dior-clinical-row-check">
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=80"
-                                    class="rounded-circle object-fit-cover shadow-sm" style="width: 36px; height: 36px;" alt="Alice Freeman">
-                                <span class="fw-semibold text-dark">Alice Freeman</span>
-                            </div>
-                        </td>
-                        <td class="text-secondary">Dr. Sarah Smith</td>
-                        <td class="text-secondary">Type 2 Diabetes</td>
-                        <td class="text-secondary">2024-03-16</td>
-                        <td>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 small fw-semibold">
-                                Under Treatment
-                            </span>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center justify-content-center gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-primary rounded-2 p-1 px-2 border-0 dior-action-edit" title="Edit record">
-                                    <i class="fas fa-pen small"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger rounded-2 p-1 px-2 border-0 dior-action-del" title="Delete record">
-                                    <i class="far fa-trash-can small"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 5 -->
-                    <tr>
-                        <td style="text-align: center;">
-                            <input type="checkbox" class="form-check-input dior-clinical-row-check">
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center gap-2">
-                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=80"
-                                    class="rounded-circle object-fit-cover shadow-sm" style="width: 36px; height: 36px;" alt="Michael Chang">
-                                <span class="fw-semibold text-dark">Michael Chang</span>
-                            </div>
-                        </td>
-                        <td class="text-secondary">Dr. David Lee</td>
-                        <td class="text-secondary">Cardiac Arrhythmia</td>
-                        <td class="text-secondary">2024-03-18</td>
-                        <td>
-                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 small fw-semibold">
-                                Recovered
-                            </span>
-                        </td>
-                        <td>
-                            <div class="d-flex align-items-center justify-content-center gap-2">
-                                <button type="button" class="btn btn-sm btn-outline-primary rounded-2 p-1 px-2 border-0 dior-action-edit" title="Edit record">
-                                    <i class="fas fa-pen small"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger rounded-2 p-1 px-2 border-0 dior-action-del" title="Delete record">
-                                    <i class="far fa-trash-can small"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                    <?php if (empty($recent_reports)): ?>
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-5">
+                                <i class="fas fa-file-medical fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                <span class="small fw-semibold">No clinical reports found.</span>
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($recent_reports as $cr):
+                            $p_name = trim((string) (($cr['first_name'] ?? '') . ' ' . ($cr['last_name'] ?? ''))) ?: ($cr['user_display_name'] ?? 'Patient');
+                            $d_name = trim((string) ($cr['doctor_name'] ?? '')) ?: 'Attending Physician';
+                            $diag   = trim((string) ($cr['condition_name'] ?? $cr['condition'] ?? $cr['visit_type'] ?? 'Consultation'));
+                            $v_date = !empty($cr['appt_date']) ? wp_date('Y-m-d', strtotime($cr['appt_date'])) : '—';
+                            $st_raw = trim((string) ($cr['status'] ?? 'Pending'));
+                            $st_low = strtolower($st_raw);
+                            $st_cls = 'bg-primary-subtle text-primary border-primary-subtle';
+                            if ($st_low === 'completed') {
+                                $st_cls = 'bg-success-subtle text-success border-success-subtle';
+                            } elseif ($st_low === 'cancelled') {
+                                $st_cls = 'bg-danger-subtle text-danger border-danger-subtle';
+                            } elseif ($st_low === 'pending') {
+                                $st_cls = 'bg-warning-subtle text-warning border-warning-subtle';
+                            }
+                            $avatar = !empty($cr['avatar_url']) ? $cr['avatar_url'] : ('https://ui-avatars.com/api/?name=' . urlencode($p_name) . '&background=1A528E&color=fff&size=80');
+                        ?>
+                            <tr>
+                                <td style="text-align: center;">
+                                    <input type="checkbox" class="form-check-input dior-clinical-row-check">
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="<?php echo esc_url($avatar); ?>"
+                                            class="rounded-circle object-fit-cover shadow-sm" style="width: 36px; height: 36px;" alt="<?php echo esc_attr($p_name); ?>">
+                                        <span class="fw-semibold text-dark"><?php echo esc_html($p_name); ?></span>
+                                    </div>
+                                </td>
+                                <td class="text-secondary"><?php echo esc_html($d_name); ?></td>
+                                <td class="text-secondary"><?php echo esc_html($diag); ?></td>
+                                <td class="text-secondary"><?php echo esc_html($v_date); ?></td>
+                                <td>
+                                    <span class="badge <?php echo esc_attr($st_cls); ?> border rounded-pill px-3 py-1 small fw-semibold">
+                                        <?php echo esc_html($st_raw); ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center justify-content-center gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-2 p-1 px-2 border-0 dior-action-edit" title="Edit record">
+                                            <i class="fas fa-pen small"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-2 p-1 px-2 border-0 dior-action-del" title="Delete record">
+                                            <i class="far fa-trash-can small"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
 
         <!-- Footer -->
         <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 mt-3 border-top gap-2 text-muted small">
-            <div id="dior-clinical-count-display">0 selected / 5 total</div>
+            <div id="dior-clinical-count-display">0 selected / <?php echo count($recent_reports); ?> total</div>
             <nav aria-label="Page navigation">
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item disabled"><span class="page-link rounded-2 me-1"><i class="fas fa-chevron-left small"></i></span></li>
@@ -582,8 +583,8 @@
             if (trendsEl && !trendsChart) {
                 var trendsOptions = {
                     series: [
-                        { name: 'Outpatients', data: [28, 29, 33, 36, 32, 32, 33, 48, 42, 48, 54, 52] },
-                        { name: 'Inpatients', data: [12, 11, 15, 18, 17, 14, 14, 21, 27, 24, 30, 32] }
+                        { name: 'Outpatients', data: <?php echo wp_json_encode($monthly_opd); ?> },
+                        { name: 'Inpatients', data: <?php echo wp_json_encode($monthly_ipd); ?> }
                     ],
                     chart: {
                         type: 'area',
@@ -621,10 +622,15 @@
             }
 
             var donutEl = document.getElementById('dior-clinical-disease-distribution-chart');
+            var diseaseSeries = <?php echo wp_json_encode($disease_series); ?>;
+            var diseaseLabels = <?php echo wp_json_encode($disease_labels); ?>;
             if (donutEl && !donutChart) {
+                if (!diseaseSeries.length) {
+                    donutEl.innerHTML = '<div class="text-center text-muted small py-5">No clinical distribution data yet.</div>';
+                } else {
                 var donutOptions = {
-                    series: [44, 55, 13, 43, 22],
-                    labels: ['Cardiology', 'Neurology', 'Orthopedics', 'Pediatrics', 'Dermatology'],
+                    series: diseaseSeries,
+                    labels: diseaseLabels,
                     chart: {
                         type: 'donut',
                         height: 310,
@@ -658,6 +664,7 @@
                 };
                 donutChart = new ApexCharts(donutEl, donutOptions);
                 donutChart.render();
+                }
             }
         }
 

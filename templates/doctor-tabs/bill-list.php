@@ -77,246 +77,65 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Row 1 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>HGYU89</td>
-                        <td>
-                            <div class="va-user-profile">
-                                <span class="va-user-avatar va-user-initials" aria-hidden="true">SS</span>
-                                <span class="va-user-name">Sarah Smith</span>
-                            </div>
-                        </td>
-                        <td>DR. Megha Trivedi</td>
-                        <td><span class="va-badge va-badge-cancelled">Unpaid</span></td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Feb 12, 2018</td>
-                        <td>8%</td>
-                        <td>5%</td>
-                        <td>$142</td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 2 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>HGYU99</td>
-                        <td>
-                            <div class="va-user-profile">
-                                <span class="va-user-avatar va-user-initials" aria-hidden="true">VK</span>
-                                <span class="va-user-name">Vishal Kumar</span>
-                            </div>
-                        </td>
-                        <td>DR. John Deo</td>
-                        <td><span class="va-badge va-badge-completed">Paid</span></td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Mar 22, 2018</td>
-                        <td>10%</td>
-                        <td>5%</td>
-                        <td>$126</td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 3 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>HGYU29</td>
-                        <td>
-                            <div class="va-user-profile">
-                                <span class="va-user-avatar va-user-initials" aria-hidden="true">RM</span>
-                                <span class="va-user-name">Rahul Malhotra</span>
-                            </div>
-                        </td>
-                        <td>DR. Sarah Smith</td>
-                        <td><span class="va-badge va-badge-completed">Paid</span></td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Feb 2, 2018</td>
-                        <td>9%</td>
-                        <td>5%</td>
-                        <td>$115</td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 4 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>HGYU36</td>
-                        <td>
-                            <div class="va-user-profile">
-                                <span class="va-user-avatar va-user-initials" aria-hidden="true">PJ</span>
-                                <span class="va-user-name">Priya Jain</span>
-                            </div>
-                        </td>
-                        <td>DR. Stive</td>
-                        <td><span class="va-badge va-badge-cancelled">Unpaid</span></td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Mar 19, 2018</td>
-                        <td>9%</td>
-                        <td>5%</td>
-                        <td>$142</td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 5 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>HGYU27</td>
-                        <td>
-                            <div class="va-user-profile">
-                                <span class="va-user-avatar va-user-initials" aria-hidden="true">RP</span>
-                                <span class="va-user-name">Radhika Patel</span>
-                            </div>
-                        </td>
-                        <td>DR. Megha Trivedi</td>
-                        <td><span class="va-badge va-badge-cancelled">Unpaid</span></td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> May 22, 2018</td>
-                        <td>10%</td>
-                        <td>5%</td>
-                        <td>$126</td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 6 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>HGYU12</td>
-                        <td>
-                            <div class="va-user-profile">
-                                <span class="va-user-avatar va-user-initials" aria-hidden="true">SS</span>
-                                <span class="va-user-name">Sarah Smith</span>
-                            </div>
-                        </td>
-                        <td>DR. Megha Trivedi</td>
-                        <td><span class="va-badge va-badge-cancelled">Unpaid</span></td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> May 7, 2018</td>
-                        <td>8%</td>
-                        <td>5%</td>
-                        <td>$115</td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 7 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>HGYU14</td>
-                        <td>
-                            <div class="va-user-profile">
-                                <span class="va-user-avatar va-user-initials" aria-hidden="true">VK</span>
-                                <span class="va-user-name">Vishal Kumar</span>
-                            </div>
-                        </td>
-                        <td>DR. John Deo</td>
-                        <td><span class="va-badge va-badge-completed">Paid</span></td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Feb 20, 2018</td>
-                        <td>10%</td>
-                        <td>5%</td>
-                        <td>$126</td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 8 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>HGYU09</td>
-                        <td>
-                            <div class="va-user-profile">
-                                <span class="va-user-avatar va-user-initials" aria-hidden="true">RM</span>
-                                <span class="va-user-name">Rahul Malhotra</span>
-                            </div>
-                        </td>
-                        <td>DR. Sarah Smith</td>
-                        <td><span class="va-badge va-badge-completed">Paid</span></td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Mar 21, 2018</td>
-                        <td>9%</td>
-                        <td>5%</td>
-                        <td>$142</td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 9 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>HGYU80</td>
-                        <td>
-                            <div class="va-user-profile">
-                                <span class="va-user-avatar va-user-initials" aria-hidden="true">PJ</span>
-                                <span class="va-user-name">Priya Jain</span>
-                            </div>
-                        </td>
-                        <td>DR. Stive</td>
-                        <td><span class="va-badge va-badge-cancelled">Unpaid</span></td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Feb 11, 2018</td>
-                        <td>9%</td>
-                        <td>5%</td>
-                        <td>$142</td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 10 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>HGYU38</td>
-                        <td>
-                            <div class="va-user-profile">
-                                <span class="va-user-avatar va-user-initials" aria-hidden="true">RP</span>
-                                <span class="va-user-name">Radhika Patel</span>
-                            </div>
-                        </td>
-                        <td>DR. Megha Trivedi</td>
-                        <td><span class="va-badge va-badge-cancelled">Unpaid</span></td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Mar 18, 2018</td>
-                        <td>10%</td>
-                        <td>5%</td>
-                        <td>$126</td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
+                    <?php
+                    global $wpdb;
+                    $inv_table = $wpdb->prefix . 'dior_invoices';
+                    $bill_rows = [];
+                    if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
+                        $bill_rows = $wpdb->get_results(
+                            "SELECT i.*, p.first_name, p.last_name, u.display_name AS patient_display, doc.display_name AS doctor_display
+                             FROM $inv_table i
+                             LEFT JOIN {$wpdb->prefix}dior_patients p ON (p.user_id = i.patient_id OR p.id = i.patient_id)
+                             LEFT JOIN {$wpdb->users} u ON u.ID = i.patient_id
+                             LEFT JOIN {$wpdb->users} doc ON doc.ID = i.doctor_id
+                             ORDER BY i.created_at DESC, i.id DESC
+                             LIMIT 100",
+                            ARRAY_A
+                        );
+                    }
+                    if (empty($bill_rows)): ?>
+                        <tr>
+                            <td colspan="10" class="dior-empty-state text-center text-muted py-5">
+                                <i class="fas fa-receipt fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                <span class="small fw-semibold">No bills found.</span>
+                            </td>
+                        </tr>
+                    <?php else:
+                        foreach ($bill_rows as $br):
+                            $p_name = trim((string) (($br['first_name'] ?? '') . ' ' . ($br['last_name'] ?? ''))) ?: ($br['patient_display'] ?? 'Patient');
+                            $parts  = preg_split('/\s+/', $p_name);
+                            $init   = strtoupper(substr($parts[0] ?? 'P', 0, 1) . substr($parts[1] ?? '', 0, 1));
+                            $d_name = $br['doctor_display'] ?? 'Attending Physician';
+                            $st_raw = ucfirst(strtolower((string) ($br['status'] ?? 'Unpaid')));
+                            $st_cls = strtolower($st_raw) === 'paid' ? 'va-badge-completed' : 'va-badge-cancelled';
+                            $b_date = !empty($br['created_at']) ? wp_date('M j, Y', strtotime($br['created_at'])) : '—';
+                            $tax    = isset($br['tax']) ? $br['tax'] . '%' : '0%';
+                            $disc   = isset($br['discount']) ? $br['discount'] . '%' : '0%';
+                            $total  = '$' . number_format((float) ($br['total_amount'] ?? $br['amount'] ?? 0), 2);
+                    ?>
+                        <tr>
+                            <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input"></td>
+                            <td><?php echo esc_html($br['invoice_uid'] ?? ('INV-' . ($br['id'] ?? ''))); ?></td>
+                            <td>
+                                <div class="va-user-profile">
+                                    <span class="va-user-avatar va-user-initials" aria-hidden="true"><?php echo esc_html($init); ?></span>
+                                    <span class="va-user-name"><?php echo esc_html($p_name); ?></span>
+                                </div>
+                            </td>
+                            <td><?php echo esc_html($d_name); ?></td>
+                            <td><span class="va-badge <?php echo esc_attr($st_cls); ?>"><?php echo esc_html($st_raw); ?></span></td>
+                            <td><i class="far fa-calendar va-icon-blue"></i> <?php echo esc_html($b_date); ?></td>
+                            <td><?php echo esc_html($tax); ?></td>
+                            <td><?php echo esc_html($disc); ?></td>
+                            <td><?php echo esc_html($total); ?></td>
+                            <td>
+                                <div class="va-row-actions" style="justify-content: center;">
+                                    <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
+                                    <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; endif; ?>
                 </tbody>
             </table>
         </div>

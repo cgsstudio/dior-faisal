@@ -81,49 +81,90 @@
     /**
      * Query DocBooker live availability for given date
      */
+    // Fetch only genuine DocBooker availability; never fabricate fallback slots.
+    var availabilityRequest = null;
+    var availabilityTimer = null;
+    var lastAvailabilityDate = '';
+
     window.diorFetchDocBookerAvailability = function(dateStr) {
-        if (!dateStr) return;
+        if (!dateStr) return Promise.resolve();
+
         var spinner = document.getElementById('dior-db-slots-loading');
         var grid = document.getElementById('dior-db-slots-grid');
+        if (!grid) return Promise.resolve();
+
+        lastAvailabilityDate = dateStr;
+        if (availabilityRequest) availabilityRequest.abort();
+        availabilityRequest = new AbortController();
+
         if (spinner) spinner.style.display = 'inline-block';
+        grid.innerHTML = '<p class="dior-db-slots-message">Checking doctor availability...</p>';
 
         var restUrl = (window.dior_booking_vars && window.dior_booking_vars.rest_url) || '/wp-json/';
         var restNonce = (window.dior_booking_vars && window.dior_booking_vars.rest_nonce) || '';
-        var apiUrl = restUrl + 'doctor-details-booking/v1/doctors/' + window.diorDocBookerState.doctorId + '/availability?date=' + encodeURIComponent(dateStr);
+        var doctorField = document.getElementById('dior-db-doctor-id');
+        var doctorId = (doctorField && doctorField.value) || window.diorDocBookerState.doctorId;
+        var apiUrl = restUrl + 'doctor-details-booking/v1/doctors/' + encodeURIComponent(doctorId) +
+            '/availability?date=' + encodeURIComponent(dateStr) + '&_=' + Date.now();
 
-        fetch(apiUrl, {
+        return fetch(apiUrl, {
             method: 'GET',
-            headers: {
-                'X-WP-Nonce': restNonce
-            }
+            cache: 'no-store',
+            signal: availabilityRequest.signal,
+            headers: { 'X-WP-Nonce': restNonce, 'Cache-Control': 'no-cache' }
         })
         .then(function(res) {
-            if (!res.ok) throw new Error('API returned ' + res.status);
+            if (!res.ok) throw new Error('Availability API returned ' + res.status);
             return res.json();
         })
         .then(function(data) {
+            if (dateStr !== lastAvailabilityDate) return;
             if (spinner) spinner.style.display = 'none';
-            if (data && data.clinics && data.clinics.length > 0 && data.clinics[0].timings) {
-                var timings = data.clinics[0].timings;
-                window.diorRenderAvailableSlots(timings);
+
+            var clinics = data && Array.isArray(data.clinics) ? data.clinics : [];
+            var timings = [];
+            clinics.forEach(function(clinic) {
+                if (Array.isArray(clinic.timings)) {
+                    timings = timings.concat(clinic.timings);
+                }
+            });
+
+            if (!timings.length) {
+                window.diorRenderAvailableSlots([]);
+                return;
             }
+            window.diorRenderAvailableSlots(timings);
         })
         .catch(function(err) {
+            if (err && err.name === 'AbortError') return;
+            if (dateStr !== lastAvailabilityDate) return;
             if (spinner) spinner.style.display = 'none';
-            console.log('[Dior Medical] Using default DocBooker slots for ' + dateStr, err);
-            // Default slots
-            var defaultSlots = [
-                { time: '09:00 AM - 10:00 AM', is_available: true },
-                { time: '10:00 AM - 11:00 AM', is_available: true },
-                { time: '11:00 AM - 12:00 PM', is_available: true },
-                { time: '01:00 PM - 02:00 PM', is_available: true },
-                { time: '02:00 PM - 03:00 PM', is_available: true },
-                { time: '03:00 PM - 04:00 PM', is_available: true },
-                { time: '04:00 PM - 05:00 PM', is_available: true }
-            ];
-            window.diorRenderAvailableSlots(defaultSlots);
+            window.diorRenderAvailableSlots([]);
+            console.error('[Dior Medical] Could not verify appointment availability:', err);
+            if (grid) {
+                grid.innerHTML = '<p class="dior-db-slots-message" role="alert">Unable to check availability right now. Please refresh or try again shortly.</p>';
+            }
         });
     };
+
+    // Refresh live availability every 15 seconds and when the patient returns to the tab.
+    function startAvailabilityRefresh() {
+        if (availabilityTimer) window.clearInterval(availabilityTimer);
+        availabilityTimer = window.setInterval(function() {
+            if (document.visibilityState === 'visible' && lastAvailabilityDate) {
+                window.diorFetchDocBookerAvailability(lastAvailabilityDate);
+            }
+        }, 15000);
+    }
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible' && lastAvailabilityDate) {
+            window.diorFetchDocBookerAvailability(lastAvailabilityDate);
+        }
+    });
+    window.addEventListener('focus', function() {
+        if (lastAvailabilityDate) window.diorFetchDocBookerAvailability(lastAvailabilityDate);
+    });
+    startAvailabilityRefresh();
 
     /**
      * Render slot buttons inside the grid
@@ -134,25 +175,24 @@
         grid.innerHTML = '';
 
         var firstAvailable = null;
-        timings.forEach(function(item, idx) {
+        (Array.isArray(timings) ? timings : []).forEach(function(item) {
+            if (!item || !item.time) return;
             var btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'dior-db-slot-btn';
             btn.setAttribute('data-time', item.time);
             btn.textContent = item.time;
 
-            if (item.is_available) {
+            if (item.is_available === true) {
                 if (!firstAvailable) {
                     firstAvailable = item.time;
                     btn.classList.add('active');
                 }
-                btn.onclick = function() {
-                    window.diorSelectTimeSlot(item.time, btn);
-                };
+                btn.onclick = function() { window.diorSelectTimeSlot(item.time, btn); };
             } else {
                 btn.disabled = true;
                 btn.classList.add('is-booked');
-                btn.title = 'Slot Booked';
+                btn.title = 'Slot unavailable';
             }
             grid.appendChild(btn);
         });
@@ -163,6 +203,13 @@
             var timeFinal = document.getElementById('dior-db-final-time');
             if (timeInput) timeInput.value = firstAvailable;
             if (timeFinal) timeFinal.value = firstAvailable;
+        } else {
+            window.diorDocBookerState.time = '';
+            var selectedInput = document.getElementById('dior-db-selected-time');
+            var finalInput = document.getElementById('dior-db-final-time');
+            if (selectedInput) selectedInput.value = '';
+            if (finalInput) finalInput.value = '';
+            grid.innerHTML = '<p class="dior-db-slots-message">No available time slots for this date.</p>';
         }
     };
 
@@ -187,6 +234,15 @@
             if (statusBox) {
                 statusBox.className = 'dior-db-alert alert-error';
                 statusBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Please provide your full name, email address, and contact phone number.';
+                statusBox.style.display = 'flex';
+            }
+            return false;
+        }
+
+        if (!window.diorDocBookerState.time) {
+            if (statusBox) {
+                statusBox.className = 'dior-db-alert alert-error';
+                statusBox.textContent = 'Please select an available appointment time before continuing.';
                 statusBox.style.display = 'flex';
             }
             return false;
@@ -356,6 +412,10 @@
             '</tr>';
 
             if (isToday && tbodyToday) {
+                var emptyToday = tbodyToday.querySelector('.dior-empty-state');
+                if (emptyToday && emptyToday.closest('tr')) {
+                    emptyToday.closest('tr').remove();
+                }
                 tbodyToday.insertAdjacentHTML('afterbegin', todayRowHtml);
                 var countToday = document.getElementById('dior-today-page-count');
                 if (countToday) {
@@ -365,6 +425,10 @@
             }
 
             if (tbodyUpcoming) {
+                var emptyUpcoming = tbodyUpcoming.querySelector('.dior-empty-state');
+                if (emptyUpcoming && emptyUpcoming.closest('tr')) {
+                    emptyUpcoming.closest('tr').remove();
+                }
                 tbodyUpcoming.insertAdjacentHTML('afterbegin', upcomingRowHtml);
                 var countUpcoming = document.getElementById('dior-upcoming-page-count');
                 if (countUpcoming) {
@@ -543,6 +607,16 @@
         if (!dateInput.value) {
             dateInput.value = new Date().toISOString().split('T')[0];
         }
+        // Read the doctor selected by the PHP template instead of relying on a stale hard-coded ID.
+        var doctorField = document.getElementById('dior-db-doctor-id');
+        var doctorNameField = document.getElementById('dior-db-doctor-name');
+        if (doctorField && doctorField.value) {
+            window.diorDocBookerState.doctorId = parseInt(doctorField.value, 10) || window.diorDocBookerState.doctorId;
+        }
+        if (doctorNameField && doctorNameField.value) {
+            window.diorDocBookerState.doctorName = doctorNameField.value;
+        }
+
         window.diorDocBookerState.date = dateInput.value;
         window.diorFetchDocBookerAvailability(dateInput.value);
     }

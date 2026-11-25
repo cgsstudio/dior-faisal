@@ -1,3 +1,46 @@
+<?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+global $wpdb;
+$inv_table = $wpdb->prefix . 'dior_invoices';
+$ir_rows = [];
+if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
+    $ir_rows = $wpdb->get_results("SELECT * FROM $inv_table ORDER BY created_at DESC LIMIT 500", ARRAY_A);
+}
+
+$ir_total_revenue = 0.0;
+$ir_monthly = array_fill(0, 12, 0.0);
+$ir_dept_totals = [];
+$ir_dept_monthly = [];
+$ir_year = (int) current_time('Y');
+
+foreach ($ir_rows as $row) {
+    $amt = (float) ($row['total_amount'] ?? $row['amount'] ?? 0);
+    $ir_total_revenue += $amt;
+    $dept = trim((string) ($row['department'] ?? $row['service_type'] ?? 'General'));
+    if ($dept === '') $dept = 'General';
+    $ir_dept_totals[$dept] = ($ir_dept_totals[$dept] ?? 0.0) + $amt;
+    if (!isset($ir_dept_monthly[$dept])) {
+        $ir_dept_monthly[$dept] = array_fill(0, 12, 0.0);
+    }
+    $ts = !empty($row['created_at']) ? strtotime($row['created_at']) : false;
+    if ($ts && (int) date('Y', $ts) === $ir_year) {
+        $m = (int) date('n', $ts) - 1;
+        $ir_monthly[$m] += $amt;
+        $ir_dept_monthly[$dept][$m] += $amt;
+    }
+}
+arsort($ir_dept_totals);
+$ir_top_dept = !empty($ir_dept_totals) ? array_key_first($ir_dept_totals) : '—';
+$ir_top_dept_amt = !empty($ir_dept_totals) ? $ir_dept_totals[$ir_top_dept] : 0.0;
+$ir_monthly_avg = $ir_total_revenue > 0 ? ($ir_total_revenue / 12) : 0.0;
+
+$ir_chart_series = [];
+foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
+    $ir_chart_series[] = ['name' => $d_name, 'data' => array_map(static function ($v) { return round($v, 2); }, $d_vals)];
+}
+?>
 <section class="dior-tab-panel" id="tab-doc-accounts-income-report" style="display: none;">
     <!-- Breadcrumb Header -->
     <div class="mb-4" style="display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
@@ -44,14 +87,14 @@
                 <div class="d-flex align-items-start justify-content-between">
                     <div>
                         <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Total Annual Revenue</span>
-                        <div class="fs-2 fw-bold text-dark mt-1">$341,750</div>
+                        <div class="fs-2 fw-bold text-dark mt-1">$<?php echo esc_html(number_format($ir_total_revenue, 2)); ?></div>
                     </div>
                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-3 p-2.5">
                         <i class="fas fa-wallet fs-5"></i>
                     </span>
                 </div>
                 <div class="mt-2 text-secondary small">
-                    <span class="text-success fw-semibold"><i class="fas fa-arrow-trend-up me-1"></i>+16.8%</span> vs last fiscal year
+                    <span class="text-success fw-semibold"><i class="fas fa-database me-1"></i>Live</span> current year
                 </div>
             </div>
         </div>
@@ -60,14 +103,14 @@
                 <div class="d-flex align-items-start justify-content-between">
                     <div>
                         <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Monthly Average</span>
-                        <div class="fs-2 fw-bold text-dark mt-1">$28,479</div>
+                        <div class="fs-2 fw-bold text-dark mt-1">$<?php echo esc_html(number_format($ir_monthly_avg, 2)); ?></div>
                     </div>
                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-3 p-2.5">
                         <i class="fas fa-chart-line fs-5"></i>
                     </span>
                 </div>
                 <div class="mt-2 text-secondary small">
-                    <span class="text-primary fw-semibold"><i class="fas fa-calendar-check me-1"></i>12 Months</span> steady inflow
+                    <span class="text-primary fw-semibold"><i class="fas fa-calendar-check me-1"></i>12 Months</span> average
                 </div>
             </div>
         </div>
@@ -76,14 +119,14 @@
                 <div class="d-flex align-items-start justify-content-between">
                     <div>
                         <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Top Department</span>
-                        <div class="fs-2 fw-bold text-dark mt-1">Cardiology</div>
+                        <div class="fs-2 fw-bold text-dark mt-1"><?php echo esc_html($ir_top_dept); ?></div>
                     </div>
                     <span class="badge bg-info-subtle text-info border border-info-subtle rounded-3 p-2.5">
                         <i class="fas fa-heart-pulse fs-5"></i>
                     </span>
                 </div>
                 <div class="mt-2 text-secondary small">
-                    <span class="text-info fw-semibold">$91,950</span> total collection
+                    <span class="text-info fw-semibold">$<?php echo esc_html(number_format($ir_top_dept_amt, 2)); ?></span> total collection
                 </div>
             </div>
         </div>
@@ -91,8 +134,8 @@
             <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white d-flex flex-column justify-content-between">
                 <div class="d-flex align-items-start justify-content-between">
                     <div>
-                        <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Average Growth</span>
-                        <div class="fs-2 fw-bold text-success mt-1">+18.4%</div>
+                        <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Total Invoices</span>
+                        <div class="fs-2 fw-bold text-success mt-1"><?php echo esc_html(count($ir_rows)); ?></div>
                     </div>
                     <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-3 p-2.5">
                         <i class="fas fa-arrow-trend-up fs-5"></i>
@@ -173,103 +216,33 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td class="ps-3 fw-bold text-dark"><i class="fas fa-brain text-primary me-2"></i>Anatomy</td>
-                        <td class="text-end">$2,980.00</td>
-                        <td class="text-end">$3,480.00</td>
-                        <td class="text-end">$1,980.00</td>
-                        <td class="text-end">$2,080.00</td>
-                        <td class="text-end">$2,480.00</td>
-                        <td class="text-end">$7,680.00</td>
-                        <td class="text-end">$8,480.00</td>
-                        <td class="text-end">$6,680.00</td>
-                        <td class="text-end">$1,080.00</td>
-                        <td class="text-end">$3,280.00</td>
-                        <td class="text-end">$2,080.00</td>
-                        <td class="text-end">$1,680.00</td>
-                        <td class="text-end pe-3 fw-bold text-dark">$43,960.00</td>
-                    </tr>
-                    <tr>
-                        <td class="ps-3 fw-bold text-dark"><i class="fas fa-heart-pulse text-danger me-2"></i>Cardiology</td>
-                        <td class="text-end">$5,230.00</td>
-                        <td class="text-end">$6,150.00</td>
-                        <td class="text-end">$7,340.00</td>
-                        <td class="text-end">$6,890.00</td>
-                        <td class="text-end">$8,120.00</td>
-                        <td class="text-end">$7,560.00</td>
-                        <td class="text-end">$9,240.00</td>
-                        <td class="text-end">$8,450.00</td>
-                        <td class="text-end">$7,890.00</td>
-                        <td class="text-end">$8,760.00</td>
-                        <td class="text-end">$7,890.00</td>
-                        <td class="text-end">$8,430.00</td>
-                        <td class="text-end pe-3 fw-bold text-dark">$91,950.00</td>
-                    </tr>
-                    <tr>
-                        <td class="ps-3 fw-bold text-dark"><i class="fas fa-dna text-info me-2"></i>Neurology</td>
-                        <td class="text-end">$4,560.00</td>
-                        <td class="text-end">$5,230.00</td>
-                        <td class="text-end">$6,780.00</td>
-                        <td class="text-end">$5,890.00</td>
-                        <td class="text-end">$7,120.00</td>
-                        <td class="text-end">$6,780.00</td>
-                        <td class="text-end">$8,230.00</td>
-                        <td class="text-end">$7,560.00</td>
-                        <td class="text-end">$6,890.00</td>
-                        <td class="text-end">$7,340.00</td>
-                        <td class="text-end">$6,780.00</td>
-                        <td class="text-end">$7,230.00</td>
-                        <td class="text-end pe-3 fw-bold text-dark">$80,390.00</td>
-                    </tr>
-                    <tr>
-                        <td class="ps-3 fw-bold text-dark"><i class="fas fa-bone text-warning me-2"></i>Orthopedics</td>
-                        <td class="text-end">$3,890.00</td>
-                        <td class="text-end">$4,560.00</td>
-                        <td class="text-end">$5,230.00</td>
-                        <td class="text-end">$4,890.00</td>
-                        <td class="text-end">$6,120.00</td>
-                        <td class="text-end">$5,780.00</td>
-                        <td class="text-end">$7,230.00</td>
-                        <td class="text-end">$6,560.00</td>
-                        <td class="text-end">$5,890.00</td>
-                        <td class="text-end">$6,340.00</td>
-                        <td class="text-end">$5,780.00</td>
-                        <td class="text-end">$6,230.00</td>
-                        <td class="text-end pe-3 fw-bold text-dark">$68,500.00</td>
-                    </tr>
-                    <tr>
-                        <td class="ps-3 fw-bold text-dark"><i class="fas fa-child text-success me-2"></i>Pediatrics</td>
-                        <td class="text-end">$3,120.00</td>
-                        <td class="text-end">$3,780.00</td>
-                        <td class="text-end">$4,230.00</td>
-                        <td class="text-end">$3,890.00</td>
-                        <td class="text-end">$5,120.00</td>
-                        <td class="text-end">$4,780.00</td>
-                        <td class="text-end">$6,230.00</td>
-                        <td class="text-end">$5,560.00</td>
-                        <td class="text-end">$4,890.00</td>
-                        <td class="text-end">$5,340.00</td>
-                        <td class="text-end">$4,780.00</td>
-                        <td class="text-end">$5,230.00</td>
-                        <td class="text-end pe-3 fw-bold text-dark">$56,950.00</td>
-                    </tr>
+                    <?php if (empty($ir_dept_monthly)): ?>
+                        <tr>
+                            <td colspan="14" class="text-center text-muted py-5">
+                                <i class="fas fa-chart-pie fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                <span class="small fw-semibold">No departmental income data available yet.</span>
+                            </td>
+                        </tr>
+                    <?php else:
+                        foreach ($ir_dept_monthly as $d_name => $months):
+                            $row_sum = array_sum($months);
+                    ?>
+                        <tr>
+                            <td class="ps-3 fw-bold text-dark"><?php echo esc_html($d_name); ?></td>
+                            <?php foreach ($months as $m_val): ?>
+                                <td class="text-end">$<?php echo esc_html(number_format($m_val, 2)); ?></td>
+                            <?php endforeach; ?>
+                            <td class="text-end pe-3 fw-bold text-dark">$<?php echo esc_html(number_format($row_sum, 2)); ?></td>
+                        </tr>
+                    <?php endforeach; endif; ?>
                 </tbody>
                 <tfoot class="table-light border-top">
                     <tr class="fw-bold">
                         <td class="ps-3 text-dark">Combined Clinic Revenue</td>
-                        <td class="text-end text-primary">$19,780</td>
-                        <td class="text-end text-primary">$23,200</td>
-                        <td class="text-end text-primary">$25,560</td>
-                        <td class="text-end text-primary">$23,540</td>
-                        <td class="text-end text-primary">$29,020</td>
-                        <td class="text-end text-primary">$32,580</td>
-                        <td class="text-end text-primary">$39,410</td>
-                        <td class="text-end text-primary">$34,810</td>
-                        <td class="text-end text-primary">$26,540</td>
-                        <td class="text-end text-primary">$31,060</td>
-                        <td class="text-end text-primary">$27,320</td>
-                        <td class="text-end text-primary">$28,930</td>
-                        <td class="text-end pe-3 text-success fs-6">$341,750.00</td>
+                        <?php foreach ($ir_monthly as $m_tot): ?>
+                            <td class="text-end text-primary">$<?php echo esc_html(number_format($m_tot, 2)); ?></td>
+                        <?php endforeach; ?>
+                        <td class="text-end pe-3 text-success fs-6">$<?php echo esc_html(number_format($ir_total_revenue, 2)); ?></td>
                     </tr>
                 </tfoot>
             </table>
@@ -523,33 +496,15 @@
     var incomeChartData = {
         Monthly: {
             categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            series: [
-                { name: 'Cardiology', data: [5230, 6150, 7340, 6890, 8120, 7560, 9240, 8450, 7890, 8760, 7890, 8430] },
-                { name: 'Neurology', data: [4560, 5230, 6780, 5890, 7120, 6780, 8230, 7560, 6890, 7340, 6780, 7230] },
-                { name: 'Orthopedics', data: [3890, 4560, 5230, 4890, 6120, 5780, 7230, 6560, 5890, 6340, 5780, 6230] },
-                { name: 'Pediatrics', data: [3120, 3780, 4230, 3890, 5120, 4780, 6230, 5560, 4890, 5340, 4780, 5230] },
-                { name: 'Anatomy', data: [2980, 3480, 1980, 2080, 2480, 7680, 8480, 6680, 1080, 3280, 2080, 1680] }
-            ]
+            series: <?php echo wp_json_encode($ir_chart_series); ?>
         },
         Daily: {
-            categories: ['Oct 6', 'Oct 7', 'Oct 8', 'Oct 9', 'Oct 10', 'Oct 11', 'Oct 12', 'Oct 13', 'Oct 14', 'Oct 15', 'Oct 16', 'Oct 17', 'Oct 18', 'Oct 19'],
-            series: [
-                { name: 'Cardiology', data: [850, 920, 1100, 780, 1250, 1400, 950, 820, 1150, 1300, 1450, 980, 1200, 1350] },
-                { name: 'Neurology', data: [620, 710, 850, 900, 740, 890, 1020, 680, 790, 910, 840, 720, 930, 880] },
-                { name: 'Orthopedics', data: [510, 580, 640, 720, 690, 810, 750, 600, 680, 740, 790, 630, 710, 770] },
-                { name: 'Pediatrics', data: [420, 480, 510, 590, 620, 650, 710, 490, 550, 610, 640, 530, 590, 620] },
-                { name: 'Anatomy', data: [210, 250, 300, 280, 310, 340, 400, 260, 290, 320, 350, 270, 310, 330] }
-            ]
+            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            series: <?php echo wp_json_encode($ir_chart_series); ?>
         },
         Yearly: {
-            categories: ['2020', '2021', '2022', '2023', '2024'],
-            series: [
-                { name: 'Cardiology', data: [62000, 68400, 75200, 82900, 91950] },
-                { name: 'Neurology', data: [53000, 59200, 64800, 71500, 80390] },
-                { name: 'Orthopedics', data: [45000, 51000, 56400, 61900, 68500] },
-                { name: 'Pediatrics', data: [38000, 42100, 46500, 51200, 56950] },
-                { name: 'Anatomy', data: [31000, 34000, 37200, 40500, 43960] }
-            ]
+            categories: ['<?php echo esc_js((string) $ir_year); ?>'],
+            series: <?php echo wp_json_encode(array_map(static function ($k, $v) { return ['name' => $k, 'data' => [round($v, 2)]]; }, array_keys(array_slice($ir_dept_totals, 0, 5, true)), array_values(array_slice($ir_dept_totals, 0, 5, true)))); ?>
         }
     };
 

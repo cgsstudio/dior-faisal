@@ -17,6 +17,8 @@ class Dior_Doctor_Dashboard
         add_action("wp_ajax_dior_doctor_reschedule_appt",     [__CLASS__, "ajax_reschedule_appt"]);
         add_action("wp_ajax_dior_doctor_edit_appointment",    [__CLASS__, "ajax_edit_appointment"]);
         add_action("wp_ajax_dior_doc_appointment_update",     [__CLASS__, "ajax_edit_appointment"]);
+        add_action("wp_ajax_dior_doc_appointment_delete",     [__CLASS__, "ajax_delete_appointment"]);
+        add_action("wp_ajax_dior_doctor_delete_appointment",  [__CLASS__, "ajax_delete_appointment"]);
         add_action("wp_ajax_dior_doctor_get_patient_appointment_details", [__CLASS__, "ajax_get_patient_appointment_details"]);
         add_action("wp_ajax_dior_doctor_add_prescription",    [__CLASS__, "ajax_add_prescription"]);
         add_action("wp_ajax_dior_doctor_add_note",            [__CLASS__, "ajax_add_note"]);
@@ -793,6 +795,78 @@ class Dior_Doctor_Dashboard
             "message"     => "Appointment rescheduled to " . esc_html($new_date . " at " . $new_time),
             "appointment" => $res
         ]);
+    }
+
+    public static function ajax_delete_appointment()
+    {
+        Dior_Auth_Service::verify_ajax_nonce(["dior_doctor_nonce", "dior_auth_nonce", "dior_portal_nonce", "dior_admin_nonce"]);
+        if (!self::can_access()) {
+            wp_send_json_error(["message" => "Unauthorized access."], 403);
+        }
+
+        $aid = self::get_post_appointment_identifier();
+        if ($aid === '') {
+            wp_send_json_error(["message" => "Appointment ID is missing."], 400);
+        }
+
+        global $wpdb;
+        $table_appts = $wpdb->prefix . 'dior_appointments';
+        $is_admin = current_user_can('administrator') || current_user_can('manage_options');
+        $uid = get_current_user_id();
+
+        $row = null;
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_appts)) === $table_appts) {
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, appt_uid, patient_id, doctor_id FROM $table_appts WHERE (appt_uid = %s OR id = %d) AND is_deleted = 0 LIMIT 1",
+                $aid,
+                is_numeric($aid) ? (int) $aid : 0
+            ), ARRAY_A);
+
+            if ($row) {
+                if (!$is_admin) {
+                    $allowed_ids = class_exists('Dior_Doctor_Resolver')
+                        ? Dior_Doctor_Resolver::get_accessible_doctor_ids($uid)
+                        : [$uid];
+                    $allowed_ids[] = 0;
+                    $allowed_ids[] = 1;
+                    if (!in_array((int) $row['doctor_id'], array_map('intval', $allowed_ids), true)) {
+                        wp_send_json_error(["message" => "Permission denied for this appointment."], 403);
+                    }
+                }
+                $wpdb->update(
+                    $table_appts,
+                    ['is_deleted' => 1, 'updated_at' => current_time('mysql')],
+                    ['id' => (int) $row['id']],
+                    ['%d', '%s'],
+                    ['%d']
+                );
+            }
+        }
+
+        // Also remove from patient usermeta if present
+        $target_patient_ids = [];
+        if (!empty($row['patient_id'])) {
+            $target_patient_ids[] = (int) $row['patient_id'];
+        } else {
+            $users = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'fields' => 'ID', 'number' => 200]);
+            $target_patient_ids = array_map('intval', $users);
+        }
+
+        foreach (array_unique($target_patient_ids) as $pid) {
+            if ($pid <= 0) continue;
+            $meta_appts = get_user_meta($pid, 'dior_appointments', true);
+            if (!is_array($meta_appts) || empty($meta_appts)) continue;
+            $filtered = array_values(array_filter($meta_appts, static function ($a) use ($aid) {
+                if (!is_array($a)) return false;
+                $keys = [(string) ($a['appt_uid'] ?? ''), (string) ($a['appointment_uid'] ?? ''), (string) ($a['id'] ?? '')];
+                return !in_array((string) $aid, $keys, true);
+            }));
+            if (count($filtered) !== count($meta_appts)) {
+                update_user_meta($pid, 'dior_appointments', $filtered);
+            }
+        }
+
+        wp_send_json_success(["message" => "Appointment deleted successfully."]);
     }
 
     public static function ajax_edit_appointment()

@@ -82,206 +82,56 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Row 1 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>1001</td>
-                        <td>John Doe</td>
-                        <td>Consultation</td>
-                        <td>150</td>
-                        <td>120</td>
-                        <td>Credit Card</td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Nov 2, 2024</td>
-                        <td>INV-20241101-1001</td>
-                        <td><span class="va-badge va-badge-completed">Completed</span></td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 2 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>1002</td>
-                        <td>Alice Smith</td>
-                        <td>Surgery</td>
-                        <td>1200</td>
-                        <td>1000</td>
-                        <td>Cash</td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Oct 26, 2024</td>
-                        <td>INV-20241025-1002</td>
-                        <td><span class="va-badge va-badge-pending">Pending</span></td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 3 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>1003</td>
-                        <td>David Lee</td>
-                        <td>Consultation</td>
-                        <td>180</td>
-                        <td>180</td>
-                        <td>Insurance</td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Oct 30, 2024</td>
-                        <td>INV-20241030-1003</td>
-                        <td><span class="va-badge va-badge-completed">Completed</span></td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 4 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>1004</td>
-                        <td>Eve Williams</td>
-                        <td>X-Ray</td>
-                        <td>200</td>
-                        <td>200</td>
-                        <td>Credit Card</td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Nov 2, 2024</td>
-                        <td>INV-20241102-1004</td>
-                        <td><span class="va-badge va-badge-completed">Completed</span></td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 5 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>1005</td>
-                        <td>George Brown</td>
-                        <td>Laboratory Test</td>
-                        <td>100</td>
-                        <td>90</td>
-                        <td>Debit Card</td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Nov 3, 2024</td>
-                        <td>INV-20241103-1005</td>
-                        <td><span class="va-badge va-badge-pending">Pending</span></td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 6 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>1006</td>
-                        <td>Isabella Taylor</td>
-                        <td>Consultation</td>
-                        <td>250</td>
-                        <td>250</td>
-                        <td>Cash</td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Nov 5, 2024</td>
-                        <td>INV-20241105-1006</td>
-                        <td><span class="va-badge va-badge-completed">Completed</span></td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 7 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>1007</td>
-                        <td>James Scott</td>
-                        <td>Surgery</td>
-                        <td>3000</td>
-                        <td>1500</td>
-                        <td>Bank Transfer</td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Oct 23, 2024</td>
-                        <td>INV-20241022-1007</td>
-                        <td><span class="va-badge va-badge-completed">Completed</span></td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 8 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>1008</td>
-                        <td>Oliver Harris</td>
-                        <td>CT Scan</td>
-                        <td>600</td>
-                        <td>500</td>
-                        <td>Credit Card</td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Nov 6, 2024</td>
-                        <td>INV-20241106-1008</td>
-                        <td><span class="va-badge va-badge-completed">Completed</span></td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 9 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>1009</td>
-                        <td>Sophia King</td>
-                        <td>Consultation</td>
-                        <td>130</td>
-                        <td>130</td>
-                        <td>Cash</td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Nov 8, 2024</td>
-                        <td>INV-20241108-1009</td>
-                        <td><span class="va-badge va-badge-completed">Completed</span></td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <!-- Row 10 -->
-                    <tr>
-                        <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input">
-                        </td>
-                        <td>1010</td>
-                        <td>Mason Clark</td>
-                        <td>MRI</td>
-                        <td>1000</td>
-                        <td>1000</td>
-                        <td>Debit Card</td>
-                        <td><i class="far fa-calendar va-icon-blue"></i> Nov 9, 2024</td>
-                        <td>INV-20241109-1010</td>
-                        <td><span class="va-badge va-badge-pending">Pending</span></td>
-                        <td>
-                            <div class="va-row-actions" style="justify-content: center;">
-                                <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
+                    <?php
+                    global $wpdb;
+                    $inv_table = $wpdb->prefix . 'dior_invoices';
+                    $inc_rows = [];
+                    if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
+                        $inc_rows = $wpdb->get_results(
+                            "SELECT i.*, p.first_name, p.last_name, u.display_name AS patient_display
+                             FROM $inv_table i
+                             LEFT JOIN {$wpdb->prefix}dior_patients p ON (p.user_id = i.patient_id OR p.id = i.patient_id)
+                             LEFT JOIN {$wpdb->users} u ON u.ID = i.patient_id
+                             ORDER BY i.created_at DESC, i.id DESC
+                             LIMIT 100",
+                            ARRAY_A
+                        );
+                    }
+                    if (empty($inc_rows)): ?>
+                        <tr>
+                            <td colspan="11" class="dior-empty-state text-center text-muted py-5">
+                                <i class="fas fa-arrow-trend-up fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                <span class="small fw-semibold">No income records found.</span>
+                            </td>
+                        </tr>
+                    <?php else:
+                        foreach ($inc_rows as $ir):
+                            $p_name  = trim((string) (($ir['first_name'] ?? '') . ' ' . ($ir['last_name'] ?? ''))) ?: ($ir['patient_display'] ?? 'Patient');
+                            $billed  = number_format((float) ($ir['total_amount'] ?? $ir['amount'] ?? 0), 2);
+                            $paid    = strtolower((string) ($ir['status'] ?? '')) === 'paid' ? $billed : '0.00';
+                            $st_raw  = ucfirst(strtolower((string) ($ir['status'] ?? 'Pending')));
+                            $st_cls  = strtolower($st_raw) === 'paid' || strtolower($st_raw) === 'completed' ? 'va-badge-completed' : 'va-badge-pending';
+                            $i_date  = !empty($ir['created_at']) ? wp_date('M j, Y', strtotime($ir['created_at'])) : '—';
+                    ?>
+                        <tr>
+                            <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input"></td>
+                            <td><?php echo esc_html($ir['id'] ?? '—'); ?></td>
+                            <td><?php echo esc_html($p_name); ?></td>
+                            <td><?php echo esc_html($ir['service_type'] ?? ($ir['description'] ?? 'Consultation')); ?></td>
+                            <td>$<?php echo esc_html($billed); ?></td>
+                            <td>$<?php echo esc_html($paid); ?></td>
+                            <td><?php echo esc_html($ir['payment_method'] ?? 'Card'); ?></td>
+                            <td><i class="far fa-calendar va-icon-blue"></i> <?php echo esc_html($i_date); ?></td>
+                            <td><?php echo esc_html($ir['invoice_uid'] ?? '—'); ?></td>
+                            <td><span class="va-badge <?php echo esc_attr($st_cls); ?>"><?php echo esc_html($st_raw); ?></span></td>
+                            <td>
+                                <div class="va-row-actions" style="justify-content: center;">
+                                    <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
+                                    <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; endif; ?>
                 </tbody>
             </table>
         </div>

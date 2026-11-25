@@ -51,17 +51,7 @@ foreach ($all_doc_users as $du) {
     ];
 }
 
-// Fallback if doctor_list is empty
-if (empty($doctor_list)) {
-    $doctor_list[35] = [
-        'id' => 35,
-        'name' => 'Dr. Marcus Sterling',
-        'email' => 'marcus.sterling@diormedical.com',
-        'specialty' => 'Cardiology & Cardiovascular Surgery',
-        'department' => 'Cardiology Department',
-        'avatar' => 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80',
-    ];
-}
+// Doctor list comes strictly from WordPress doctor/admin users (no hardcoded demo doctor).
 
 // Fetch appointments with full patient and doctor joins
 $_va_is_admin = current_user_can('administrator') || current_user_can('manage_options');
@@ -179,9 +169,9 @@ if (empty($appointments)) {
                     'patient_uid' => get_user_meta($u->ID, 'patient_id', true) ?: 'DM-' . (10000 + $u->ID),
                     'patient_user_id' => $u->ID,
                     'patient_id' => $u->ID,
-                    'doctor_id' => 35,
-                    'doctor_name' => 'Dr. Marcus Sterling',
-                    'doctor_email' => 'marcus.sterling@diormedical.com'
+                    'doctor_id' => (int) ($a['doctor_id'] ?? 0),
+                    'doctor_name' => $a['doctor_name'] ?? ($a['provider'] ?? '—'),
+                    'doctor_email' => $a['doctor_email'] ?? ''
                 ]);
             }
         }
@@ -240,18 +230,6 @@ $status_badges = [
                     </li>
                 </ol>
             </nav>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <button type="button"
-                class="btn btn-outline-primary rounded-3 px-3 py-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2"
-                id="va-export-csv-btn">
-                <i class="fas fa-file-export"></i> Export CSV
-            </button>
-            <button type="button"
-                onclick="if (typeof diorGoToDocBookerPage === 'function') { diorGoToDocBookerPage(); } else if (typeof diorDocSwitchTab === 'function') { diorDocSwitchTab('doc-appointments-book'); } else if (typeof diorAdminSwitchTab === 'function') { diorAdminSwitchTab('doc-appointments-book'); } else if (typeof diorSwitchTab === 'function') { diorSwitchTab('doc-appointments-book'); }"
-                class="btn btn-primary rounded-3 px-3 py-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2">
-                <i class="fas fa-plus"></i> Book Appointment
-            </button>
         </div>
     </div>
 
@@ -330,61 +308,41 @@ $status_badges = [
                 <div class="va-title-line"></div>
             </div>
 
-            <!-- Bulk Selection & Action Toolbar -->
-            <div class="va-actions-wrapper">
+            <!-- Bulk Selection & Single-Line Action Toolbar -->
+            <div class="va-actions-wrapper d-flex flex-wrap flex-md-nowrap align-items-center gap-2">
                 <!-- Bulk Selection Toolbar (reveals when items checked) -->
                 <div id="va-bulk-bar" class="d-none align-items-center gap-2">
-                    <span class="badge bg-primary text-white rounded-pill px-2 py-1 small fw-semibold"
+                    <span class="badge bg-primary text-white rounded-pill px-2 py-1 small fw-semibold text-nowrap"
                         id="va-selected-count">0 Selected</span>
                     <button type="button"
-                        class="btn btn-outline-success btn-sm rounded-3 px-2 py-1 shadow-none fw-semibold"
+                        class="btn btn-outline-success btn-sm rounded-3 px-2 py-1 shadow-none fw-semibold text-nowrap"
                         id="va-bulk-complete-btn" title="Mark as Completed">
                         <i class="fas fa-check me-1"></i>Complete
                     </button>
                 </div>
 
-                <!-- Search, Filters & Actions -->
+                <!-- Search & Actions in Single Line -->
                 <div class="input-group input-group-sm dior-bs-search-group flex-fill">
                     <input type="text" id="va-appt-search" class="form-control border-start-0 ps-0 shadow-none"
                         placeholder="Search patient, doctor, UID...">
                 </div>
 
-                <!-- Doctor / Physician Filter -->
-                <div class="flex-fill">
-                    <select id="va-doctor-filter" class="form-select form-select-sm shadow-none">
-                        <option value="">All Doctors</option>
-                        <?php foreach ($doctor_list as $doc_item): ?>
-                            <option value="<?php echo esc_attr($doc_item['name']); ?>">
-                                <?php echo esc_html($doc_item['name']); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-
-                <!-- Status Filter -->
-                <div class="flex-fill">
-                    <select id="va-status-filter" class="form-select form-select-sm shadow-none">
-                        <option value="">All Statuses</option>
-                        <option value="Confirmed">Confirmed</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Cancelled">Cancelled</option>
-                        <option value="No Show">No Show</option>
-                    </select>
-                </div>
-
-                <!-- Date Range Filter -->
-                <div class="flex-fill">
-                    <select id="va-date-filter" class="form-select form-select-sm shadow-none">
-                        <option value="">All Dates</option>
-                        <option value="today">Today</option>
-                        <option value="upcoming">Upcoming</option>
-                        <option value="past">Past</option>
-                    </select>
-                </div>
-
-                <div class="va-actions-group">
-                    <button class="va-icon-btn va-btn-info btn" id="va-refresh-btn" aria-label="Refresh"
-                        title="Reset Filters & Refresh">
+                <div class="va-actions-group d-flex align-items-center gap-2 flex-nowrap">
+                    <button type="button" class="btn btn-sm btn-danger" id="va-bulk-delete-btn"
+                        aria-label="Delete selected appointments" title="Delete Selected">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary" id="va-add-appt-btn"
+                        aria-label="Book Appointment" title="Book Appointment"
+                        onclick="if (typeof diorGoToDocBookerPage === 'function') { diorGoToDocBookerPage(); } else if (typeof diorDocSwitchTab === 'function') { diorDocSwitchTab('doc-appointments-book'); } else if (typeof diorAdminSwitchTab === 'function') { diorAdminSwitchTab('doc-appointments-book'); } else if (typeof diorSwitchTab === 'function') { diorSwitchTab('doc-appointments-book'); }">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-success" id="va-export-csv-btn"
+                        aria-label="Export to CSV" title="Export CSV">
+                        <i class="fas fa-file-arrow-down"></i>
+                    </button>
+                    <button type="button" class="va-icon-btn va-btn-info btn btn-sm btn-info text-white" id="va-refresh-btn"
+                        aria-label="Refresh" title="Reset & Refresh">
                         <i class="fas fa-rotate-right"></i>
                     </button>
                 </div>
@@ -589,6 +547,12 @@ $status_badges = [
                                                 <i class="fas fa-ban me-1"></i>Cancel
                                             </button>
                                         <?php endif; ?>
+                                        <button type="button"
+                                            class="btn btn-outline-danger btn-sm rounded-3 fw-semibold va-delete-appt-btn"
+                                            data-uid="<?php echo esc_attr($uid); ?>" data-name="<?php echo esc_attr($fname); ?>"
+                                            title="Delete Appointment">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -1199,7 +1163,12 @@ $status_badges = [
                         return cb.closest('tr');
                     }).filter(Boolean);
 
-                    if (checkedRows.length === 0) return;
+                    if (checkedRows.length === 0) {
+                        if (window.Swal) {
+                            Swal.fire({ icon: 'info', title: 'No Appointments Selected', text: 'Please select at least one appointment to delete.' });
+                        }
+                        return;
+                    }
 
                     Swal.fire({
                         title: 'Delete ' + checkedRows.length + ' Appointment(s)?',
@@ -1254,7 +1223,12 @@ $status_badges = [
                         return cb.closest('tr');
                     }).filter(Boolean);
 
-                    if (checkedRows.length === 0) return;
+                    if (checkedRows.length === 0) {
+                        if (window.Swal) {
+                            Swal.fire({ icon: 'info', title: 'No Appointments Selected', text: 'Please select at least one appointment to mark as completed.' });
+                        }
+                        return;
+                    }
 
                     var promises = checkedRows.map(function (row) {
                         var uid = row.dataset.apptUid;

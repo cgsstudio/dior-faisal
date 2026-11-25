@@ -441,6 +441,10 @@
             '</tr>';
 
             if (isToday && tbodyToday) {
+                var emptyToday = tbodyToday.querySelector('.dior-empty-state');
+                if (emptyToday && emptyToday.closest('tr')) {
+                    emptyToday.closest('tr').remove();
+                }
                 tbodyToday.insertAdjacentHTML('afterbegin', todayRowHtml);
                 var countToday = document.getElementById('dior-today-page-count');
                 if (countToday) {
@@ -450,6 +454,10 @@
             }
 
             if (tbodyUpcoming) {
+                var emptyUpcoming = tbodyUpcoming.querySelector('.dior-empty-state');
+                if (emptyUpcoming && emptyUpcoming.closest('tr')) {
+                    emptyUpcoming.closest('tr').remove();
+                }
                 tbodyUpcoming.insertAdjacentHTML('afterbegin', upcomingRowHtml);
                 var countUpcoming = document.getElementById('dior-upcoming-page-count');
                 if (countUpcoming) {

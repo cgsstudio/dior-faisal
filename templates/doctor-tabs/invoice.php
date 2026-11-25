@@ -323,37 +323,53 @@
     <!-- Main Card -->
     <div class="dior-invoice-card">
         
+        <?php
+        global $wpdb;
+        $inv_table = $wpdb->prefix . 'dior_invoices';
+        $latest_inv = null;
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
+            $latest_inv = $wpdb->get_row(
+                "SELECT i.*, p.first_name, p.last_name, u.display_name AS patient_display
+                 FROM $inv_table i
+                 LEFT JOIN {$wpdb->prefix}dior_patients p ON (p.user_id = i.patient_id OR p.id = i.patient_id)
+                 LEFT JOIN {$wpdb->users} u ON u.ID = i.patient_id
+                 ORDER BY i.created_at DESC, i.id DESC
+                 LIMIT 1",
+                ARRAY_A
+            );
+        }
+        ?>
+        <?php if (empty($latest_inv)): ?>
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-file-invoice fs-2 d-block mb-2 text-secondary opacity-50"></i>
+                <p class="mb-0 fw-semibold small">No invoice available yet.</p>
+            </div>
+        <?php else:
+            $inv_uid = $latest_inv['invoice_uid'] ?? ('INV-' . ($latest_inv['id'] ?? ''));
+            $inv_status = ucfirst(strtolower((string) ($latest_inv['status'] ?? 'Unpaid')));
+            $inv_patient = trim((string) (($latest_inv['first_name'] ?? '') . ' ' . ($latest_inv['last_name'] ?? ''))) ?: ($latest_inv['patient_display'] ?? 'Patient');
+            $inv_date = !empty($latest_inv['created_at']) ? wp_date('M j, Y', strtotime($latest_inv['created_at'])) : '—';
+            $inv_amt = (float) ($latest_inv['total_amount'] ?? $latest_inv['amount'] ?? 0);
+        ?>
         <div id="invoice-pdf-content" style="background: #ffffff; padding-bottom: 20px;">
             <!-- Header -->
             <div class="dior-invoice-header">
-                <h2>INVOICE #345766</h2>
-                <span class="dior-status-paid">Paid</span>
+                <h2>INVOICE #<?php echo esc_html($inv_uid); ?></h2>
+                <span class="dior-status-paid"><?php echo esc_html($inv_status); ?></span>
             </div>
             
             <!-- Info Section -->
             <div class="dior-invoice-info">
                 <div class="dior-company-info">
-                    <img src="https://diormedical.com/wp-content/uploads/2026/08/logo.png" alt="MediDash Logo">
-                    <h3>MediDash Hospital</h3>
-                    <p class="dior-address-text">
-                        D 103, MediDash Hospital<br>
-                        Opp. Town Hall<br>
-                        Sardar Patel Road<br>
-                        Ahmedabad - 380015
-                    </p>
+                    <img src="https://diormedical.com/wp-content/uploads/2026/08/logo.png" alt="Dior Medical Logo">
+                    <h3>Dior Medical</h3>
+                    <p class="dior-address-text">HIPAA-Compliant Healthcare Platform</p>
                 </div>
                 <div class="dior-client-info">
                     <h3 class="bill-to">BILL TO</h3>
-                    <h4>Jayesh Patel</h4>
-                    <p class="dior-address-text">
-                        207, Prem Sagar Appt.<br>
-                        Near Income Tax Office<br>
-                        Ashram Road<br>
-                        Ahmedabad - 380057
-                    </p>
+                    <h4><?php echo esc_html($inv_patient); ?></h4>
                     <div class="dior-invoice-meta">
-                        <div class="meta-item"><span class="meta-label">Invoice Date:</span> <span class="meta-value">14th July 2023</span></div>
-                        <div class="meta-item"><span class="meta-label">Due Date:</span> <span class="meta-value">28th July 2023</span></div>
+                        <div class="meta-item"><span class="meta-label">Invoice Date:</span> <span class="meta-value"><?php echo esc_html($inv_date); ?></span></div>
                     </div>
                 </div>
             </div>
@@ -376,54 +392,18 @@
                         <tbody>
                             <tr>
                                 <td>1</td>
-                                <td style="font-weight: 500; color: #1e293b;">Visiting Charges</td>
+                                <td style="font-weight: 500; color: #1e293b;"><?php echo esc_html($latest_inv['service_type'] ?? ($latest_inv['description'] ?? 'Medical Consultation')); ?></td>
+                                <td class="text-center">1</td>
+                                <td class="text-center">$<?php echo esc_html(number_format($inv_amt, 2)); ?></td>
+                                <td class="text-center">$<?php echo esc_html(number_format($inv_amt, 2)); ?></td>
                                 <td class="text-center">-</td>
-                                <td class="text-center">-</td>
-                                <td class="text-center">$100</td>
-                                <td class="text-center">-</td>
-                                <td class="text-end" style="font-weight: 600;">$100</td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td style="font-weight: 500; color: #1e293b;">Medicines</td>
-                                <td class="text-center">10</td>
-                                <td class="text-center">$15</td>
-                                <td class="text-center">$150</td>
-                                <td class="text-center">5%</td>
-                                <td class="text-end" style="font-weight: 600;">$1000</td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td style="font-weight: 500; color: #1e293b;">X-ray Reports</td>
-                                <td class="text-center">4</td>
-                                <td class="text-center">$600</td>
-                                <td class="text-center">$70</td>
-                                <td class="text-center">5%</td>
-                                <td class="text-end" style="font-weight: 600;">$1200</td>
-                            </tr>
-                            <tr>
-                                <td>4</td>
-                                <td style="font-weight: 500; color: #1e293b;">MRI</td>
-                                <td class="text-center">2</td>
-                                <td class="text-center">$245</td>
-                                <td class="text-center">$125</td>
-                                <td class="text-center">10%</td>
-                                <td class="text-end" style="font-weight: 600;">$480</td>
-                            </tr>
-                            <tr>
-                                <td>5</td>
-                                <td style="font-weight: 500; color: #1e293b;">Other Charges</td>
-                                <td class="text-center">-</td>
-                                <td class="text-center">-</td>
-                                <td class="text-center">-</td>
-                                <td class="text-center">-</td>
-                                <td class="text-end" style="font-weight: 600;">$300</td>
+                                <td class="text-end" style="font-weight: 600;">$<?php echo esc_html(number_format($inv_amt, 2)); ?></td>
                             </tr>
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td colspan="6" class="text-end"><strong style="color: #1e293b;">Subtotal</strong></td>
-                                <td class="text-end"><strong style="color: #1e293b;">$2600</strong></td>
+                                <td class="text-end"><strong style="color: #1e293b;">$<?php echo esc_html(number_format($inv_amt, 2)); ?></strong></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -437,39 +417,20 @@
                     <div class="dior-payment-details">
                         <div class="detail-row">
                             <span class="label">Payment Method:</span>
-                            <span class="value">Credit Card</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="label">Payment Terms:</span>
-                            <span class="value">Due on Receipt</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="label">Note:</span>
-                            <span class="value">Thank you for your business!</span>
+                            <span class="value"><?php echo esc_html($latest_inv['payment_method'] ?? 'Card'); ?></span>
                         </div>
                     </div>
                 </div>
                 
                 <div class="dior-totals-box">
-                    <div class="dior-totals-row">
-                        <span>Subtotal:</span>
-                        <span style="font-weight: 600; color: #1e293b;">$2,600.00</span>
-                    </div>
-                    <div class="dior-totals-row">
-                        <span>Discount:</span>
-                        <span style="font-weight: 600; color: #ef4444;">-$100.00</span>
-                    </div>
-                    <div class="dior-totals-row">
-                        <span>Tax (10%):</span>
-                        <span style="font-weight: 600; color: #1e293b;">$160.00</span>
-                    </div>
                     <div class="dior-totals-row total">
                         <span>Total:</span>
-                        <span>$2,760.00</span>
+                        <span>$<?php echo esc_html(number_format($inv_amt, 2)); ?></span>
                     </div>
                 </div>
             </div>
         </div>
+        <?php endif; ?>
         
         <!-- Actions -->
         <div class="dior-invoice-actions">
