@@ -610,34 +610,25 @@ foreach ($doctor_notif_rows as $row) {
 
     function diorDeleteNotificationRow(btn, notifId) {
         const row = btn.closest('.notification-item-row');
-        if (!row) return;
+        if (!row || !notifId) return;
 
         const doDelete = function () {
-            row.style.transition = 'all 0.3s ease';
-            row.style.opacity = '0';
-            row.style.transform = 'translateX(20px)';
-            setTimeout(() => {
-                row.remove();
-                diorUpdateNotifBadgesAndStats();
-            }, 300);
-
-            // Sync with WordPress backend
             const ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
             const nonce = '<?php echo esc_js($doctor_nonce); ?>';
+            const body = new URLSearchParams({ action: 'dior_doctor_delete_notification', notif_id: notifId, nonce: nonce });
 
-            if (notifId) {
-                const body = new URLSearchParams({
-                    action: 'dior_doctor_delete_notification',
-                    notif_id: notifId,
-                    nonce: nonce
+            fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: body.toString() })
+                .then(res => res.json())
+                .then(data => {
+                    if (!data || !data.success) throw new Error((data && data.data && data.data.message) || 'Notification could not be deleted.');
+                    row.style.transition = 'all 0.3s ease';
+                    row.style.opacity = '0';
+                    row.style.transform = 'translateX(20px)';
+                    setTimeout(() => { row.remove(); diorUpdateNotifBadgesAndStats(); }, 300);
+                })
+                .catch(error => {
+                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.message || 'Please try again.' });
                 });
-
-                fetch(ajaxUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-                    body: body.toString()
-                }).catch(() => { });
-            }
         };
 
         if (window.Swal) {
@@ -649,180 +640,99 @@ foreach ($doctor_notif_rows as $row) {
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Yes, delete!'
-            }).then(result => {
-                if (result.isConfirmed) {
-                    doDelete();
-                }
-            });
+            }).then(result => { if (result.isConfirmed) doDelete(); });
         } else {
             doDelete();
         }
     }
 
     function diorClearReadSystemNotifications() {
-        const readRows = document.querySelectorAll('#dior-system-notif-list .notification-item-row[data-read-state="read"]');
-        if (readRows.length === 0) {
-            if (window.Swal) {
-                Swal.fire({ icon: 'info', title: 'No Read Notifications', text: 'There are no read notifications to clear.' });
-            }
+        const readRows = Array.from(document.querySelectorAll('#dior-system-notif-list .notification-item-row[data-read-state="read"]'));
+        if (!readRows.length) {
+            if (window.Swal) Swal.fire({ icon: 'info', title: 'No Read Notifications', text: 'There are no read notifications to clear.' });
             return;
         }
 
-        const notifIds = Array.from(readRows).map(r => r.dataset.notifId).filter(Boolean);
-
         const doClear = function () {
-            readRows.forEach(row => {
-                row.style.transition = 'all 0.3s ease';
-                row.style.opacity = '0';
-                setTimeout(() => row.remove(), 300);
-            });
-
-            setTimeout(() => {
-                diorUpdateNotifBadgesAndStats();
-            }, 350);
-
-            // Sync with backend
             const ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
             const nonce = '<?php echo esc_js($doctor_nonce); ?>';
+            const body = new URLSearchParams({ action: 'dior_doctor_clear_read_notifications', nonce: nonce });
 
-            const body = new URLSearchParams({
-                action: 'dior_doctor_clear_read_notifications',
-                nonce: nonce
-            });
-            notifIds.forEach(id => body.append('notif_ids[]', id));
-
-            fetch(ajaxUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-                body: body.toString()
-            }).then(res => res.json()).then(data => {
-                if (window.Swal) {
-                    Swal.fire({
-                        position: 'top-end',
-                        icon: 'success',
-                        title: 'Read notifications cleared',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                }
-            }).catch(() => { });
+            fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: body.toString() })
+                .then(res => res.json())
+                .then(data => {
+                    if (!data || !data.success) throw new Error((data && data.data && data.data.message) || 'Read notifications could not be cleared.');
+                    readRows.forEach(row => row.remove());
+                    diorUpdateNotifBadgesAndStats();
+                    if (window.Swal) Swal.fire({ position: 'top-end', icon: 'success', title: 'Read notifications cleared', showConfirmButton: false, timer: 1500 });
+                })
+                .catch(error => {
+                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.message || 'Please try again.' });
+                });
         };
 
         if (window.Swal) {
             Swal.fire({
                 title: 'Clear Read Notifications?',
-                text: `You are about to remove ${readRows.length} read notification(s).`,
+                text: 'You are about to remove ' + readRows.length + ' read notification(s).',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Yes, clear read!'
-            }).then(result => {
-                if (result.isConfirmed) {
-                    doClear();
-                }
-            });
+            }).then(result => { if (result.isConfirmed) doClear(); });
         } else {
             doClear();
         }
     }
 
     function diorDeleteAllSystemNotifications() {
-        const allRows = document.querySelectorAll('#dior-system-notif-list .notification-item-row');
-        if (allRows.length === 0) {
-            if (window.Swal) {
-                Swal.fire({ icon: 'info', title: 'No Notifications', text: 'There are no notifications to delete.' });
-            }
+        const allRows = Array.from(document.querySelectorAll('#dior-system-notif-list .notification-item-row'));
+        if (!allRows.length) {
+            if (window.Swal) Swal.fire({ icon: 'info', title: 'No Notifications', text: 'There are no notifications to delete.' });
+            return;
+        }
+        const notifIds = allRows.map(row => row.dataset.notifId).filter(Boolean);
+        if (!notifIds.length) {
+            if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: 'Notification IDs are missing. No records were removed.' });
             return;
         }
 
-        const notifIds = Array.from(allRows).map(r => r.dataset.notifId).filter(Boolean);
-
         const doDeleteAll = function () {
-            allRows.forEach(row => {
-                row.style.transition = 'all 0.3s ease';
-                row.style.opacity = '0';
-                setTimeout(() => row.remove(), 300);
-            });
-
-            setTimeout(() => {
-                diorUpdateNotifBadgesAndStats();
-            }, 350);
-
             const ajaxUrl = '<?php echo esc_js($ajax_url); ?>';
             const nonce = '<?php echo esc_js($doctor_nonce); ?>';
-
-            const body = new URLSearchParams({
-                action: 'dior_doctor_delete_notification',
-                nonce: nonce
-            });
+            const body = new URLSearchParams({ action: 'dior_doctor_delete_notification', nonce: nonce });
             notifIds.forEach(id => body.append('notif_ids[]', id));
 
-            fetch(ajaxUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-                body: body.toString()
-            }).then(res => res.json()).then(() => {
-                if (window.Swal) {
-                    Swal.fire({
-                        position: 'top-end',
-                        icon: 'success',
-                        title: 'All notifications deleted',
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                }
-            }).catch(() => { });
+            fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: body.toString() })
+                .then(res => res.json())
+                .then(data => {
+                    if (!data || !data.success) throw new Error((data && data.data && data.data.message) || 'Notifications could not be deleted.');
+                    allRows.forEach(row => row.remove());
+                    diorUpdateNotifBadgesAndStats();
+                    if (window.Swal) Swal.fire({ position: 'top-end', icon: 'success', title: 'All notifications deleted', showConfirmButton: false, timer: 1500 });
+                })
+                .catch(error => {
+                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.message || 'Please try again.' });
+                });
         };
 
         if (window.Swal) {
             Swal.fire({
                 title: 'Delete All Notifications?',
-                text: `You are about to permanently remove all ${allRows.length} notification(s).`,
+                text: 'You are about to permanently remove all ' + allRows.length + ' notification(s).',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Yes, delete all!'
-            }).then(result => {
-                if (result.isConfirmed) {
-                    doDeleteAll();
-                }
-            });
+            }).then(result => { if (result.isConfirmed) doDeleteAll(); });
         } else {
             doDeleteAll();
         }
     }
 
-    function diorDownloadDoctorNotifCSV() {
-        const rows = document.querySelectorAll('#dior-system-notif-list .notification-item-row');
-        let csvContent = "data:text/csv;charset=utf-8,Title,Message,Date,Status\n";
-
-        rows.forEach(row => {
-            if (row.style.display !== 'none') {
-                const title = (row.querySelector('.notification-title')?.textContent || '').replace(/"/g, '""').trim();
-                const text = (row.querySelector('.notification-text')?.textContent || '').replace(/"/g, '""').trim();
-                const time = (row.querySelector('.timestamp-tag')?.textContent || '').replace(/"/g, '""').trim();
-                const status = row.dataset.readState === 'unread' ? 'Unread' : 'Read';
-                csvContent += `"${title}","${text}","${time}","${status}"\n`;
-            }
-        });
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "doctor_notifications.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-
-    function diorRefreshLiveDoctorNotifs() {
-        const icon = document.querySelector('.btn-outline-action .fa-rotate-right');
-        if (icon) icon.classList.add('fa-spin');
-        window.location.reload();
-    }
-</script>
+</script></script>
 
 <!-- Notification pagination: 10 per page, composed with the existing filters -->
 <script>
