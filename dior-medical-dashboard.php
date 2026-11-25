@@ -773,6 +773,14 @@ class Dior_Patient_Portal_Data
             }
         }
 
+        $hidden_ids = get_user_meta((int)$user_id, 'dior_hidden_prescription_ids', true);
+        $hidden_ids = is_array($hidden_ids) ? array_map('strval', $hidden_ids) : [];
+        if ($hidden_ids) {
+            $results = array_values(array_filter($results, static function ($rx) use ($hidden_ids) {
+                $ids = array_filter([(string)($rx['id'] ?? ''), (string)($rx['prescription_uid'] ?? ''), (string)($rx['order_id'] ?? '')]);
+                return empty(array_intersect($ids, $hidden_ids));
+            }));
+        }
         return $results;
     }
 
@@ -783,13 +791,22 @@ class Dior_Patient_Portal_Data
     {
         global $wpdb;
         $table = $wpdb->prefix . 'dior_payments';
+        $hidden_ids = get_user_meta((int)$user_id, 'dior_hidden_payment_ids', true);
+        $hidden_ids = is_array($hidden_ids) ? array_map('strval', $hidden_ids) : [];
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table) {
-            $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table WHERE patient_id=%d ORDER BY created_at DESC", (int) $user_id), ARRAY_A);
-            if (!empty($rows))
-                return $rows;
+            $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table WHERE patient_id=%d ORDER BY created_at DESC", (int) $user_id), ARRAY_A) ?: [];
+            return array_values(array_filter($rows, static function ($row) use ($hidden_ids) {
+                $ids = array_filter([(string)($row['invoice_uid'] ?? ''), (string)($row['payment_uid'] ?? ''), (string)($row['id'] ?? '')]);
+                return empty(array_intersect($ids, $hidden_ids));
+            }));
         }
         $payments = get_user_meta($user_id, 'dior_payments', true);
-        return is_array($payments) ? $payments : [];
+        if (!is_array($payments)) return [];
+        return array_values(array_filter($payments, static function ($row) use ($hidden_ids) {
+            if (!is_array($row)) return false;
+            $ids = array_filter([(string)($row['invoice_uid'] ?? ''), (string)($row['invoice_id'] ?? ''), (string)($row['payment_uid'] ?? ''), (string)($row['id'] ?? '')]);
+            return empty(array_intersect($ids, $hidden_ids));
+        }));
     }
 
     /**
@@ -3734,13 +3751,13 @@ class Dior_Medical_Auth
 
         $deleted = $wpdb->delete($reviews_table, ['id' => $feedback_id, 'patient_id' => $patient_id], ['%d', '%d']);
 
-        if ($deleted === false) {
+        if ($deleted !== 1) {
+            if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('patient_feedback_delete', 'review', (string)$feedback_id, $patient_id, 'error');
             wp_send_json_error(['message' => 'Your feedback could not be deleted. Please try again.'], 500);
         }
 
-        wp_send_json_success([
-            'message' => 'Feedback deleted successfully.',
-        ]);
+        if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('patient_feedback_delete', 'review', (string)$feedback_id, $patient_id, 'success');
+        wp_send_json_success(['message' => 'Feedback permanently deleted.']);
     }
 
     /**
@@ -3765,8 +3782,10 @@ class Dior_Medical_Auth
         $deleted = 0;
         foreach ($ids as $id) {
             $ok = $wpdb->delete($reviews_table, ['id' => $id, 'patient_id' => $patient_id], ['%d', '%d']);
-            if ($ok)
+            if ($ok === 1) {
                 $deleted++;
+                if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('patient_feedback_delete', 'review', (string)$id, $patient_id, 'success');
+            }
         }
 
         wp_send_json_success(['message' => "$deleted feedback record(s) deleted."]);
@@ -5023,7 +5042,10 @@ class Dior_Medical_Auth
             }
         }
 
-        wp_send_json_success(['message' => count($notif_ids) . ' notification(s) deleted successfully.']);
+        if (class_exists('Dior_Audit_Service')) {
+            foreach ($notif_ids as $nid) Dior_Audit_Service::log('patient_notification_delete', 'notification', $nid, $user_id, 'success');
+        }
+        wp_send_json_success(['message' => count($notif_ids) . ' notification(s) permanently deleted.']);
     }
 
     /**
@@ -5048,36 +5070,62 @@ class Dior_Medical_Auth
             wp_send_json_error(['message' => 'No appointments selected.']);
         }
 
-        // 1. Soft-delete from wp_dior_appointments
         global $wpdb;
         $appt_table = $wpdb->prefix . 'dior_appointments';
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $appt_table)) === $appt_table) {
-            $now = current_time('mysql');
-            foreach ($record_ids as $rid) {
-                $wpdb->query($wpdb->prepare(
-                    "UPDATE $appt_table SET is_deleted = 1, updated_at = %s WHERE patient_id = %d AND (appt_uid = %s OR id = %d)",
-                    $now,
-                    $user_id,
-                    $rid,
-                    ctype_digit($rid) ? (int) $rid : 0
-                ));
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $appt_table)) !== $appt_table) {
+            wp_send_json_error(['message' => 'Appointment storage is unavailable.'], 500);
+        }
+
+        $deleted = 0;
+        $retained = 0;
+        foreach ($record_ids as $rid) {
+            $appointment = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $appt_table WHERE patient_id=%d AND (appt_uid=%s OR id=%d) AND is_deleted=0 LIMIT 1",
+                $user_id, $rid, ctype_digit($rid) ? (int)$rid : 0
+            ), ARRAY_A);
+            if (!$appointment) continue;
+
+            $uid = (string)($appointment['appt_uid'] ?? '');
+            $has_encounter = $uid ? $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}dior_encounters WHERE appointment_id=%s AND is_deleted=0 LIMIT 1", $uid
+            )) : false;
+            $has_prescription = $uid ? $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}dior_prescriptions WHERE appointment_uid=%s LIMIT 1", $uid
+            )) : false;
+
+            // Appointments linked to clinical documents remain in the source of truth.
+            if ($has_encounter || $has_prescription) {
+                $retained++;
+                continue;
+            }
+
+            $removed = $wpdb->delete($appt_table, ['id' => (int)$appointment['id'], 'patient_id' => $user_id], ['%d', '%d']);
+            if ($removed === 1) {
+                $deleted++;
+                if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('patient_appointment_delete', 'appointment', $uid ?: $rid, $user_id, 'success');
             }
         }
 
-        // 2. Remove from user meta (dior_appointments)
+        // Remove only the selected operational rows from the legacy mirror.
         $meta_appts = get_user_meta($user_id, 'dior_appointments', true);
         if (is_array($meta_appts)) {
             $meta_appts = array_values(array_filter($meta_appts, function ($apt) use ($record_ids) {
-                $candidates = array_filter([
-                    (string) ($apt['appt_uid'] ?? ''),
-                    (string) ($apt['id'] ?? ''),
-                ]);
+                if (!is_array($apt)) return true;
+                $candidates = array_filter([(string)($apt['appt_uid'] ?? ''), (string)($apt['id'] ?? '')]);
                 return empty(array_intersect($candidates, $record_ids));
             }));
             update_user_meta($user_id, 'dior_appointments', $meta_appts);
         }
 
-        wp_send_json_success(['message' => 'Selected appointments deleted permanently.']);
+        if (!$deleted && $retained) {
+            wp_send_json_error(['message' => 'Selected appointment(s) are linked to retained clinical records and cannot be permanently deleted.'], 409);
+        }
+        if (!$deleted) wp_send_json_error(['message' => 'No selected appointment was found or deleted.'], 404);
+        wp_send_json_success([
+            'message' => $deleted . ' appointment(s) permanently deleted.' . ($retained ? ' ' . $retained . ' linked clinical appointment(s) were retained.' : ''),
+            'deleted' => $deleted,
+            'retained' => $retained,
+        ]);
     }
 
     public static function ajax_bulk_delete_payments()
@@ -5096,48 +5144,18 @@ class Dior_Medical_Auth
             wp_send_json_error(['message' => 'No billing records selected.']);
         }
 
-        // 1. Delete from user meta
-        $meta_payments = get_user_meta($user_id, 'dior_payments', true);
-        if (is_array($meta_payments)) {
-            $meta_payments = array_values(array_filter($meta_payments, function ($pm) use ($record_ids) {
-                $candidates = array_filter([
-                    (string) ($pm['invoice_uid'] ?? ''),
-                    (string) ($pm['invoice_id'] ?? ''),
-                    (string) ($pm['payment_uid'] ?? ''),
-                    (string) ($pm['id'] ?? ''),
-                ]);
-                return empty(array_intersect($candidates, $record_ids));
-            }));
-            update_user_meta($user_id, 'dior_payments', $meta_payments);
+        // Financial source records are retained for accounting/tax audit.
+        // Store a per-patient dashboard tombstone so hidden rows do not reappear after refresh.
+        $hidden = get_user_meta($user_id, 'dior_hidden_payment_ids', true);
+        $hidden = is_array($hidden) ? $hidden : [];
+        $hidden = array_values(array_unique(array_merge($hidden, $record_ids)));
+        update_user_meta($user_id, 'dior_hidden_payment_ids', $hidden);
+
+        if (class_exists('Dior_Audit_Service')) {
+            foreach ($record_ids as $rid) Dior_Audit_Service::log('patient_payment_hidden', 'payment', $rid, $user_id, 'success', ['retention' => 'financial_record_preserved']);
         }
 
-        // 2. Delete from relational tables
-        global $wpdb;
-        $payments_table = $wpdb->prefix . 'dior_payments';
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $payments_table)) === $payments_table) {
-            foreach ($record_ids as $rid) {
-                $wpdb->query($wpdb->prepare(
-                    "DELETE FROM $payments_table WHERE patient_id = %d AND (invoice_uid = %s OR payment_uid = %s OR id = %d)",
-                    $user_id,
-                    $rid,
-                    $rid,
-                    ctype_digit($rid) ? (int) $rid : 0
-                ));
-            }
-        }
-        $invoices_table = $wpdb->prefix . 'dior_invoices';
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $invoices_table)) === $invoices_table) {
-            foreach ($record_ids as $rid) {
-                $wpdb->query($wpdb->prepare(
-                    "DELETE FROM $invoices_table WHERE patient_id = %d AND (invoice_uid = %s OR id = %d)",
-                    $user_id,
-                    $rid,
-                    ctype_digit($rid) ? (int) $rid : 0
-                ));
-            }
-        }
-
-        wp_send_json_success(['message' => count($record_ids) . ' billing record(s) deleted successfully.']);
+        wp_send_json_success(['message' => count($record_ids) . ' billing record(s) removed from your dashboard. Financial records are retained for compliance.']);
     }
 
     /**
@@ -5159,35 +5177,18 @@ class Dior_Medical_Auth
             wp_send_json_error(['message' => 'No prescriptions selected.']);
         }
 
-        // 1. Delete from user meta
-        $meta_rx = get_user_meta($user_id, 'dior_prescriptions', true);
-        if (is_array($meta_rx)) {
-            $meta_rx = array_values(array_filter($meta_rx, function ($rx) use ($record_ids) {
-                $candidates = array_filter([
-                    (string) ($rx['prescription_uid'] ?? ''),
-                    (string) ($rx['order_id'] ?? ''),
-                    (string) ($rx['id'] ?? ''),
-                ]);
-                return empty(array_intersect($candidates, $record_ids));
-            }));
-            update_user_meta($user_id, 'dior_prescriptions', $meta_rx);
+        // Prescriptions are clinical records: remove them from the patient's active view,
+        // but retain the signed/source record and doctor-side history.
+        $hidden = get_user_meta($user_id, 'dior_hidden_prescription_ids', true);
+        $hidden = is_array($hidden) ? $hidden : [];
+        $hidden = array_values(array_unique(array_merge($hidden, $record_ids)));
+        update_user_meta($user_id, 'dior_hidden_prescription_ids', $hidden);
+
+        if (class_exists('Dior_Audit_Service')) {
+            foreach ($record_ids as $rid) Dior_Audit_Service::log('patient_prescription_hidden', 'prescription', $rid, $user_id, 'success', ['retention' => 'clinical_record_preserved']);
         }
 
-        // 2. Delete from relational table
-        global $wpdb;
-        $rx_table = $wpdb->prefix . 'dior_prescriptions';
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $rx_table)) === $rx_table) {
-            foreach ($record_ids as $rid) {
-                $wpdb->query($wpdb->prepare(
-                    "DELETE FROM $rx_table WHERE patient_id = %d AND (prescription_uid = %s OR id = %d)",
-                    $user_id,
-                    $rid,
-                    ctype_digit($rid) ? (int) $rid : 0
-                ));
-            }
-        }
-
-        wp_send_json_success(['message' => count($record_ids) . ' prescription(s) deleted successfully.']);
+        wp_send_json_success(['message' => count($record_ids) . ' prescription(s) removed from your dashboard. Clinical records are retained for compliance.']);
     }
 
     /**
@@ -5217,7 +5218,10 @@ class Dior_Medical_Auth
             update_user_meta($user_id, 'dior_insurance_claims', $claims);
         }
 
-        wp_send_json_success(['message' => count($record_ids) . ' insurance claim(s) deleted successfully.']);
+        if (class_exists('Dior_Audit_Service')) {
+            foreach ($record_ids as $rid) Dior_Audit_Service::log('patient_insurance_delete', 'insurance_claim', $rid, $user_id, 'success');
+        }
+        wp_send_json_success(['message' => count($record_ids) . ' insurance claim(s) permanently deleted.']);
     }
 
     /**
@@ -5464,6 +5468,7 @@ class Dior_Medical_Auth
         if (is_array($contacts) && isset($contacts[$index])) {
             array_splice($contacts, $index, 1);
             update_user_meta($user_id, 'dior_emergency_contacts_list', $contacts);
+            if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('emergency_contact_delete', 'patient_profile', 'contact-index-' . $index, $user_id, 'success');
         }
 
         if (empty($contacts)) {
@@ -5576,6 +5581,7 @@ class Dior_Medical_Auth
         if (is_array($goals) && isset($goals[$index])) {
             array_splice($goals, $index, 1);
             update_user_meta($user_id, 'dior_health_goals', $goals);
+            if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('health_goal_delete', 'patient_profile', 'goal-index-' . $index, $user_id, 'success');
         }
 
         wp_send_json_success([
