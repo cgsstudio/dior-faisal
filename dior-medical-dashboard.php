@@ -795,10 +795,12 @@ class Dior_Patient_Portal_Data
         $hidden_ids = is_array($hidden_ids) ? array_map('strval', $hidden_ids) : [];
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table) {
             $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table WHERE patient_id=%d ORDER BY created_at DESC", (int) $user_id), ARRAY_A) ?: [];
-            return array_values(array_filter($rows, static function ($row) use ($hidden_ids) {
-                $ids = array_filter([(string)($row['invoice_uid'] ?? ''), (string)($row['payment_uid'] ?? ''), (string)($row['id'] ?? '')]);
-                return empty(array_intersect($ids, $hidden_ids));
-            }));
+            if (!empty($rows)) {
+                return array_values(array_filter($rows, static function ($row) use ($hidden_ids) {
+                    $ids = array_filter([(string)($row['invoice_uid'] ?? ''), (string)($row['payment_uid'] ?? ''), (string)($row['id'] ?? '')]);
+                    return empty(array_intersect($ids, $hidden_ids));
+                }));
+            }
         }
         $payments = get_user_meta($user_id, 'dior_payments', true);
         if (!is_array($payments)) return [];
