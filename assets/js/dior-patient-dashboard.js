@@ -2361,15 +2361,25 @@ let diorNotifCurrentPage = 1;
             nonce: nonce
         });
 
+        if (!ajaxUrl || !nonce) {
+            if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+            if (window.Swal) Swal.fire({ icon: 'error', title: 'Unable to refresh notifications', text: 'Please refresh the page and try again.' });
+            return;
+        }
+
         fetch(ajaxUrl, {
             method: 'POST',
+            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
             body: body.toString()
         })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Notification request failed.');
+            return res.json();
+        })
         .then(data => {
             if (refreshIcon) refreshIcon.classList.remove('fa-spin');
-            if (data && data.success && data.data && data.data.full_html && tbody) {
+            if (data && data.success && data.data && typeof data.data.full_html === 'string' && tbody) {
                 tbody.innerHTML = data.data.full_html;
                 diorNotifCurrentPage = 1;
                 diorRenderNotifPagination();
@@ -2377,13 +2387,15 @@ let diorNotifCurrentPage = 1;
                 if (window.Swal) {
                     Swal.fire({ position: 'top-end', icon: 'success', title: 'Notifications Refreshed', showConfirmButton: false, timer: 1000 });
                 }
-            } else {
-                window.location.reload();
+                return;
             }
+            throw new Error((data && data.data && data.data.message) || 'Unable to refresh notifications.');
         })
-        .catch(() => {
+        .catch(error => {
             if (refreshIcon) refreshIcon.classList.remove('fa-spin');
-            window.location.reload();
+            if (window.Swal) {
+                Swal.fire({ icon: 'error', title: 'Notification refresh failed', text: error.message || 'Please try again.' });
+            }
         });
     }
     window.diorRefreshNotifications = diorRefreshNotifications;
