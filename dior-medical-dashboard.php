@@ -58,9 +58,6 @@ require_once(DIOR_PORTAL_PATH . 'rest_api/hipaatizer_api_sync.php');
 if (!class_exists('Dior_Medical_Secure_Files')) {
     require_once(DIOR_PORTAL_PATH . 'includes/class-dior-secure-files.php');
 }
-if (!class_exists('Dior_Demo_Data')) {
-    require_once(DIOR_PORTAL_PATH . 'includes/class-dior-demo-data.php');
-}
 if (!class_exists('Dior_Questionnaire_Service')) {
     require_once(DIOR_PORTAL_PATH . 'includes/class-dior-questionnaire-service.php');
 }
@@ -165,9 +162,6 @@ add_action('plugins_loaded', function () {
     }
     if (class_exists('Dior_Medical_Secure_Files')) {
         Dior_Medical_Secure_Files::init();
-    }
-    if (class_exists('Dior_Demo_Data')) {
-        Dior_Demo_Data::init();
     }
 });
 
