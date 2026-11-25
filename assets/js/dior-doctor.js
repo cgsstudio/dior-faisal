@@ -9,6 +9,47 @@ function getDiorDocAjax() {
 function getDiorDocNonce() {
     return window.diorDocNonce || (typeof diorDocNonce !== 'undefined' ? diorDocNonce : '') || (window.dior_doctor_vars ? window.dior_doctor_vars.nonce : '') || (window.dior_vars ? window.dior_vars.nonce : '');
 }
+window.diorHideFinancialRecord = function (button) {
+    var row = button && button.closest('tr');
+    var invoiceId = row ? row.getAttribute('data-record-id') : '';
+    if (!row || !invoiceId) {
+        if (window.Swal) Swal.fire({ icon: 'error', title: 'Unable to Remove', text: 'Invoice ID is missing. No record was changed.' });
+        return;
+    }
+
+    var performHide = function () {
+        var body = new FormData();
+        body.append('action', 'dior_doc_financial_record_hide');
+        body.append('nonce', getDiorDocNonce());
+        body.append('invoice_id', invoiceId);
+
+        fetch(getDiorDocAjax(), { method: 'POST', credentials: 'same-origin', body: body })
+            .then(function (response) { return response.json(); })
+            .then(function (result) {
+                if (!result || !result.success) throw new Error((result && result.data && result.data.message) || 'Invoice could not be removed.');
+                row.remove();
+                if (window.Swal) Swal.fire({ position: 'top-end', icon: 'success', title: 'Invoice Removed', text: result.data && result.data.message ? result.data.message : 'Invoice removed from active list.', showConfirmButton: false, timer: 1800 });
+            })
+            .catch(function (error) {
+                if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.message || 'Please try again.' });
+            });
+    };
+
+    if (window.Swal) {
+        Swal.fire({
+            title: 'Remove Invoice?',
+            text: 'The invoice will be hidden from this list. The financial source record will be retained for compliance.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#DC2626',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, remove'
+        }).then(function (result) { if (result.isConfirmed) performHide(); });
+    } else {
+        performHide();
+    }
+};
+
 
 function initDoctorDashboard() {
     // Guard: Only initialize if on the Doctor Dashboard container
