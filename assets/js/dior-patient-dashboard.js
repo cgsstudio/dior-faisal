@@ -1471,6 +1471,73 @@ let diorBillCurrentPage = 1;
         diorBillCurrentPage = 1;
         diorRenderBillPagination();
     }
+
+    function diorDeletePatientDashboardRows(tableId, action, label, checkboxSelector) {
+        var table = document.getElementById(tableId);
+        if (!table) return;
+        var checkboxes = Array.from(table.querySelectorAll(checkboxSelector || 'tbody input[type="checkbox"]:checked')).filter(function (cb) { return cb.checked; });
+        var rows = checkboxes.map(function (cb) { return cb.closest('tr'); }).filter(Boolean);
+        if (!rows.length) {
+            if (window.Swal) Swal.fire({ icon: 'info', title: 'No Records Selected', text: 'Select at least one ' + label + ' to remove.' });
+            return;
+        }
+
+        var ids = rows.map(function (row) { return String(row.getAttribute('data-record-id') || '').trim(); }).filter(Boolean);
+        if (!ids.length) {
+            if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: 'Record IDs are missing. No records were removed.' });
+            return;
+        }
+
+        var cfg = window.dior_patient_dashboard || window.dior_vars || {};
+        var ajaxUrl = cfg.ajax_url || '';
+        var nonce = cfg.portal_nonce || cfg.nonce || '';
+        if (!ajaxUrl || !nonce) {
+            if (window.Swal) Swal.fire({ icon: 'error', title: 'Session Expired', text: 'Refresh the page and try again.' });
+            return;
+        }
+
+        var sendDelete = function () {
+            var body = new FormData();
+            body.append('action', action);
+            body.append('nonce', nonce);
+            ids.forEach(function (id) { body.append('ids[]', id); });
+            fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body })
+                .then(function (response) { return response.json(); })
+                .then(function (result) {
+                    if (!result || !result.success) throw new Error((result && result.data && result.data.message) || 'Selected records could not be removed.');
+                    rows.forEach(function (row) { row.remove(); });
+                    if (tableId === 'dior-bill-table' && typeof diorRenderBillPagination === 'function') diorRenderBillPagination();
+                    if (tableId === 'dior-insurance-table' && typeof diorRenderInsurancePagination === 'function') diorRenderInsurancePagination();
+                    if (window.Swal) Swal.fire({ position: 'top-end', icon: 'success', title: 'Records Removed', text: result.data && result.data.message ? result.data.message : 'Selected records removed.', showConfirmButton: false, timer: 1800 });
+                })
+                .catch(function (error) {
+                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.message || 'Please try again.' });
+                });
+        };
+
+        if (window.Swal) {
+            Swal.fire({
+                title: 'Remove selected ' + label + '?',
+                text: 'Selected records will be removed from your dashboard. Regulated source records may be retained for compliance.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#DC2626',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, remove'
+            }).then(function (result) { if (result.isConfirmed) sendDelete(); });
+        } else {
+            sendDelete();
+        }
+    }
+
+    window.diorBulkDeletePayments = function () {
+        diorDeletePatientDashboardRows('dior-bill-table', 'dior_patient_bulk_delete_payments', 'billing record(s)', '.dior-bill-row-checkbox:checked');
+    };
+    window.diorBulkDeleteInsurance = function () {
+        diorDeletePatientDashboardRows('dior-insurance-table', 'dior_patient_bulk_delete_insurance', 'insurance claim(s)', 'tbody input[type="checkbox"]:checked');
+    };
+
+
     
     function diorDownloadBillCSV() {
         let csvContent = "data:text/csv;charset=utf-8,Invoice No,Doctor Name,Date,Amount,Tax,Discount,Total\n";
