@@ -775,10 +775,15 @@ class Dior_Doctor_Dashboard
         // Remove the legacy duplicate so the patient dashboard cannot resurrect it from user meta.
         $legacy = get_user_meta((int)$record['patient_id'], 'dior_prescriptions', true);
         if (is_array($legacy)) {
-            $legacy = array_values(array_filter($legacy, static function ($item) use ($rx_id) {
+            $remove_ids = array_values(array_unique(array_filter([
+                $rx_id,
+                (string)($record['prescription_uid'] ?? ''),
+                (string)($record['id'] ?? ''),
+            ])));
+            $legacy = array_values(array_filter($legacy, static function ($item) use ($remove_ids) {
                 if (!is_array($item)) return true;
                 $ids = array_filter([(string)($item['prescription_uid'] ?? ''), (string)($item['order_id'] ?? ''), (string)($item['id'] ?? '')]);
-                return !in_array($rx_id, $ids, true);
+                return empty(array_intersect($remove_ids, $ids));
             }));
             update_user_meta((int)$record['patient_id'], 'dior_prescriptions', $legacy);
         }
