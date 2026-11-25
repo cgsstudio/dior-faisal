@@ -573,7 +573,12 @@ let diorUpcomingCurrentPage = 1;
                                     const deletedSet = new Set((deletedIds || []).map(String));
                                     rows.forEach(function(row) {
                                         const rowId = String(row.getAttribute('data-record-id') || '').trim();
-                                        if (deletedSet.has(rowId)) row.remove();
+                                        if (deletedSet.has(rowId)) {
+                                            row.remove();
+                                        } else {
+                                            const checkbox = row.querySelector('input[type="checkbox"]');
+                                            if (checkbox) checkbox.checked = false;
+                                        }
                                     });
                                     const masterCb = document.getElementById('dior-select-all-upcoming');
                                     if (masterCb) masterCb.checked = false;
