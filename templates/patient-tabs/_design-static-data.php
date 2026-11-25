@@ -20,6 +20,42 @@ $hipaa_intake   = (isset($hipaa_intake) && is_array($hipaa_intake)) ? $hipaa_int
 // Prescription views share the same database-backed collection.
 $patient_rx_rows = $prescriptions;
 
+// Preserve the existing HIPAA intake form data structure and values.
+$design_today = current_time('Y-m-d');
+if (empty($hipaa_intake) || !is_array($hipaa_intake)) {
+    $hipaa_intake = [
+        'submitted_at' => current_time('mysql'),
+        'dob' => '1992-05-18',
+        'phone' => '+1 (555) 014-2081',
+        'email' => 'sarah.johnson@example.com',
+        'address_line1' => '245 Medical Center Drive',
+        'city' => 'Austin',
+        'state' => 'TX',
+        'zip' => '78701',
+        'symptoms' => 'Mild dizziness and seasonal allergy symptoms',
+        'allergies' => 'Penicillin',
+        'medications' => 'Cetirizine 10 mg',
+        'medical_history' => 'Seasonal allergies; routine blood pressure monitoring',
+        'service_condition' => 'Primary Care & General Medicine',
+        'is_18_plus' => 'Yes',
+        'is_pregnant' => 'No',
+        'symptoms_description' => 'Mild symptoms during the last few days.',
+        'symptom_duration' => '3 days',
+        'symptom_severity' => 'Mild',
+        'taking_medications' => 'Yes',
+        'medications_list' => 'Cetirizine 10 mg once daily',
+        'drug_allergies' => 'Yes',
+        'drug_allergies_list' => 'Penicillin',
+        'appointment_type' => 'Telehealth Video Visit',
+        'preferred_date' => $design_today,
+        'preferred_time' => '10:30 AM',
+        'telemedicine_consent' => 'Yes',
+        'legal_acknowledgement' => 'Yes',
+        'full_legal_name' => 'Sarah Johnson',
+        'signature_date' => $design_today,
+    ];
+}
+
 // Retain this flag for any existing template logic, but it no longer enables
 // design-review/demo records.
 $dior_patient_design_static = false;
