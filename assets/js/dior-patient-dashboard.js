@@ -558,13 +558,49 @@ let diorUpcomingCurrentPage = 1;
 
                             function diorBulkDeleteUpcomingRows() {
                                 const checkedBoxes = document.querySelectorAll('.upcoming-row-checkbox:checked');
+                                if (!checkedBoxes.length) return;
+                                const rows = [];
+                                const ids = [];
                                 checkedBoxes.forEach(function(cb) {
                                     const row = cb.closest('tr');
-                                    if (row) row.remove();
+                                    if (!row) return;
+                                    rows.push(row);
+                                    const rid = row.getAttribute('data-record-id') || (row.querySelector('[data-appt-uid]') && row.querySelector('[data-appt-uid]').getAttribute('data-appt-uid')) || '';
+                                    if (rid) ids.push(rid.trim());
                                 });
-                                const masterCb = document.getElementById('dior-select-all-upcoming');
-                                if (masterCb) masterCb.checked = false;
-                                diorRenderUpcomingPagination();
+
+                                const finishDom = function() {
+                                    rows.forEach(function(row) { row.remove(); });
+                                    const masterCb = document.getElementById('dior-select-all-upcoming');
+                                    if (masterCb) masterCb.checked = false;
+                                    diorRenderUpcomingPagination();
+                                };
+
+                                const cfg = window.dior_vars || window.dior_patient_dashboard || {};
+                                const ajaxUrl = cfg.ajax_url || (window.ajaxurl || '/wp-admin/admin-ajax.php');
+                                const nonce = cfg.nonce || cfg.portal_nonce || '';
+
+                                if (ids.length && ajaxUrl) {
+                                    const body = new FormData();
+                                    body.append('action', 'dior_patient_bulk_delete_appointments');
+                                    if (nonce) body.append('nonce', nonce);
+                                    ids.forEach(function(id) { body.append('ids[]', id); });
+
+                                    fetch(ajaxUrl, {
+                                        method: 'POST',
+                                        credentials: 'same-origin',
+                                        body: body
+                                    })
+                                    .then(function(r) { return r.json(); })
+                                    .then(function(res) {
+                                        if (res && res.success) {
+                                            finishDom();
+                                        }
+                                    })
+                                    .catch(function() {});
+                                } else {
+                                    finishDom();
+                                }
                             }
 
                             function diorUpdateUpcomingSelectedCount(customVisibleCount) {
@@ -3110,14 +3146,14 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
 
             var rowsHtml = rows.map(function (r, idx) {
                 var bg = idx % 2 === 0 ? '#f8fafc' : '#ffffff';
-                return '<tr style="background:' + bg + ';">' +
-                    '<td style="width:34%;padding:10px 14px;border:1px solid #cbd5e1;font-weight:700;color:#334155;font-size:13px;vertical-align:top;">' + escRxHtml(r[0]) + '</td>' +
-                    '<td style="width:66%;padding:10px 14px;border:1px solid #cbd5e1;color:#0f172a;font-size:13px;vertical-align:top;white-space:pre-wrap;">' + escRxHtml(r[1]) + '</td>' +
-                    '</tr>';
+                return '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;background:' + bg + ';border:1px solid #cbd5e1;border-bottom:none;padding:11px 14px;box-sizing:border-box;">' +
+                    '<span style="width:34%;flex-shrink:0;font-weight:700;color:#334155;font-size:12px;text-transform:uppercase;letter-spacing:.04em;">' + escRxHtml(r[0]) + '</span>' +
+                    '<span style="width:66%;color:#0f172a;font-size:13px;font-weight:600;text-align:right;white-space:pre-wrap;word-break:break-word;">' + escRxHtml(r[1]) + '</span>' +
+                    '</div>';
             }).join('');
 
             var pdfHtml =
-                '<div style="font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#ffffff;padding:28px 32px;box-sizing:border-box;width:100%;">' +
+                '<div style="font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#ffffff;padding:24px 28px;box-sizing:border-box;width:100%;max-width:680px;margin:0 auto;">' +
                     '<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #00346C;padding-bottom:14px;margin-bottom:20px;">' +
                         '<div>' +
                             '<div style="font-size:22px;font-weight:700;color:#00346C;line-height:1.2;">Dior Medical</div>' +
@@ -3128,10 +3164,10 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
                             '<div style="font-size:14px;font-weight:700;color:#00346C;margin-top:2px;">' + escRxHtml(d.id) + '</div>' +
                         '</div>' +
                     '</div>' +
-                    '<div style="font-size:18px;font-weight:700;color:#0f172a;margin-bottom:16px;">' + escRxHtml(d.title) + '</div>' +
-                    '<table style="width:100%;border-collapse:collapse;margin-bottom:22px;">' +
-                        '<tbody>' + rowsHtml + '</tbody>' +
-                    '</table>' +
+                    '<div style="font-size:17px;font-weight:700;color:#0f172a;margin-bottom:16px;">' + escRxHtml(d.title) + '</div>' +
+                    '<div style="width:100%;margin-bottom:22px;border-bottom:1px solid #cbd5e1;">' +
+                        rowsHtml +
+                    '</div>' +
                     '<div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0;padding-top:12px;font-size:11px;color:#94a3b8;">' +
                         '<span>Generated by Dior Medical Patient Portal</span>' +
                         '<span>Printed: ' + escRxHtml(today) + '</span>' +
@@ -3155,31 +3191,15 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
                 return;
             }
 
-            var holder = document.createElement('div');
-            holder.style.position = 'fixed';
-            holder.style.left = '0';
-            holder.style.top = '0';
-            holder.style.width = '750px';
-            holder.style.background = '#FFFFFF';
-            holder.style.zIndex = '-999999';
-            holder.style.opacity = '1';
-            holder.style.pointerEvents = 'none';
-            holder.innerHTML = pdfHtml;
-            document.body.appendChild(holder);
-
             html2pdf().set({
-                margin: [8, 8, 8, 8],
+                margin: [10, 10, 10, 10],
                 filename: cleanFileName,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, scrollX: 0, windowWidth: 794 },
+                html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, scrollX: 0, backgroundColor: '#ffffff' },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(holder.firstElementChild || holder).save()
-                .then(function () {
-                    if (holder.parentNode) holder.parentNode.removeChild(holder);
-                })
+            }).from(pdfHtml).save()
                 .catch(function (err) {
                     console.error('Prescription PDF export failed:', err);
-                    if (holder.parentNode) holder.parentNode.removeChild(holder);
                     openRxPrintFallback();
                 });
         };

@@ -397,7 +397,8 @@
         var PATIENT_BULK_ACTIONS = {
             'dior-bill-table': 'dior_patient_bulk_delete_payments',
             'dior-rx-table': 'dior_patient_bulk_delete_prescriptions',
-            'dior-insurance-table': 'dior_patient_bulk_delete_insurance'
+            'dior-insurance-table': 'dior_patient_bulk_delete_insurance',
+            'dior-upcoming-appointments-table': 'dior_patient_bulk_delete_appointments'
         };
 
         function performDeletion() {

@@ -993,6 +993,7 @@ class Dior_Medical_Auth
         add_action('wp_ajax_dior_patient_mark_all_notifications_read', [__CLASS__, 'ajax_mark_all_notifications_read']);
         add_action('wp_ajax_dior_patient_bulk_delete_notifications', [__CLASS__, 'ajax_bulk_delete_notifications']);
         add_action('wp_ajax_dior_patient_bulk_delete_payments', [__CLASS__, 'ajax_bulk_delete_payments']);
+        add_action('wp_ajax_dior_patient_bulk_delete_appointments', [__CLASS__, 'ajax_bulk_delete_appointments']);
         add_action('wp_ajax_dior_patient_bulk_delete_prescriptions', [__CLASS__, 'ajax_bulk_delete_prescriptions']);
         add_action('wp_ajax_dior_patient_bulk_delete_insurance', [__CLASS__, 'ajax_bulk_delete_insurance']);
         add_action('wp_ajax_dior_patient_get_live_notifications', [__CLASS__, 'ajax_get_live_notifications']);
@@ -5028,6 +5029,57 @@ class Dior_Medical_Auth
     /**
      * AJAX Bulk Delete Patient Billing/Payments
      */
+    /**
+     * AJAX Bulk Delete Appointments (Upcoming / Patient Appointments Table)
+     */
+    public static function ajax_bulk_delete_appointments()
+    {
+        Dior_Auth_Service::verify_ajax_nonce(['dior_portal_nonce', 'dior_auth_nonce']);
+
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            wp_send_json_error(['message' => 'Authentication required.']);
+        }
+
+        $record_ids = isset($_POST['ids']) ? (array) $_POST['ids'] : [];
+        $record_ids = array_values(array_filter(array_map('sanitize_text_field', $record_ids)));
+
+        if (empty($record_ids)) {
+            wp_send_json_error(['message' => 'No appointments selected.']);
+        }
+
+        // 1. Soft-delete from wp_dior_appointments
+        global $wpdb;
+        $appt_table = $wpdb->prefix . 'dior_appointments';
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $appt_table)) === $appt_table) {
+            $now = current_time('mysql');
+            foreach ($record_ids as $rid) {
+                $wpdb->query($wpdb->prepare(
+                    "UPDATE $appt_table SET is_deleted = 1, updated_at = %s WHERE patient_id = %d AND (appt_uid = %s OR id = %d)",
+                    $now,
+                    $user_id,
+                    $rid,
+                    ctype_digit($rid) ? (int) $rid : 0
+                ));
+            }
+        }
+
+        // 2. Remove from user meta (dior_appointments)
+        $meta_appts = get_user_meta($user_id, 'dior_appointments', true);
+        if (is_array($meta_appts)) {
+            $meta_appts = array_values(array_filter($meta_appts, function ($apt) use ($record_ids) {
+                $candidates = array_filter([
+                    (string) ($apt['appt_uid'] ?? ''),
+                    (string) ($apt['id'] ?? ''),
+                ]);
+                return empty(array_intersect($candidates, $record_ids));
+            }));
+            update_user_meta($user_id, 'dior_appointments', $meta_appts);
+        }
+
+        wp_send_json_success(['message' => 'Selected appointments deleted permanently.']);
+    }
+
     public static function ajax_bulk_delete_payments()
     {
         Dior_Auth_Service::verify_ajax_nonce(['dior_portal_nonce', 'dior_auth_nonce']);

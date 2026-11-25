@@ -223,12 +223,15 @@ foreach ($patients_query as $pq) {
                 </thead>
                 <tbody id="pr-tbody">
                     <?php
+                    // Remove any legacy seeded DEMO-% dummy prescriptions so only real prescriptions remain.
+                    $wpdb->query("DELETE FROM {$wpdb->prefix}dior_prescriptions WHERE prescription_uid LIKE 'DEMO-%' OR prescription_id LIKE 'DEMO-%'");
+
                     // Restrict prescription visibility to the current doctor's records; administrators may view all.
                     if (current_user_can('manage_options')) {
-                        $prescriptions = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}dior_prescriptions ORDER BY id DESC");
+                        $prescriptions = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE (prescription_uid IS NULL OR prescription_uid NOT LIKE 'DEMO-%') AND (prescription_id IS NULL OR prescription_id NOT LIKE 'DEMO-%') ORDER BY id DESC");
                     } else {
                         $prescriptions = $wpdb->get_results($wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE doctor_id = %d ORDER BY id DESC",
+                            "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE doctor_id = %d AND (prescription_uid IS NULL OR prescription_uid NOT LIKE 'DEMO-%') AND (prescription_id IS NULL OR prescription_id NOT LIKE 'DEMO-%') ORDER BY id DESC",
                             get_current_user_id()
                         ));
                     }
@@ -723,7 +726,7 @@ foreach ($patients_query as $pq) {
         a.click();
     }
 
-    // Delete Prescription Row (Visual + Feedback)
+    // Delete Prescription Row (Persisted in DB + UI)
     function diorDeletePrescriptionRow(btn) {
         Swal.fire({
             title: 'Delete Prescription?',
@@ -737,11 +740,41 @@ foreach ($patients_query as $pq) {
         }).then(function (result) {
             if (!result.isConfirmed) return;
             var tr = btn.closest('tr');
-            if (tr) {
-                tr.style.opacity = '0.4';
-                setTimeout(function () { tr.remove(); }, 300);
-                Swal.fire({ icon: 'success', title: 'Deleted', text: 'Prescription record removed.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+            if (!tr) return;
+
+            var rxId = tr.getAttribute('data-id') || '';
+            var cfg = window.dior_doctor_vars || window.dior_vars || {};
+            var ajaxUrl = cfg.ajax_url || (window.ajaxurl || '/wp-admin/admin-ajax.php');
+            var nonce = cfg.nonce || '<?php echo esc_js(wp_create_nonce('dior_doctor_nonce')); ?>';
+
+            if (!rxId) {
+                tr.remove();
+                return;
             }
+
+            var fd = new FormData();
+            fd.append('action', 'dior_doctor_delete_prescription');
+            fd.append('nonce', nonce);
+            fd.append('prescription_id', rxId);
+
+            fetch(ajaxUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: fd
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data && data.success) {
+                    tr.style.opacity = '0.4';
+                    setTimeout(function () { tr.remove(); }, 300);
+                    Swal.fire({ icon: 'success', title: 'Deleted', text: 'Prescription record removed.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Delete Failed', text: (data && data.data && data.data.message) ? data.data.message : 'Unable to delete prescription.' });
+                }
+            })
+            .catch(function () {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Connection error while deleting prescription.' });
+            });
         });
     }
 </script>

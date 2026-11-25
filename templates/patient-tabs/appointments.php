@@ -402,7 +402,7 @@
                                     };
                                     foreach ($upcoming_mock as $um):
                                         ?>
-                                        <tr>
+                                        <tr data-record-id="<?php echo esc_attr($um[7] ?? ''); ?>">
                                             <td class="dior-ic-d5c209e67c">
                                                 <input type="checkbox"
                                                     class="master-checkbox upcoming-row-checkbox form-check-input"

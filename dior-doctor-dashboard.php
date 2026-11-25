@@ -21,6 +21,7 @@ class Dior_Doctor_Dashboard
         add_action("wp_ajax_dior_doctor_delete_appointment",  [__CLASS__, "ajax_delete_appointment"]);
         add_action("wp_ajax_dior_doctor_get_patient_appointment_details", [__CLASS__, "ajax_get_patient_appointment_details"]);
         add_action("wp_ajax_dior_doctor_add_prescription",    [__CLASS__, "ajax_add_prescription"]);
+        add_action("wp_ajax_dior_doctor_delete_prescription", [__CLASS__, "ajax_delete_prescription"]);
         add_action("wp_ajax_dior_doctor_add_note",            [__CLASS__, "ajax_add_note"]);
         add_action("wp_ajax_dior_doctor_save_soap_note",      [__CLASS__, "ajax_save_soap_note"]);
         add_action("wp_ajax_dior_doctor_delete_note",         [__CLASS__, "ajax_delete_note"]);
@@ -524,63 +525,7 @@ class Dior_Doctor_Dashboard
             }
         }
 
-        // Fallback clinical notifications if doctor has no active items
-        if (empty($all_notifs)) {
-            $all_notifs = [
-                [
-                    'id' => 'notif-sys-001',
-                    'title' => 'New Patient Registration',
-                    'message' => 'New patient registration completed. Clinical profile and questionnaire are available for review.',
-                    'action_url' => '#tab=doc-patients-all',
-                    'icon' => 'fa-user-plus',
-                    'priority' => 'Medium',
-                    'type' => 'user',
-                    'is_read' => false,
-                    'created_at' => current_time('mysql'),
-                    'timestamp' => time()
-                ],
-                [
-                    'id' => 'notif-sys-002',
-                    'title' => 'Telemedicine Consultation Booked',
-                    'message' => 'Patient has scheduled an upcoming virtual telehealth visit. Please review appointment details.',
-                    'action_url' => '#tab=doc-appointments',
-                    'icon' => 'fa-calendar-check',
-                    'priority' => 'High',
-                    'type' => 'appointment',
-                    'is_read' => false,
-                    'created_at' => current_time('mysql'),
-                    'timestamp' => time() - 1800
-                ],
-                [
-                    'id' => 'notif-sys-003',
-                    'title' => 'Signed Patient Consent Uploaded',
-                    'message' => 'Signed telehealth and treatment consent document has been securely archived.',
-                    /* the Signed Consent tab was removed; land on the documents list */
-                    'action_url' => '#tab=doc-documents-upload',
-                    'icon' => 'fa-file-signature',
-                    'priority' => 'Medium',
-                    'type' => 'document',
-                    'is_read' => true,
-                    'created_at' => date('Y-m-d H:i:s', time() - 86400),
-                    'timestamp' => time() - 86400
-                ],
-                [
-                    'id' => 'notif-sys-004',
-                    'title' => 'HIPAA System Security Archive Verified',
-                    'message' => 'Daily automated encrypted backup and electronic medical record synchronization succeeded.',
-                    'action_url' => '#tab=doc-settings',
-                    'icon' => 'fa-shield-halved',
-                    'priority' => 'Low',
-                    'type' => 'system',
-                    'is_read' => true,
-                    'created_at' => date('Y-m-d H:i:s', time() - 172800),
-                    'timestamp' => time() - 172800
-                ]
-            ];
-            update_user_meta($user_id, 'dior_doctor_notifications', $all_notifs);
-        }
-
-        // Sort newest first
+        // Sort newest first (never re-seed fallback notifications when empty)
         usort($all_notifs, static function ($a, $b) {
             $tA = !empty($a['timestamp']) ? (int) $a['timestamp'] : (!empty($a['created_at']) ? strtotime($a['created_at']) : 0);
             $tB = !empty($b['timestamp']) ? (int) $b['timestamp'] : (!empty($b['created_at']) ? strtotime($b['created_at']) : 0);
@@ -795,6 +740,45 @@ class Dior_Doctor_Dashboard
             "message"     => "Appointment rescheduled to " . esc_html($new_date . " at " . $new_time),
             "appointment" => $res
         ]);
+    }
+
+    public static function ajax_delete_prescription()
+    {
+        Dior_Auth_Service::verify_ajax_nonce(["dior_doctor_nonce", "dior_auth_nonce", "dior_portal_nonce", "dior_admin_nonce"]);
+        if (!self::can_access()) {
+            wp_send_json_error(["message" => "Unauthorized access."], 403);
+        }
+
+        $rx_id = sanitize_text_field($_POST['prescription_id'] ?? ($_POST['id'] ?? ''));
+        if ($rx_id === '') {
+            wp_send_json_error(["message" => "Prescription ID is required."], 400);
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'dior_prescriptions';
+        $is_admin = current_user_can('administrator') || current_user_can('manage_options');
+        $uid = get_current_user_id();
+
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table) {
+            if ($is_admin) {
+                $wpdb->query($wpdb->prepare(
+                    "DELETE FROM $table WHERE prescription_id = %s OR prescription_uid = %s OR id = %d",
+                    $rx_id,
+                    $rx_id,
+                    ctype_digit($rx_id) ? (int) $rx_id : 0
+                ));
+            } else {
+                $wpdb->query($wpdb->prepare(
+                    "DELETE FROM $table WHERE doctor_id = %d AND (prescription_id = %s OR prescription_uid = %s OR id = %d)",
+                    $uid,
+                    $rx_id,
+                    $rx_id,
+                    ctype_digit($rx_id) ? (int) $rx_id : 0
+                ));
+            }
+        }
+
+        wp_send_json_success(["message" => "Prescription deleted permanently."]);
     }
 
     public static function ajax_delete_appointment()
