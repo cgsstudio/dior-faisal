@@ -499,7 +499,7 @@ class Dior_Patient_Portal_Data
         ];
 
         // Keep the normalized patient record synchronized for dynamic reporting/API use.
-        self::sync_relational_patient($user_id);
+        Dior_Patient_Portal_Data::sync_relational_patient($user_id);
         return $profile;
     }
 
@@ -3897,7 +3897,7 @@ class Dior_Medical_Auth
             );
         }
 
-        self::sync_relational_patient($user_id);
+        Dior_Patient_Portal_Data::sync_relational_patient($user_id);
 
         wp_send_json_success([
             'message' => 'Profile photo updated successfully!',
