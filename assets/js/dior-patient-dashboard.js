@@ -569,8 +569,12 @@ let diorUpcomingCurrentPage = 1;
                                     if (rid) ids.push(rid.trim());
                                 });
 
-                                const finishDom = function() {
-                                    rows.forEach(function(row) { row.remove(); });
+                                const finishDom = function(deletedIds) {
+                                    const deletedSet = new Set((deletedIds || []).map(String));
+                                    rows.forEach(function(row) {
+                                        const rowId = String(row.getAttribute('data-record-id') || '').trim();
+                                        if (deletedSet.has(rowId)) row.remove();
+                                    });
                                     const masterCb = document.getElementById('dior-select-all-upcoming');
                                     if (masterCb) masterCb.checked = false;
                                     diorRenderUpcomingPagination();
@@ -600,7 +604,7 @@ let diorUpcomingCurrentPage = 1;
                                     if (!res || !res.success) {
                                         throw new Error((res && res.data && res.data.message) || 'The selected appointments could not be deleted.');
                                     }
-                                    finishDom();
+                                    finishDom(res.data && res.data.deleted_ids ? res.data.deleted_ids : []);
                                     if (res.data && res.data.retained && window.Swal) {
                                         Swal.fire({ icon: 'info', title: 'Some Records Retained', text: res.data.message });
                                     }
