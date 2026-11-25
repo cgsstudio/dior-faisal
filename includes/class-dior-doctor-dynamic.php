@@ -311,7 +311,7 @@ class Dior_Doctor_Dynamic {
         update_user_meta($id, 'dior_patient_status', 'deleted');
 
         // Prevent further portal use without deleting PHI, clinical history or linked records.
-        wp_update_user([
+        $user_update = wp_update_user([
             'ID' => $id,
             'user_pass' => wp_generate_password(48, true, true),
             'user_email' => 'closed-patient-' . $id . '@invalid.example',
@@ -319,6 +319,15 @@ class Dior_Doctor_Dynamic {
             'first_name' => '',
             'last_name' => '',
         ]);
+        if (is_wp_error($user_update)) {
+            $wpdb->update(self::table('patients'), ['status' => 'active', 'updated_at' => current_time('mysql')], ['user_id' => $id], ['%s', '%s'], ['%d']);
+            delete_user_meta($id, 'dior_patient_status');
+            return false;
+        }
+        // Revoke existing sessions as well as preventing future password resets to the old address.
+        if (class_exists('WP_Session_Tokens')) {
+            WP_Session_Tokens::get_instance($id)->destroy_all();
+        }
         foreach (['phone', 'billing_phone', 'dior_profile_image', 'profile_image', 'dior_profile_image_id'] as $meta_key) {
             delete_user_meta($id, $meta_key);
         }
