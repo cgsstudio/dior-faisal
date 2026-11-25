@@ -1,118 +1,32 @@
 <?php
 /**
- * Dior Medical — Patient portal design-review static dataset.
+ * Patient dashboard data normalization.
  *
- * IMPORTANT:
- * This file is included only after the Patient Overview/Dashboard has already
- * rendered. It gives the remaining patient tabs stable sample data for UI work.
- * It does not write anything to WordPress/database and does not affect Overview.
+ * This file only preserves database/API-provided values. It must never
+ * fabricate patient profiles, HIPAAtizer submissions, or dashboard records.
  */
 
-$dior_patient_design_static = true;
-$design_today = current_time('Y-m-d');
+if (!isset($profile) || !is_array($profile)) {
+    $profile = [];
+}
 
-// Appointment and prescription data are supplied by the dashboard's database-backed data provider.
+if (!isset($hipaa_intake) || !is_array($hipaa_intake)) {
+    $hipaa_intake = [];
+}
+
 if (!isset($prescriptions) || !is_array($prescriptions)) {
     $prescriptions = [];
 }
 $patient_rx_rows = $prescriptions;
 
-
-// Billing/Payments are dynamic from database and user meta — no static overwrite.
-
-// Documents and questionnaires are dynamic from database and user meta — no static overwrite.
 if (!isset($documents) || !is_array($documents)) {
     $documents = [];
 }
+
 if (!isset($questionnaires) || !is_array($questionnaires)) {
     $questionnaires = [];
 }
 
-// Notifications are dynamic from database and user meta — no static overwrite.
-
-
-// Insurance & Claims are dynamic from user meta — no static overwrite.
-
-/* Static profile defaults only fill in fields that are completely empty in the real profile */
-$static_defaults = [
-    'full_name' => 'Sarah Johnson',
-    'patient_id' => 'PT-20481',
-    'email' => 'sarah.johnson@example.com',
-    'phone' => '+1 (555) 014-2081',
-    'gender' => 'Female',
-    'dob' => '1992-05-18',
-    'blood_group' => 'O+',
-    'address' => '245 Medical Center Drive, Austin, TX',
-    'avatar_url' => 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
-    'emergency_name' => 'Michael Johnson',
-    'emergency_relation' => 'Spouse',
-    'emergency_phone' => '+1 (555) 014-2099',
-    'emergency_priority' => 'Primary',
-];
-$profile = array_merge($static_defaults, array_filter((array)($profile ?? [])));
-
-if (empty($hipaa_intake) || !is_array($hipaa_intake)) {
-    $hipaa_intake = [
-        'submitted_at' => current_time('mysql'),
-        'dob' => '1992-05-18',
-        'phone' => '+1 (555) 014-2081',
-        'email' => 'sarah.johnson@example.com',
-        'address_line1' => '245 Medical Center Drive',
-        'city' => 'Austin',
-        'state' => 'TX',
-        'zip' => '78701',
-        'symptoms' => 'Mild dizziness and seasonal allergy symptoms',
-        'allergies' => 'Penicillin',
-        'medications' => 'Cetirizine 10 mg',
-        'medical_history' => 'Seasonal allergies; routine blood pressure monitoring',
-        'service_condition' => 'Primary Care & General Medicine',
-        'is_18_plus' => 'Yes',
-        'is_pregnant' => 'No',
-        'symptoms_description' => 'Mild symptoms during the last few days.',
-        'symptom_duration' => '3 days',
-        'symptom_severity' => 'Mild',
-        'taking_medications' => 'Yes',
-        'medications_list' => 'Cetirizine 10 mg once daily',
-        'drug_allergies' => 'Yes',
-        'drug_allergies_list' => 'Penicillin',
-        'appointment_type' => 'Telehealth Video Visit',
-        'preferred_date' => $design_today,
-        'preferred_time' => '10:30 AM',
-        'telemedicine_consent' => 'Yes',
-        'legal_acknowledgement' => 'Yes',
-        'full_legal_name' => 'Sarah Johnson',
-        'signature_date' => $design_today,
-    ];
-}
-
-/* ----------------------------------------------------------------------
- * Design-review expansion: exactly 10 static rows per major patient table.
- * These are UI-only records and are never persisted.
- * ---------------------------------------------------------------------- */
-$design_doctors = [
-    ['Dr. Sarah Smith','Cardiology'], ['Dr. James Chen','Primary Care'],
-    ['Dr. Helen Miller','Internal Medicine'], ['Dr. Marcus Sterling','Family Medicine'],
-    ['Dr. Olivia Carter','Dermatology'], ['Dr. Daniel Brooks','Neurology'],
-    ['Dr. Emily Wilson','Endocrinology'], ['Dr. Noah Bennett','Orthopedics'],
-    ['Dr. Sophia Davis','Pediatrics'], ['Dr. Ethan Walker','Gastroenterology'],
-];
-
 if (!isset($appointments) || !is_array($appointments)) {
     $appointments = [];
 }
-// Removed static appointments synthetic row generator to preserve dynamic appointment data.
-
-// Removed static prescriptions synthetic row generators to preserve dynamic prescription data.
-
-// Removed static payments synthetic row generator to preserve dynamic billing data.
-
-// Removed static documents synthetic row generator to preserve dynamic document data.
-
-// Removed static questionnaires synthetic row generator to preserve dynamic questionnaire data.
-
-// Removed static notifications synthetic row generator to preserve dynamic notifications.
-
-
-// Removed static insurance claims synthetic row generator to preserve dynamic claims data.
-
-// Removed static feedback sample and synthetic row generator for feedback history.
