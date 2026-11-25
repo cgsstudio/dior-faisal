@@ -580,27 +580,34 @@ let diorUpcomingCurrentPage = 1;
                                 const ajaxUrl = cfg.ajax_url || (window.ajaxurl || '/wp-admin/admin-ajax.php');
                                 const nonce = cfg.nonce || cfg.portal_nonce || '';
 
-                                if (ids.length && ajaxUrl) {
-                                    const body = new FormData();
-                                    body.append('action', 'dior_patient_bulk_delete_appointments');
-                                    if (nonce) body.append('nonce', nonce);
-                                    ids.forEach(function(id) { body.append('ids[]', id); });
-
-                                    fetch(ajaxUrl, {
-                                        method: 'POST',
-                                        credentials: 'same-origin',
-                                        body: body
-                                    })
-                                    .then(function(r) { return r.json(); })
-                                    .then(function(res) {
-                                        if (res && res.success) {
-                                            finishDom();
-                                        }
-                                    })
-                                    .catch(function() {});
-                                } else {
-                                    finishDom();
+                                if (!ids.length || !ajaxUrl || !nonce) {
+                                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: 'The selected appointment IDs or secure session are missing. Please refresh and try again.' });
+                                    return;
                                 }
+
+                                const body = new FormData();
+                                body.append('action', 'dior_patient_bulk_delete_appointments');
+                                body.append('nonce', nonce);
+                                ids.forEach(function(id) { body.append('ids[]', id); });
+
+                                fetch(ajaxUrl, {
+                                    method: 'POST',
+                                    credentials: 'same-origin',
+                                    body: body
+                                })
+                                .then(function(r) { return r.json(); })
+                                .then(function(res) {
+                                    if (!res || !res.success) {
+                                        throw new Error((res && res.data && res.data.message) || 'The selected appointments could not be deleted.');
+                                    }
+                                    finishDom();
+                                    if (res.data && res.data.retained && window.Swal) {
+                                        Swal.fire({ icon: 'info', title: 'Some Records Retained', text: res.data.message });
+                                    }
+                                })
+                                .catch(function(error) {
+                                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: error.message || 'Please try again.' });
+                                });
                             }
 
                             function diorUpdateUpcomingSelectedCount(customVisibleCount) {
