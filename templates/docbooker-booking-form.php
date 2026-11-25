@@ -198,6 +198,7 @@ $has_stripe_alert = (is_array($stripe_notice) && in_array($stripe_notice['status
                                 <div>
                                     <div class="fw-bold text-dark">Stripe Secure Payment</div>
                                     <div class="small text-secondary">Credit / Debit Card, Apple Pay &bull; Redirects to Stripe Checkout</div>
+                                    <div class="small text-dark fw-semibold mt-1">Note: Payment is non-refundable once completed.</div>
                                 </div>
                             </div>
                             <div class="text-end">

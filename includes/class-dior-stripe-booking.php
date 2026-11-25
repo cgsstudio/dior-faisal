@@ -243,7 +243,7 @@ class Dior_Stripe_Booking
         $success_url = add_query_arg([
             'dior_stripe_status' => 'success',
             'dior_booking_token' => $token,
-        ], $clean_base) . '&session_id={CHECKOUT_SESSION_ID}#tab=appointments&subtab=schedule';
+        ], $clean_base) . '&session_id={CHECKOUT_SESSION_ID}#tab=appointments&subtab=upcoming';
 
         $cancel_url = add_query_arg([
             'dior_stripe_status' => 'cancelled',
@@ -263,8 +263,9 @@ class Dior_Stripe_Booking
             'line_items[0][price_data][currency]' => $currency,
             'line_items[0][price_data][unit_amount]' => (string) ((int) round($amount * 100)),
             'line_items[0][price_data][product_data][name]' => 'Telehealth Appointment - ' . $doctor_name,
-            'line_items[0][price_data][product_data][description]' => trim($visit_type . ' | ' . $appt_date . ' at ' . $appt_time),
+            'line_items[0][price_data][product_data][description]' => trim($visit_type . ' | ' . $appt_date . ' at ' . $appt_time . ' | Payment is non-refundable'),
             'line_items[0][quantity]' => '1',
+            'custom_text[submit][message]' => 'Note: Payment is non-refundable once completed.',
             'metadata[dior_booking_token]' => $token,
             'metadata[patient_id]' => (string) ($booking_payload['patient_id'] ?? 0),
             'metadata[doctor_id]' => (string) ($booking_payload['doctor_id'] ?? 0),

@@ -1543,7 +1543,10 @@ let diorBillCurrentPage = 1;
     /* Build the printable body of a single bill. Shared by download and print so
        both produce the same self-contained document with inline styles for html2canvas. */
     function diorBuildBillHtml(inv, doc, date, amt, tax, disc, total) {
-        var logo = (window.dior_vars && window.dior_vars.logo_url) || '';
+        var rawLogo = (window.dior_vars && window.dior_vars.logo_url) || '';
+        var logo = rawLogo.indexOf('cropped-logo.png') !== -1
+            ? rawLogo.replace('cropped-logo.png', 'logo.png')
+            : rawLogo;
         var esc = function (v) {
             return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
                 return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -1566,8 +1569,8 @@ let diorBillCurrentPage = 1;
         }).join('');
 
         return '<div class="dior-bill-doc" style="font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#ffffff;padding:24px 28px;box-sizing:border-box;width:100%;max-width:680px;margin:0 auto;">' +
-            '<div class="bill-doc-head" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:14px;margin-bottom:20px;border-bottom:2px solid #1A528E;">' +
-                (logo ? '<img src="' + esc(logo) + '" alt="Dior Medical" style="max-height:48px;max-width:160px;width:auto;height:auto;object-fit:contain;display:block;">' : '') +
+            '<div class="bill-doc-head" style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:6px 0 16px;margin-bottom:20px;border-bottom:2px solid #1A528E;">' +
+                (logo ? '<div style="flex-shrink:0;padding:2px 0;"><img src="' + esc(logo) + '" onerror="if(this.src!==\'' + esc(rawLogo) + '\'){this.src=\'' + esc(rawLogo) + '\';}" alt="Dior Medical" style="width:155px;height:auto;display:block;border:0;margin:0;padding:0;"></div>' : '') +
                 '<div style="text-align:' + (logo ? 'right' : 'left') + ';">' +
                     '<div style="font-size:17px;margin:0;color:#1A528E;font-weight:700;letter-spacing:.02em;">DIOR MEDICAL TELEHEALTH</div>' +
                     '<div style="margin:4px 0 0;font-size:12px;color:#64748B;">Billing Statement &middot; Invoice ' + esc(inv) + '</div>' +

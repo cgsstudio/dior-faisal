@@ -200,6 +200,7 @@ $consultation_fee = class_exists('Dior_Stripe_Booking') ? Dior_Stripe_Booking::g
                                 <div>
                                     <div class="fw-bold text-dark">Stripe Secure Payment</div>
                                     <div class="small text-secondary">Credit / Debit Card, Apple Pay &bull; Redirects to Stripe Checkout</div>
+                                    <div class="small text-dark fw-semibold mt-1">Note: Payment is non-refundable once completed.</div>
                                 </div>
                             </div>
                             <div class="text-end">

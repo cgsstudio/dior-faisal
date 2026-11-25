@@ -1299,7 +1299,7 @@ class Dior_Medical_Auth
             'hipaa_intake' => $hipaa_intake_data ?: [],
             'patient_profile' => $profile_data ?: [],
             'default_doctor_signature' => $default_doc_sig,
-            'logo_url' => site_url('/wp-content/uploads/2026/08/cropped-logo.png'),
+            'logo_url' => self::get_logo_url(),
         ];
 
         wp_localize_script('dior-auth-js', 'dior_auth_vars', $localize_data);
