@@ -4115,6 +4115,17 @@ document.addEventListener('click', function (event) {
             cancelTodayAppointment(cancelButton);
         }
     });
+
+    // Expose the reschedule handler used by the calendar's inline action buttons.
+    // Keep it routed through the same validated AJAX flow as the appointment tables.
+    window.diorOpenRescheduleModal = function (appointmentId, appointmentDate, appointmentTime) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('data-appt-uid', String(appointmentId || ''));
+        button.setAttribute('data-appt-date', String(appointmentDate || ''));
+        button.setAttribute('data-appt-time', String(appointmentTime || ''));
+        rescheduleTodayAppointment(button);
+    };
 })();
 
 
