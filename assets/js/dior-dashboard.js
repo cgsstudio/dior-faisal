@@ -2226,6 +2226,8 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
 
         if (avatarFileInput) {
             avatarFileInput.addEventListener('change', function(e) {
+                // settings.php already handles this input via onchange="diorHandlePatientAvatarFile(this)"
+                if (typeof window.diorHandlePatientAvatarFile === 'function') return;
                 const file = this.files && this.files[0];
                 if (!file) return;
 
