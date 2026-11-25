@@ -728,7 +728,11 @@
                         throw new Error((result && result.data && result.data.message) || 'Selected appointments could not be deleted.');
                     }
 
-                    rows.forEach(function(row) { row.remove(); });
+                    var deletedSet = new Set((result.data && result.data.deleted_ids ? result.data.deleted_ids : []).map(String));
+                    rows.forEach(function(row) {
+                        var rowId = String(row.getAttribute('data-record-id') || '').trim();
+                        if (deletedSet.has(rowId)) row.remove();
+                    });
                     var masterCb = table.querySelector('thead input[type="checkbox"]');
                     if (masterCb) masterCb.checked = false;
                     var countEl = wrapper.querySelector('[id*="-page-count"]');
