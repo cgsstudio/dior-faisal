@@ -39,6 +39,7 @@ $doctor_spec = $doctor_post ? (get_post_meta($doctor_id, 'wpddb_doctor_specialit
 $doctor_avatar = get_avatar_url($doctor_user_id, ['size' => 120]) ?: (DIOR_PORTAL_URL . 'assets/images/doctor-placeholder.jpg');
 
 $today_ymd = current_time('Y-m-d');
+$consultation_fee = class_exists('Dior_Stripe_Booking') ? Dior_Stripe_Booking::get_docbooker_doctor_price($doctor_id) : 0.0;
 ?>
 
 <!-- ── DIOR MEDICAL CLEAN REGISTRATION-STYLE APPOINTMENT MODAL ── -->
@@ -76,6 +77,9 @@ $today_ymd = current_time('Y-m-d');
             <form id="dior-docbooker-form" class="dior-clean-db-form" onsubmit="diorSubmitDocBookerBooking(event)">
                 <input type="hidden" name="action" value="dior_patient_book_appointment">
                 <input type="hidden" name="nonce" value="<?php echo esc_attr(wp_create_nonce('dior_portal_nonce')); ?>">
+                <input type="hidden" name="require_stripe_checkout" value="1">
+                <input type="hidden" name="payment_method" value="stripe">
+                <input type="hidden" name="return_url" value="<?php echo esc_url(home_url('/patient-dashboard/')); ?>">
                 <input type="hidden" name="doctor_id" id="dior-db-doctor-id" value="<?php echo esc_attr($doctor_id); ?>">
                 <input type="hidden" name="doctorId" value="<?php echo esc_attr($doctor_id); ?>">
                 <input type="hidden" name="doctor_name" id="dior-db-doctor-name" value="<?php echo esc_attr($doctor_name); ?>">
@@ -184,14 +188,46 @@ $today_ymd = current_time('Y-m-d');
                     </div>
                 </div>
 
+                <!-- 4. PAYMENT METHOD (STRIPE) -->
+                <div class="dior-db-section">
+                    <div class="dior-reg-section-title">4. Payment Method</div>
+                    <div class="card border rounded-3 p-3 bg-light">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary p-2">
+                                    <i class="fa-brands fa-stripe fa-lg"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">Stripe Secure Payment</div>
+                                    <div class="small text-secondary">Credit / Debit Card, Apple Pay &bull; Redirects to Stripe Checkout</div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-dark fs-5">
+                                    <?php echo $consultation_fee > 0 ? esc_html('$' . number_format($consultation_fee, 2)) : 'Free'; ?>
+                                </div>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small">
+                                    <i class="fa-solid fa-lock me-1"></i> Pay Before Booking
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Status Feedback Message -->
                 <div id="dior-db-status-box" class="dior-db-alert" style="display: none;"></div>
 
                 <!-- Modal Actions (Clean Registration Action Button) -->
                 <div class="dior-reg-submit-wrap">
                     <button type="submit" id="dior-db-submit-btn" class="dior-btn-reg-submit btn">
-                        <span class="dior-db-btn-text"><i class="fa-solid fa-calendar-check me-2"></i> Confirm &amp; Book Appointment</span>
-                        <span class="dior-db-btn-spinner" style="display: none;"><i class="fa-solid fa-circle-notch fa-spin me-2"></i> Scheduling Appointment...</span>
+                        <span class="dior-db-btn-text">
+                            <?php if ($consultation_fee > 0): ?>
+                                <i class="fa-solid fa-lock me-2"></i> Proceed to Stripe Payment (<?php echo esc_html('$' . number_format($consultation_fee, 2)); ?>)
+                            <?php else: ?>
+                                <i class="fa-solid fa-calendar-check me-2"></i> Confirm &amp; Book Appointment
+                            <?php endif; ?>
+                        </span>
+                        <span class="dior-db-btn-spinner" style="display: none;"><i class="fa-solid fa-circle-notch fa-spin me-2"></i> Redirecting to Stripe...</span>
                     </button>
                     <button type="button" class="dior-db-cancel-link btn" onclick="diorCloseDocBookerModal()">
                         Cancel

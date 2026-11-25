@@ -309,6 +309,19 @@
         })
         .then(function(res) { return res.json(); })
         .then(function(res) {
+            if (res.success && res.data && res.data.requires_payment && res.data.checkout_url) {
+                if (statusBox) {
+                    statusBox.className = 'dior-db-alert alert-info';
+                    statusBox.innerHTML = '<i class="fa-solid fa-lock me-2"></i> Redirecting to Stripe secure payment...';
+                    statusBox.style.display = 'flex';
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                }
+                window.location.href = res.data.checkout_url;
+                return;
+            }
+
             window.diorDocBookerState.isSubmitting = false;
             if (submitBtn) {
                 submitBtn.disabled = false;

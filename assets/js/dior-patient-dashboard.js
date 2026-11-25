@@ -1541,34 +1541,49 @@ let diorBillCurrentPage = 1;
     });
 
     /* Build the printable body of a single bill. Shared by download and print so
-       both produce the same document. */
+       both produce the same self-contained document with inline styles for html2canvas. */
     function diorBuildBillHtml(inv, doc, date, amt, tax, disc, total) {
         var logo = (window.dior_vars && window.dior_vars.logo_url) || '';
-        var row = function (label, value) {
-            return '<tr><th>' + label + '</th><td>' + value + '</td></tr>';
-        };
         var esc = function (v) {
             return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
                 return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
             });
         };
-        return '<div class="dior-bill-doc">' +
-            '<div class="bill-doc-head">' +
-                (logo ? '<img src="' + esc(logo) + '" alt="Dior Medical">' : '') +
-                '<div><h1>DIOR MEDICAL TELEHEALTH</h1>' +
-                '<p>Billing Statement &middot; Invoice ' + esc(inv) + '</p></div>' +
+        var rows = [
+            ['Invoice No', inv || '—'],
+            ['Doctor', doc || '—'],
+            ['Date', date || '—'],
+            ['Amount', amt || '$0.00'],
+            ['Tax', tax || '$0.00'],
+            ['Discount', disc || '$0.00']
+        ];
+        var rowsHtml = rows.map(function (r, idx) {
+            var bg = idx % 2 === 0 ? '#f8fafc' : '#ffffff';
+            return '<div style="display:flex;align-items:center;justify-content:space-between;background:' + bg + ';border:1px solid #cbd5e1;border-bottom:none;padding:11px 14px;box-sizing:border-box;">' +
+                '<span style="font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#475569;font-weight:700;">' + esc(r[0]) + '</span>' +
+                '<span style="font-size:13px;color:#0f172a;font-weight:600;text-align:right;">' + esc(r[1]) + '</span>' +
+                '</div>';
+        }).join('');
+
+        return '<div class="dior-bill-doc" style="font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#ffffff;padding:24px 28px;box-sizing:border-box;width:100%;max-width:680px;margin:0 auto;">' +
+            '<div class="bill-doc-head" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:14px;margin-bottom:20px;border-bottom:2px solid #1A528E;">' +
+                (logo ? '<img src="' + esc(logo) + '" alt="Dior Medical" style="max-height:48px;max-width:160px;width:auto;height:auto;object-fit:contain;display:block;">' : '') +
+                '<div style="text-align:' + (logo ? 'right' : 'left') + ';">' +
+                    '<div style="font-size:17px;margin:0;color:#1A528E;font-weight:700;letter-spacing:.02em;">DIOR MEDICAL TELEHEALTH</div>' +
+                    '<div style="margin:4px 0 0;font-size:12px;color:#64748B;">Billing Statement &middot; Invoice ' + esc(inv) + '</div>' +
+                '</div>' +
             '</div>' +
-            '<table class="bill-doc-table">' +
-                row('Invoice No', esc(inv)) +
-                row('Doctor', esc(doc)) +
-                row('Date', esc(date)) +
-                row('Amount', esc(amt)) +
-                row('Tax', esc(tax)) +
-                row('Discount', esc(disc)) +
-                '<tr class="bill-doc-total"><th>Total</th><td>' + esc(total) + '</td></tr>' +
-            '</table>' +
-            '<p class="bill-doc-foot">This statement was generated from the Dior Medical patient portal. ' +
-            'For billing questions, contact the clinic using the details on our website.</p>' +
+            '<div style="width:100%;margin-bottom:18px;border-bottom:1px solid #cbd5e1;">' +
+                rowsHtml +
+                '<div style="display:flex;align-items:center;justify-content:space-between;background:#eff6ff;border:1px solid #cbd5e1;border-top:2px solid #1A528E;padding:12px 14px;box-sizing:border-box;">' +
+                    '<span style="font-size:14px;color:#00346C;font-weight:700;text-transform:uppercase;">Total Paid</span>' +
+                    '<span style="font-size:15px;color:#00346C;font-weight:700;text-align:right;">' + esc(total || amt || '$0.00') + '</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="bill-doc-foot" style="margin:18px 0 0;font-size:11px;color:#64748B;line-height:1.5;border-top:1px solid #e2e8f0;padding-top:12px;">' +
+                'This statement was generated from the Dior Medical patient portal. ' +
+                'For billing questions, contact the clinic using the details on our website.' +
+            '</div>' +
             '</div>';
     }
 
@@ -1583,31 +1598,15 @@ let diorBillCurrentPage = 1;
             return;
         }
 
-        var holder = document.createElement('div');
-        holder.style.position = 'fixed';
-        holder.style.left = '0';
-        holder.style.top = '0';
-        holder.style.width = '750px';
-        holder.style.background = '#FFFFFF';
-        holder.style.zIndex = '-999999';
-        holder.style.opacity = '1';
-        holder.style.pointerEvents = 'none';
-        holder.innerHTML = html;
-        document.body.appendChild(holder);
-
         html2pdf().set({
-            margin: [8, 8, 8, 8],
+            margin: [10, 10, 10, 10],
             filename: fileName,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, scrollX: 0, windowWidth: 794 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, scrollX: 0, backgroundColor: '#ffffff' },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        }).from(holder.firstElementChild || holder).save()
-            .then(function () {
-                if (holder.parentNode) holder.parentNode.removeChild(holder);
-            })
+        }).from(html).save()
             .catch(function (err) {
                 console.error('Bill PDF export failed:', err);
-                if (holder.parentNode) holder.parentNode.removeChild(holder);
                 window.diorPrintBill(inv, doc, date, amt, tax, disc, total);
             });
     };

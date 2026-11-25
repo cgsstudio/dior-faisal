@@ -78,6 +78,12 @@ if (!class_exists('Dior_Zoom_Meetings')) {
 }
 Dior_Zoom_Meetings::init();
 
+// DocBooker Stripe Checkout payment-before-booking integration.
+if (!class_exists('Dior_Stripe_Booking')) {
+    require_once(DIOR_PORTAL_PATH . 'includes/class-dior-stripe-booking.php');
+}
+Dior_Stripe_Booking::init();
+
 /**
  * Universal Dynamic Relative Notification Time Formatter
  * 
@@ -4313,6 +4319,43 @@ class Dior_Medical_Auth
             $du = get_userdata($doctor_user_id);
             if ($du)
                 $doctor_name = $du->display_name;
+        }
+
+        // DocBooker Stripe Checkout: redirect to Stripe BEFORE creating the appointment
+        $require_stripe = sanitize_text_field($_POST['require_stripe_checkout'] ?? '');
+        $payment_method = sanitize_text_field($_POST['payment_method'] ?? '');
+        if (($require_stripe === '1' || $payment_method === 'stripe') && class_exists('Dior_Stripe_Booking')) {
+            $doc_fee = Dior_Stripe_Booking::get_docbooker_doctor_price($doctor_id_raw ?: $doctor_user_id);
+            if ($doc_fee > 0) {
+                $return_url = !empty($_POST['return_url']) ? esc_url_raw(wp_unslash($_POST['return_url'])) : home_url('/patient-dashboard/');
+                $checkout = Dior_Stripe_Booking::create_checkout_session([
+                    'patient_id' => $user_id,
+                    'patient_name' => $patient_name,
+                    'patient_email' => $patient_email ?: (($u = get_userdata($user_id)) ? $u->user_email : ''),
+                    'patient_phone' => $patient_phone,
+                    'doctor_id' => $doctor_id_raw ?: ($doctor_user_id ?: 1957),
+                    'doctor_user_id' => $doctor_user_id,
+                    'provider' => $doctor_name,
+                    'condition' => $condition,
+                    'visit_type' => $type,
+                    'appt_date' => $date,
+                    'appt_time' => $time,
+                    'notes' => $notes,
+                    'amount' => $doc_fee,
+                ], $return_url);
+
+                if (is_wp_error($checkout)) {
+                    wp_send_json_error(['message' => $checkout->get_error_message()], 400);
+                }
+
+                wp_send_json_success([
+                    'requires_payment' => true,
+                    'checkout_url' => $checkout['checkout_url'],
+                    'session_id' => $checkout['session_id'],
+                    'amount' => $doc_fee,
+                    'message' => 'Redirecting to Stripe secure payment...',
+                ]);
+            }
         }
 
         if (stripos($type, 'phone') !== false) {
