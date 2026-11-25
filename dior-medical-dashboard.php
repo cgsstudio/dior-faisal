@@ -3294,8 +3294,11 @@ class Dior_Medical_Auth
 
         global $wpdb;
         $table = $wpdb->prefix . 'dior_appointments';
-        $patient_id = get_current_user_id() ?: 0;
-        $appt_uid = 'APT-' . ($patient_id ?: '0') . rand(100, 999);
+        $patient_id = get_current_user_id();
+        if (!$patient_id || !$doctor_id) {
+            wp_send_json_error('Please sign in and select a valid doctor before booking.', 400);
+        }
+        $appt_uid = 'APT-' . $patient_id . wp_generate_password(8, false, false);
         $now = current_time('mysql');
 
         $inserted = $wpdb->insert($table, [
@@ -4423,11 +4426,6 @@ class Dior_Medical_Auth
                     'patient_code' => 'DM-' . (10000 + ($user_id % 90000))
                 ]);
                 $docbooker_patient_id = $wpdb->insert_id;
-            }
-            $sync_doc_id = $doctor_id_raw;
-            if (!$sync_doc_id) {
-                $sync_doc_id = $wpdb->get_var("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpddb_doctor' AND post_status = 'publish' ORDER BY ID ASC LIMIT 1");
-                $sync_doc_id = $sync_doc_id ?: 0;
             }
             $sync_doc_id = $doctor_id_raw;
             $sync_clinic_id = absint($_POST['clinicId'] ?? 0);
