@@ -228,10 +228,10 @@ foreach ($patients_query as $pq) {
 
                     // Restrict prescription visibility to the current doctor's records; administrators may view all.
                     if (current_user_can('manage_options')) {
-                        $prescriptions = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE (prescription_uid IS NULL OR prescription_uid NOT LIKE 'DEMO-%') AND (prescription_id IS NULL OR prescription_id NOT LIKE 'DEMO-%') ORDER BY id DESC");
+                        $prescriptions = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE status <> 'Deleted' AND (prescription_uid IS NULL OR prescription_uid NOT LIKE 'DEMO-%') AND (prescription_id IS NULL OR prescription_id NOT LIKE 'DEMO-%') ORDER BY id DESC");
                     } else {
                         $prescriptions = $wpdb->get_results($wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE doctor_id = %d AND (prescription_uid IS NULL OR prescription_uid NOT LIKE 'DEMO-%') AND (prescription_id IS NULL OR prescription_id NOT LIKE 'DEMO-%') ORDER BY id DESC",
+                            "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE doctor_id = %d AND status <> 'Deleted' AND (prescription_uid IS NULL OR prescription_uid NOT LIKE 'DEMO-%') AND (prescription_id IS NULL OR prescription_id NOT LIKE 'DEMO-%') ORDER BY id DESC",
                             get_current_user_id()
                         ));
                     }
