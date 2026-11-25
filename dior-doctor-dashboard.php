@@ -745,352 +745,114 @@ class Dior_Doctor_Dashboard
     public static function ajax_delete_prescription()
     {
         Dior_Auth_Service::verify_ajax_nonce(["dior_doctor_nonce", "dior_auth_nonce", "dior_portal_nonce", "dior_admin_nonce"]);
-        if (!self::can_access()) {
-            wp_send_json_error(["message" => "Unauthorized access."], 403);
-        }
+        if (!self::can_access()) wp_send_json_error(["message" => "Unauthorized access."], 403);
 
-        $rx_id = sanitize_text_field($_POST['prescription_id'] ?? ($_POST['id'] ?? ''));
-        if ($rx_id === '') {
-            wp_send_json_error(["message" => "Prescription ID is required."], 400);
-        }
+        $rx_id = sanitize_text_field(wp_unslash($_POST['prescription_id'] ?? ($_POST['id'] ?? '')));
+        if ($rx_id === '') wp_send_json_error(["message" => "Prescription ID is required."], 400);
 
         global $wpdb;
         $table = $wpdb->prefix . 'dior_prescriptions';
         $is_admin = current_user_can('administrator') || current_user_can('manage_options');
         $uid = get_current_user_id();
-
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) === $table) {
-            if ($is_admin) {
-                $wpdb->query($wpdb->prepare(
-                    "DELETE FROM $table WHERE prescription_id = %s OR prescription_uid = %s OR id = %d",
-                    $rx_id,
-                    $rx_id,
-                    ctype_digit($rx_id) ? (int) $rx_id : 0
-                ));
-            } else {
-                $wpdb->query($wpdb->prepare(
-                    "DELETE FROM $table WHERE doctor_id = %d AND (prescription_id = %s OR prescription_uid = %s OR id = %d)",
-                    $uid,
-                    $rx_id,
-                    $rx_id,
-                    ctype_digit($rx_id) ? (int) $rx_id : 0
-                ));
-            }
+        $where = "(prescription_id = %s OR prescription_uid = %s OR id = %d)";
+        $args = [$rx_id, $rx_id, ctype_digit($rx_id) ? (int)$rx_id : 0];
+        if (!$is_admin) {
+            $where = "doctor_id = %d AND " . $where;
+            array_unshift($args, $uid);
         }
 
-        wp_send_json_success(["message" => "Prescription deleted permanently."]);
+        $record = $wpdb->get_row($wpdb->prepare("SELECT id, patient_id, prescription_uid FROM $table WHERE $where LIMIT 1", ...$args), ARRAY_A);
+        if (!$record) wp_send_json_error(["message" => "Prescription not found or access denied."], 404);
+
+        // Keep the prescription source record for clinical retention; hide it from active portal lists.
+        $updated = $wpdb->update($table, ['status' => 'Deleted', 'updated_at' => current_time('mysql')], ['id' => (int)$record['id']], ['%s', '%s'], ['%d']);
+        if ($updated === false || $updated < 1) wp_send_json_error(["message" => "Prescription could not be archived."], 500);
+
+        if (class_exists('Dior_Audit_Service')) {
+            Dior_Audit_Service::log('prescription_archived', 'prescription', $record['prescription_uid'] ?: $rx_id, (int)$record['patient_id'], 'success', ['retention' => 'clinical_record_preserved']);
+        }
+
+        // Remove the legacy duplicate so the patient dashboard cannot resurrect it from user meta.
+        $legacy = get_user_meta((int)$record['patient_id'], 'dior_prescriptions', true);
+        if (is_array($legacy)) {
+            $legacy = array_values(array_filter($legacy, static function ($item) use ($rx_id) {
+                if (!is_array($item)) return true;
+                $ids = array_filter([(string)($item['prescription_uid'] ?? ''), (string)($item['order_id'] ?? ''), (string)($item['id'] ?? '')]);
+                return !in_array($rx_id, $ids, true);
+            }));
+            update_user_meta((int)$record['patient_id'], 'dior_prescriptions', $legacy);
+        }
+
+        wp_send_json_success(["message" => "Prescription removed from active lists. Clinical record retained for compliance."]);
     }
 
     public static function ajax_delete_appointment()
     {
         Dior_Auth_Service::verify_ajax_nonce(["dior_doctor_nonce", "dior_auth_nonce", "dior_portal_nonce", "dior_admin_nonce"]);
-        if (!self::can_access()) {
-            wp_send_json_error(["message" => "Unauthorized access."], 403);
-        }
+        if (!self::can_access()) wp_send_json_error(["message" => "Unauthorized access."], 403);
 
-        $aid = self::get_post_appointment_identifier();
-        if ($aid === '') {
-            wp_send_json_error(["message" => "Appointment ID is missing."], 400);
-        }
+        $appointment_id = self::get_post_appointment_identifier();
+        if ($appointment_id === '') wp_send_json_error(["message" => "Appointment ID is missing."], 400);
 
         global $wpdb;
-        $table_appts = $wpdb->prefix . 'dior_appointments';
+        $table = $wpdb->prefix . 'dior_appointments';
         $is_admin = current_user_can('administrator') || current_user_can('manage_options');
-        $uid = get_current_user_id();
-
-        $row = null;
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_appts)) === $table_appts) {
-            $row = $wpdb->get_row($wpdb->prepare(
-                "SELECT id, appt_uid, patient_id, doctor_id FROM $table_appts WHERE (appt_uid = %s OR id = %d) AND is_deleted = 0 LIMIT 1",
-                $aid,
-                is_numeric($aid) ? (int) $aid : 0
-            ), ARRAY_A);
-
-            if ($row) {
-                if (!$is_admin) {
-                    $allowed_ids = class_exists('Dior_Doctor_Resolver')
-                        ? Dior_Doctor_Resolver::get_accessible_doctor_ids($uid)
-                        : [$uid];
-                    $linked_post_ids = $wpdb->get_col($wpdb->prepare(
-                        "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wpddb_doctor_user_id' AND meta_value = %s",
-                        (string) $uid
-                    ));
-                    $allowed_ids = array_merge((array) $allowed_ids, (array) $linked_post_ids, [0, 1, 1957]);
-                    if (!in_array((int) $row['doctor_id'], array_map('intval', $allowed_ids), true)) {
-                        wp_send_json_error(["message" => "Permission denied for this appointment."], 403);
-                    }
-                }
-                $wpdb->update(
-                    $table_appts,
-                    ['is_deleted' => 1, 'updated_at' => current_time('mysql')],
-                    ['id' => (int) $row['id']],
-                    ['%d', '%s'],
-                    ['%d']
-                );
-            }
-        }
-
-        // Also remove from patient usermeta if present
-        $target_patient_ids = [];
-        if (!empty($row['patient_id'])) {
-            $target_patient_ids[] = (int) $row['patient_id'];
-        } else {
-            $users = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'fields' => 'ID', 'number' => 200]);
-            $target_patient_ids = array_map('intval', $users);
-        }
-
-        foreach (array_unique($target_patient_ids) as $pid) {
-            if ($pid <= 0) continue;
-            $meta_appts = get_user_meta($pid, 'dior_appointments', true);
-            if (!is_array($meta_appts) || empty($meta_appts)) continue;
-            $filtered = array_values(array_filter($meta_appts, static function ($a) use ($aid) {
-                if (!is_array($a)) return false;
-                $keys = [(string) ($a['appt_uid'] ?? ''), (string) ($a['appointment_uid'] ?? ''), (string) ($a['id'] ?? '')];
-                return !in_array((string) $aid, $keys, true);
-            }));
-            if (count($filtered) !== count($meta_appts)) {
-                update_user_meta($pid, 'dior_appointments', $filtered);
-            }
-        }
-
-        wp_send_json_success(["message" => "Appointment deleted successfully."]);
-    }
-
-    public static function ajax_edit_appointment()
-    {
-        Dior_Auth_Service::verify_ajax_nonce(["dior_doctor_nonce", "dior_auth_nonce", "dior_portal_nonce", "dior_admin_nonce"]);
-        if (!self::can_access()) {
-            wp_send_json_error(["message" => "Unauthorized access."], 403);
-        }
-
-        // Accept the first non-empty canonical UID or legacy numeric database ID.
-        $appt_uid = self::get_post_appointment_identifier();
-        $patient_id = (int)(!empty($_POST['patient_id']) ? $_POST['patient_id'] : 0);
-
-        global $wpdb;
-        $table_appts = $wpdb->prefix . 'dior_appointments';
-        $table_patients = $wpdb->prefix . 'dior_patients';
-
-        if (empty($appt_uid) || $appt_uid === 'new' || $appt_uid === 'undefined') {
-            if (!$patient_id) {
-                wp_send_json_error(["message" => "Please select a valid patient to schedule or update an appointment."]);
-            }
-            $appt_uid = 'APT-' . strtoupper(wp_generate_password(8, false));
-            $wpdb->insert($table_appts, [
-                'appt_uid'       => $appt_uid,
-                'patient_id'     => $patient_id,
-                'doctor_id'      => (int)($_POST['doctor_id'] ?? get_current_user_id()),
-                'appt_date'      => sanitize_text_field($_POST['appt_date'] ?? ($_POST['date'] ?? current_time('Y-m-d'))),
-                'appt_time'      => sanitize_text_field($_POST['appt_time'] ?? ($_POST['time'] ?? '10:00 AM')),
-                'status'         => sanitize_text_field($_POST['status'] ?? 'Confirmed'),
-                'visit_type'     => sanitize_text_field($_POST['visit_type'] ?? 'Video Visit (HD)'),
-                'condition_name' => sanitize_text_field($_POST['condition_name'] ?? 'General Consultation'),
-                'join_url'       => esc_url_raw($_POST['join_url'] ?? ''),
-                'payment_status' => sanitize_text_field($_POST['payment_status'] ?? 'Paid'),
-                'notes'          => sanitize_textarea_field($_POST['notes'] ?? ''),
-                'is_deleted'     => 0,
-                'created_at'     => current_time('mysql'),
-                'updated_at'     => current_time('mysql'),
-            ]);
-            $appt = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_appts WHERE appt_uid = %s", $appt_uid), ARRAY_A);
-        } else {
-            // Accept both the stable appointment UID and legacy numeric database IDs.
-            if (ctype_digit((string) $appt_uid)) {
-                $appt = $wpdb->get_row($wpdb->prepare(
-                    "SELECT * FROM $table_appts WHERE (id = %d OR appt_uid = %s) AND is_deleted = 0 LIMIT 1",
-                    (int) $appt_uid,
-                    $appt_uid
-                ), ARRAY_A);
-            } else {
-                $appt = $wpdb->get_row($wpdb->prepare(
-                    "SELECT * FROM $table_appts WHERE appt_uid = %s AND is_deleted = 0 LIMIT 1",
-                    $appt_uid
-                ), ARRAY_A);
-            }
-
-            if (!$appt) {
-                wp_send_json_error(["message" => "Appointment not found."]);
-            }
-
-            // Always use the canonical UID for subsequent updates and notifications.
-            $appt_uid = (string) $appt['appt_uid'];
-        }
-
-        if (!$patient_id && !empty($appt['patient_id'])) {
-            $patient_id = (int)$appt['patient_id'];
-        }
-
-        // 1. Core Appointment fields
-        $new_date        = sanitize_text_field($_POST['appt_date'] ?? ($_POST['date'] ?? $appt['appt_date']));
-        $new_time        = sanitize_text_field($_POST['appt_time'] ?? ($_POST['time'] ?? $appt['appt_time']));
-        $new_status      = sanitize_text_field($_POST['status'] ?? $appt['status']);
-        // Keep status values compatible with the database ENUM; legacy clients may still send Success.
-        if ($new_status === 'Success') {
-            $new_status = 'Confirmed';
-        }
-        $new_condition   = sanitize_text_field($_POST['condition_name'] ?? $appt['condition_name']);
-        $new_visit_type  = sanitize_text_field($_POST['visit_type'] ?? $appt['visit_type']);
-        $new_join_url    = esc_url_raw($_POST['join_url'] ?? $appt['join_url']);
-        $new_payment     = sanitize_text_field($_POST['payment_status'] ?? $appt['payment_status']);
-        $new_notes       = sanitize_textarea_field($_POST['notes'] ?? $appt['notes']);
-        $new_doctor_id   = (int)($_POST['doctor_id'] ?? $appt['doctor_id']);
-
-        $allowed_statuses = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled', 'No Show'];
-        if (!in_array($new_status, $allowed_statuses, true)) {
-            $new_status = $appt['status'];
-        }
-
-        $allowed_payments = ['Pending', 'Paid', 'Refunded', 'Failed'];
-        if (!in_array($new_payment, $allowed_payments, true)) {
-            $new_payment = $appt['payment_status'];
-        }
-
-        $now = current_time('mysql');
-        $old_date = $appt['appt_date'];
-        $old_time = $appt['appt_time'];
-        $old_status = $appt['status'];
-
-        $updated = $wpdb->update(
-            $table_appts,
-            [
-                'patient_id'     => $patient_id,
-                'condition_name' => $new_condition,
-                'visit_type'     => $new_visit_type,
-                'status'         => $new_status,
-                'appt_date'      => $new_date,
-                'appt_time'      => $new_time,
-                'join_url'       => $new_join_url,
-                'payment_status' => $new_payment,
-                'notes'          => $new_notes,
-                'doctor_id'      => $new_doctor_id ?: get_current_user_id(),
-                'updated_at'     => $now,
-            ],
-            ['appt_uid' => $appt_uid]
-        );
-
-        if ($updated === false) {
-            wp_send_json_error(["message" => "Database error while updating appointment."]);
-        }
-
-        // 2. Update Patient details if patient_id is valid
-        if ($patient_id > 0) {
-            $first_name = sanitize_text_field($_POST['first_name'] ?? '');
-            $last_name  = sanitize_text_field($_POST['last_name'] ?? '');
-            $phone      = sanitize_text_field($_POST['phone'] ?? '');
-            $gender     = sanitize_text_field($_POST['gender'] ?? '');
-            $dob        = sanitize_text_field($_POST['dob'] ?? '');
-            $blood_group= sanitize_text_field($_POST['blood_group'] ?? '');
-            $address    = sanitize_textarea_field($_POST['address'] ?? '');
-
-            if (!empty($first_name) || !empty($phone)) {
-                $patient_update = [];
-                if (!empty($first_name)) $patient_update['first_name'] = $first_name;
-                if (!empty($last_name)) $patient_update['last_name'] = $last_name;
-                if (!empty($phone)) $patient_update['phone'] = $phone;
-                if (!empty($gender)) $patient_update['gender'] = $gender;
-                if (!empty($dob)) $patient_update['dob'] = $dob;
-                if (!empty($blood_group)) $patient_update['blood_group'] = $blood_group;
-                if (!empty($address)) $patient_update['address'] = $address;
-                $patient_update['updated_at'] = $now;
-
-                $patient_exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table_patients WHERE user_id = %d", $patient_id));
-                if ($patient_exists) {
-                    $wpdb->update($table_patients, $patient_update, ['user_id' => $patient_id]);
-                }
-
-                if (!empty($first_name)) update_user_meta($patient_id, 'first_name', $first_name);
-                if (!empty($last_name)) update_user_meta($patient_id, 'last_name', $last_name);
-                if (!empty($phone)) update_user_meta($patient_id, 'phone', $phone);
-                if (!empty($gender)) update_user_meta($patient_id, 'gender', $gender);
-                if (!empty($dob)) update_user_meta($patient_id, 'dob', $dob);
-                if (!empty($blood_group)) update_user_meta($patient_id, 'blood_group', $blood_group);
-                if (!empty($address)) update_user_meta($patient_id, 'address', $address);
-            }
-
-            // Insurance Meta
-            if (isset($_POST['insurance_provider'])) update_user_meta($patient_id, 'dior_insurance_provider', sanitize_text_field($_POST['insurance_provider']));
-            if (isset($_POST['insurance_policy_number'])) update_user_meta($patient_id, 'dior_insurance_policy', sanitize_text_field($_POST['insurance_policy_number']));
-            if (isset($_POST['insurance_group_number'])) update_user_meta($patient_id, 'dior_insurance_group', sanitize_text_field($_POST['insurance_group_number']));
-            if (isset($_POST['insurance_holder_name'])) update_user_meta($patient_id, 'dior_insurance_holder', sanitize_text_field($_POST['insurance_holder_name']));
-            if (isset($_POST['insurance_relation'])) update_user_meta($patient_id, 'dior_insurance_relation', sanitize_text_field($_POST['insurance_relation']));
-
-            // Medical History Meta
-            if (isset($_POST['medical_conditions'])) update_user_meta($patient_id, 'dior_medical_conditions', sanitize_textarea_field($_POST['medical_conditions']));
-            if (isset($_POST['medications'])) update_user_meta($patient_id, 'dior_current_medications', sanitize_textarea_field($_POST['medications']));
-            if (isset($_POST['allergies'])) update_user_meta($patient_id, 'dior_allergies', sanitize_textarea_field($_POST['allergies']));
-            if (isset($_POST['surgeries'])) update_user_meta($patient_id, 'dior_past_surgeries', sanitize_textarea_field($_POST['surgeries']));
-
-            // Emergency Contact Meta
-            if (isset($_POST['emergency_contact_name'])) update_user_meta($patient_id, 'emergency_contact_name', sanitize_text_field($_POST['emergency_contact_name']));
-            if (isset($_POST['emergency_contact_relation'])) update_user_meta($patient_id, 'emergency_contact_relation', sanitize_text_field($_POST['emergency_contact_relation']));
-            if (isset($_POST['emergency_contact_phone'])) update_user_meta($patient_id, 'emergency_contact_phone', sanitize_text_field($_POST['emergency_contact_phone']));
-
-            // Sync legacy user meta for appointments
-            if (class_exists('Dior_Appointment_Service')) {
-                Dior_Appointment_Service::sync_legacy_usermeta($patient_id);
-            }
-        }
-
-        // 3. Log history & audit if rescheduled or status changed
-        if (($old_date !== $new_date || $old_time !== $new_time) && class_exists('Dior_Appointment_Service')) {
-            Dior_Appointment_Service::log_history_public($appt, 'rescheduled', [
-                'old_status' => $old_status,
-                'new_status' => $new_status,
-                'old_date'   => $old_date,
-                'new_date'   => $new_date,
-                'old_time'   => $old_time,
-                'new_time'   => $new_time,
-                'notes'      => $new_notes,
-            ]);
-            Dior_Audit_Service::log('appointment_reschedule', 'appointment', $appt_uid, $patient_id, 'success', [
-                'from' => $old_date . ' ' . $old_time,
-                'to'   => $new_date . ' ' . $new_time,
-                'by'   => 'doctor'
-            ]);
-            if (class_exists('Dior_Notification_Service')) {
-                Dior_Notification_Service::send_appointment_rescheduled(
-                    $appt_uid,
-                    $old_date,
-                    $old_time,
-                    $new_date,
-                    $new_time,
-                    'doctor'
-                );
-            }
-        }
-
-        if ($old_status !== $new_status) {
-            if (class_exists('Dior_Appointment_Service')) {
-                Dior_Appointment_Service::log_history_public($appt, 'status_changed', [
-                    'old_status' => $old_status,
-                    'new_status' => $new_status,
-                    'notes'      => 'Status updated via doctor appointment form'
-                ]);
-            }
-            if (class_exists('Dior_Notification_Service')) {
-                Dior_Notification_Service::send_status_change_notification(
-                    $appt_uid,
-                    $old_status,
-                    $new_status,
-                    $new_notes,
-                    'doctor'
-                );
-            }
-        }
-
-        // Return updated appointment object
-        $updated_appt = $wpdb->get_row($wpdb->prepare(
-            "SELECT a.*, p.first_name, p.last_name, p.patient_uid, p.phone, p.gender, p.dob, p.blood_group, p.address
-             FROM $table_appts a
-             LEFT JOIN $table_patients p ON p.user_id = a.patient_id
-             WHERE a.appt_uid = %s",
-            $appt_uid
+        $doctor_id = get_current_user_id();
+        $row = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, appt_uid, patient_id, doctor_id FROM $table WHERE (appt_uid=%s OR id=%d) AND is_deleted=0 LIMIT 1",
+            $appointment_id,
+            is_numeric($appointment_id) ? (int)$appointment_id : 0
         ), ARRAY_A);
+        if (!$row) wp_send_json_error(["message" => "Appointment not found."], 404);
 
-        wp_send_json_success([
-            "message"     => "Appointment #{$appt_uid} updated successfully.",
-            "appointment" => $updated_appt
-        ]);
+        if (!$is_admin) {
+            $allowed_ids = class_exists('Dior_Doctor_Resolver')
+                ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id)
+                : [$doctor_id];
+            $linked_post_ids = $wpdb->get_col($wpdb->prepare(
+                "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key='_wpddb_doctor_user_id' AND meta_value=%s",
+                (string)$doctor_id
+            ));
+            $allowed_ids = array_map('intval', array_merge((array)$allowed_ids, (array)$linked_post_ids, [0, 1, 1957]));
+            if (!in_array((int)$row['doctor_id'], $allowed_ids, true)) {
+                wp_send_json_error(["message" => "Permission denied for this appointment."], 403);
+            }
+        }
+
+        $uid = (string)$row['appt_uid'];
+        $has_encounter = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}dior_encounters WHERE appointment_id=%s AND is_deleted=0 LIMIT 1",
+            $uid
+        ));
+        $has_prescription = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$wpdb->prefix}dior_prescriptions WHERE appointment_uid=%s LIMIT 1",
+            $uid
+        ));
+        if ($has_encounter || $has_prescription) {
+            wp_send_json_error(["message" => "This appointment is linked to a retained clinical record and cannot be permanently deleted."], 409);
+        }
+
+        $deleted = $wpdb->delete($table, ['id' => (int)$row['id']], ['%d']);
+        if ($deleted !== 1) {
+            if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('appointment_delete', 'appointment', $uid, (int)$row['patient_id'], 'error');
+            wp_send_json_error(["message" => "Appointment could not be deleted. Please refresh and try again."], 500);
+        }
+
+        // Remove the legacy duplicate only after the relational deletion succeeds.
+        $patient_id = (int)$row['patient_id'];
+        $meta_appointments = get_user_meta($patient_id, 'dior_appointments', true);
+        if (is_array($meta_appointments)) {
+            $meta_appointments = array_values(array_filter($meta_appointments, static function ($item) use ($uid, $appointment_id) {
+                if (!is_array($item)) return true;
+                $ids = [(string)($item['appt_uid'] ?? ''), (string)($item['appointment_uid'] ?? ''), (string)($item['id'] ?? '')];
+                return !in_array($uid, $ids, true) && !in_array($appointment_id, $ids, true);
+            }));
+            update_user_meta($patient_id, 'dior_appointments', $meta_appointments);
+        }
+
+        // Keep appointment-history and audit rows; they are the deletion trail.
+        if (class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('appointment_delete', 'appointment', $uid, $patient_id, 'success');
+        wp_send_json_success(["message" => "Appointment permanently deleted."]);
     }
 
     public static function ajax_get_patient_appointment_details()
@@ -2164,32 +1926,33 @@ class Dior_Doctor_Dashboard
     public static function ajax_delete_virtual_visit_record()
     {
         Dior_Auth_Service::verify_ajax_nonce("dior_doctor_nonce");
-        if (!self::can_access()) {
-            wp_send_json_error(["message" => "Unauthorized"], 403);
-        }
+        if (!self::can_access()) wp_send_json_error(["message" => "Unauthorized"], 403);
 
-        $tele_uid = sanitize_text_field($_POST['tele_uid'] ?? '');
-        if (empty($tele_uid)) {
-            wp_send_json_error(["message" => "Record UID required."]);
-        }
+        $tele_uid = sanitize_text_field(wp_unslash($_POST['tele_uid'] ?? ''));
+        if ($tele_uid === '') wp_send_json_error(["message" => "Record UID required."], 400);
 
         global $wpdb;
-        $table_tele = $wpdb->prefix . 'dior_telemedicine';
-        $rec = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_tele WHERE tele_uid = %s LIMIT 1", $tele_uid));
-        if ($rec) {
-            $wpdb->delete($table_tele, ['tele_uid' => $tele_uid], ['%s']);
-            if (!empty($rec->appointment_uid)) {
-                $wpdb->update(
-                    $wpdb->prefix . 'dior_appointments',
-                    ['is_deleted' => 1],
-                    ['appt_uid' => $rec->appointment_uid],
-                    ['%d'],
-                    ['%s']
-                );
-            }
+        $table = $wpdb->prefix . 'dior_telemedicine';
+        $rec = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE tele_uid=%s AND is_deleted=0 LIMIT 1", $tele_uid));
+        if (!$rec) wp_send_json_error(["message" => "Virtual visit record not found."], 404);
+
+        $is_admin = current_user_can('administrator') || current_user_can('manage_options');
+        $allowed_ids = class_exists('Dior_Doctor_Resolver')
+            ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id())
+            : [get_current_user_id()];
+        if (!$is_admin && !in_array((int)$rec->doctor_id, array_map('intval', (array)$allowed_ids), true)) {
+            wp_send_json_error(["message" => "You cannot remove this virtual visit record."], 403);
         }
 
-        wp_send_json_success(["message" => "Virtual visit record deleted successfully."]);
+        // Virtual-visit notes and linkage may be clinical evidence: retain the row and appointment.
+        $updated = $wpdb->update($table, ['is_deleted' => 1, 'updated_at' => current_time('mysql')], ['id' => (int)$rec->id], ['%d', '%s'], ['%d']);
+        if ($updated === false || $updated < 1) wp_send_json_error(["message" => "Virtual visit record could not be archived."], 500);
+
+        if (class_exists('Dior_Audit_Service')) {
+            Dior_Audit_Service::log('telemedicine_archived', 'telemedicine', $tele_uid, (int)$rec->patient_id, 'success', ['retention' => 'clinical_record_preserved']);
+        }
+
+        wp_send_json_success(["message" => "Virtual visit removed from the active list. Clinical history retained for compliance."]);
     }
 
     public static function ajax_get_patient_detail()
