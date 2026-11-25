@@ -338,25 +338,25 @@
                 ?>
                 <?php if (!$is_prof_complete): ?>
                     <!-- Action Required Alert Banner for Incomplete Profile -->
-                    <div class="dior-profile-incomplete-alert dior-ic-c03948b3c3" id="dior-profile-incomplete-banner">
-                        <div class="dior-ic-29bdac4ec4">
-                            <div class="dior-ic-3fb01cc77f">
+                    <div class="card border-0 border-start border-4 border-primary bg-primary-subtle rounded-4 shadow-sm p-3 p-md-4 mb-4 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3" id="dior-profile-incomplete-banner">
+                        <div class="d-flex align-items-start align-items-md-center gap-3">
+                            <div class="d-none d-sm-inline-flex align-items-center justify-content-center rounded-3 bg-primary text-white p-3 flex-shrink-0">
                                 <i class="fas fa-user-pen"></i>
                             </div>
                             <div>
-                                <strong class="dior-ic-11190ca3a8">
+                                <div class="fw-bold text-primary mb-1">
                                     Action Required: Complete Your Personal Profile
-                                </strong>
-                                <span class="dior-ic-acb9b5ec47">
+                                </div>
+                                <div class="small text-dark">
                                     Please complete your required personal information
                                     (<strong><?php echo esc_html(implode(', ', $missing_fields_list)); ?></strong>) to
                                     unlock appointment booking and telehealth consultations.
-                                </span>
+                                </div>
                             </div>
                         </div>
-                        <button type="button" class="dior-btn-gold-primary dior-ic-4ee0445c2a btn"
+                        <button type="button" class="btn btn-primary rounded-3 fw-semibold py-2 px-3 shadow-sm text-nowrap w-100 w-md-auto flex-shrink-0"
                             onclick="diorOpenHipaaPopup()">
-                            <i class="fas fa-id-card"></i> Complete Profile Now
+                            <i class="fas fa-id-card me-1"></i> Complete Profile Now
                         </button>
                     </div>
                 <?php endif; ?>

@@ -187,7 +187,7 @@
         var oldToolbars = card.querySelectorAll('.dior-bulk-actions-toolbar');
         oldToolbars.forEach(function (tb) { tb.remove(); });
 
-        var trashBtn = card.querySelector('.docs-actions-group .docs-btn-danger, .action-buttons .docs-btn-danger, .va-actions-group .va-btn-danger, .docs-actions-group button[title*="Delete"], .action-buttons button[title*="Delete"], .va-actions-group button[title*="Delete"], #ap-bulk-delete-btn, #va-bulk-delete-btn, #rv-bulk-delete-btn, #dior-pr-bulk-delete, #dior-upcoming-bulk-delete-btn, #dior-clinical-bulk-delete');
+        var trashBtn = card.querySelector('.docs-actions-group .docs-btn-danger, .action-buttons .docs-btn-danger, .docs-actions-group button[title*="Delete"], .action-buttons button[title*="Delete"], #ap-bulk-delete-btn, #rv-bulk-delete-btn, #dior-pr-bulk-delete, #dior-upcoming-bulk-delete-btn, #dior-clinical-bulk-delete');
 
         if (!trashBtn) {
             var icon = card.querySelector('.docs-actions-group .fa-trash, .docs-actions-group .fa-trash-can, .va-actions-group .fa-trash, .va-actions-group .fa-trash-can');
@@ -398,7 +398,9 @@
             'dior-bill-table': 'dior_patient_bulk_delete_payments',
             'dior-rx-table': 'dior_patient_bulk_delete_prescriptions',
             'dior-insurance-table': 'dior_patient_bulk_delete_insurance',
-            'dior-upcoming-appointments-table': 'dior_patient_bulk_delete_appointments'
+            'dior-upcoming-appointments-table': 'dior_patient_bulk_delete_appointments',
+            'dior-today-appointments-table': 'dior_patient_bulk_delete_appointments',
+            'dior-past-appointments-table': 'dior_patient_bulk_delete_appointments'
         };
 
         function performDeletion() {
@@ -979,7 +981,7 @@
         }
 
         // Right-side Toolbar Bulk Delete Buttons
-        var bulkDeleteBtn = event.target.closest('.dior-bulk-actions-toolbar .btn-bulk-delete, #ap-bulk-delete-btn, #va-bulk-delete-btn, #rv-bulk-delete-btn, #dior-pr-bulk-delete, #dior-upcoming-bulk-delete-btn, #dior-clinical-bulk-delete, .docs-actions-group .docs-btn-danger, .va-actions-group .va-btn-danger, [onclick*="diorBulkDelete"]');
+        var bulkDeleteBtn = event.target.closest('.dior-bulk-actions-toolbar .btn-bulk-delete, #ap-bulk-delete-btn, #rv-bulk-delete-btn, #dior-pr-bulk-delete, #dior-upcoming-bulk-delete-btn, #dior-clinical-bulk-delete, .docs-actions-group .docs-btn-danger, [onclick*="diorBulkDelete"]');
         if (bulkDeleteBtn) {
             event.preventDefault();
             event.stopPropagation();

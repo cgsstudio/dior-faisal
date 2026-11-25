@@ -158,8 +158,7 @@
                                 </div>
                                 <div class="docs-actions-group">
                                     <button type="button" aria-label="Delete selected items"
-                                        class="btn btn-sm btn-danger btn" title="Delete Selected"
-                                        onclick="diorBulkDeleteStaticRows(this)">
+                                        class="btn btn-sm btn-danger btn" title="Delete Selected">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     <button type="button" aria-label="Export to CSV" class="btn btn-sm btn-success btn"
@@ -177,6 +176,10 @@
                             <table class="docs-table table table-hover" id="dior-today-appointments-table">
                                 <thead>
                                     <tr>
+                                        <th class="dior-ic-5c9987d36c">
+                                            <input type="checkbox" class="master-checkbox form-check-input" aria-label="Select all today appointments"
+                                                onclick="var c=this.checked;document.querySelectorAll('#dior-today-appointments-tbody .today-row-checkbox').forEach(function(x){x.checked=c;});">
+                                        </th>
                                         <th>DOCTOR <i class="fas fa-sort"></i></th>
                                         <th>SPECIALIZATION <i class="fas fa-sort"></i></th>
                                         <th>DATE <i class="fas fa-sort"></i></th>
@@ -230,7 +233,10 @@
                                     };
                                     foreach ($today_mock as $tm):
                                         ?>
-                                        <tr>
+                                        <tr data-record-id="<?php echo esc_attr($tm[9]); ?>">
+                                            <td class="dior-ic-d5c209e67c">
+                                                <input type="checkbox" class="master-checkbox today-row-checkbox form-check-input" aria-label="Select appointment">
+                                            </td>
                                             <td>
                                                 <div class="cell-content cell-image-name">
                                                     <?php if (!empty($tm[7])): ?><img src="<?php echo esc_url($tm[7]); ?>"
@@ -288,7 +294,7 @@
                                     <?php endforeach; ?>
                                     <?php if (empty($today_mock)): ?>
                                         <tr>
-                                            <td colspan="8" class="dior-empty-state text-center text-muted py-4">
+                                            <td colspan="9" class="dior-empty-state text-center text-muted py-4">
                                                 <i class="far fa-calendar-xmark fs-3 d-block mb-2 text-secondary opacity-50"></i>
                                                 <span class="small fw-semibold">No appointments scheduled for today.</span>
                                             </td>
@@ -325,9 +331,8 @@
                                 </div>
                                 <div class="docs-actions-group">
                                     <button type="button" aria-label="Delete selected items"
-                                        class="btn btn-sm btn-danger dior-ic-44a70a0420 btn"
-                                        id="dior-upcoming-bulk-delete-btn" title="Delete Selected"
-                                        onclick="diorBulkDeleteUpcomingRows()">
+                                        class="btn btn-sm btn-danger btn"
+                                        id="dior-upcoming-bulk-delete-btn" title="Delete Selected">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     <button type="button" aria-label="Add new record" class="btn btn-sm btn-primary btn"
@@ -494,8 +499,7 @@
                                 </div>
                                 <div class="docs-actions-group">
                                     <button type="button" aria-label="Delete selected items"
-                                        class="btn btn-sm btn-danger btn" title="Delete Selected"
-                                        onclick="diorBulkDeleteStaticRows(this)">
+                                        class="btn btn-sm btn-danger btn" title="Delete Selected">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                     <button type="button" aria-label="Export to CSV" class="btn btn-sm btn-success btn"
@@ -513,6 +517,10 @@
                             <table class="docs-table table table-hover" id="dior-past-appointments-table">
                                 <thead>
                                     <tr>
+                                        <th class="dior-ic-5c9987d36c">
+                                            <input type="checkbox" class="master-checkbox form-check-input" aria-label="Select all past appointments"
+                                                onclick="var c=this.checked;document.querySelectorAll('#dior-past-appointments-tbody .past-row-checkbox').forEach(function(x){x.checked=c;});">
+                                        </th>
                                         <th>DOCTOR <i class="fas fa-sort"></i></th>
                                         <th>DATE <i class="fas fa-sort"></i></th>
                                         <th>TIME <i class="fas fa-sort"></i></th>
@@ -542,12 +550,16 @@
                                             $apt_row['condition'] ?? '—',
                                             $apt_row['type'] ?? ($apt_row['visit_type'] ?? 'Consultation'),
                                             '—',
-                                            ''
+                                            '',
+                                            sanitize_text_field($apt_row['appt_uid'] ?? ($apt_row['id'] ?? ''))
                                         ];
                                     };
                                     foreach ($past_mock as $pm):
                                         ?>
-                                        <tr>
+                                        <tr data-record-id="<?php echo esc_attr($pm[9]); ?>">
+                                            <td class="dior-ic-d5c209e67c">
+                                                <input type="checkbox" class="master-checkbox past-row-checkbox form-check-input" aria-label="Select past appointment">
+                                            </td>
                                             <td>
                                                 <div class="cell-content cell-image-name">
                                                     <?php if (!empty($pm[8])): ?><img src="<?php echo esc_url($pm[8]); ?>"
@@ -577,7 +589,7 @@
                                     <?php endforeach; ?>
                                     <?php if (empty($past_mock)): ?>
                                         <tr>
-                                            <td colspan="8" class="dior-empty-state text-center text-muted py-4">
+                                            <td colspan="9" class="dior-empty-state text-center text-muted py-4">
                                                 <i class="far fa-calendar-xmark fs-3 d-block mb-2 text-secondary opacity-50"></i>
                                                 <span class="small fw-semibold">No past appointments found.</span>
                                             </td>

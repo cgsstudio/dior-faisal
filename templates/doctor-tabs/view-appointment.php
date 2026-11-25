@@ -302,16 +302,16 @@ $status_badges = [
     <div class="view-appointment-card">
 
         <!-- Controls Header Bar -->
-        <div class="va-header-container">
-            <div class="va-title-box">
+        <div class="va-header-container d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center justify-content-between gap-3">
+            <div class="va-title-box flex-shrink-0">
                 <h2><i class="fas fa-calendar-check text-primary me-2"></i>Appointments Registry</h2>
                 <div class="va-title-line"></div>
             </div>
 
             <!-- Bulk Selection & Single-Line Action Toolbar -->
-            <div class="va-actions-wrapper d-flex flex-wrap flex-md-nowrap align-items-center gap-2">
+            <div class="va-actions-wrapper d-flex flex-wrap flex-lg-nowrap align-items-center justify-content-lg-end gap-2 ms-lg-auto">
                 <!-- Bulk Selection Toolbar (reveals when items checked) -->
-                <div id="va-bulk-bar" class="d-none align-items-center gap-2">
+                <div id="va-bulk-bar" class="d-none align-items-center gap-2 flex-shrink-0">
                     <span class="badge bg-primary text-white rounded-pill px-2 py-1 small fw-semibold text-nowrap"
                         id="va-selected-count">0 Selected</span>
                     <button type="button"
@@ -322,12 +322,12 @@ $status_badges = [
                 </div>
 
                 <!-- Search & Actions in Single Line -->
-                <div class="input-group input-group-sm dior-bs-search-group flex-fill">
+                <div class="input-group input-group-sm dior-bs-search-group flex-shrink-1" style="min-width: 210px; max-width: 260px;">
                     <input type="text" id="va-appt-search" class="form-control border-start-0 ps-0 shadow-none"
                         placeholder="Search patient, doctor, UID...">
                 </div>
 
-                <div class="va-actions-group d-flex align-items-center gap-2 flex-nowrap">
+                <div class="va-actions-group d-flex align-items-center gap-2 flex-nowrap flex-shrink-0">
                     <button type="button" class="btn btn-sm btn-danger" id="va-bulk-delete-btn"
                         aria-label="Delete selected appointments" title="Delete Selected">
                         <i class="fas fa-trash"></i>
@@ -507,7 +507,24 @@ $status_badges = [
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <span class="<?php echo $badge; ?> va-badge text-nowrap"><?php echo $status; ?></span>
+                                    <?php
+                                    $cur_status = trim((string) $status) !== '' ? $status : 'Pending';
+                                    $status_options = ['Pending', 'Confirmed', 'Completed', 'Cancelled', 'No Show'];
+                                    if (!in_array($cur_status, $status_options, true)) {
+                                        $status_options[] = $cur_status;
+                                    }
+                                    ?>
+                                    <select class="form-select form-select-sm va-status-select rounded-3 fw-semibold"
+                                        data-uid="<?php echo esc_attr($uid); ?>"
+                                        data-prev-status="<?php echo esc_attr($cur_status); ?>"
+                                        aria-label="Change appointment status"
+                                        style="min-width: 125px;">
+                                        <?php foreach ($status_options as $opt): ?>
+                                            <option value="<?php echo esc_attr($opt); ?>" <?php selected(strtolower($cur_status), strtolower($opt)); ?>>
+                                                <?php echo esc_html($opt); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </td>
                                 <td class="text-end text-nowrap">
                                     <div class="d-inline-flex align-items-center justify-content-end gap-1 flex-nowrap">
@@ -913,6 +930,7 @@ $status_badges = [
             setupSelectAll();
             setupRowCheckboxes();
             setupBulkActions();
+            setupStatusSelect();
             setupViewDetailsBtns();
             setupMeetingJoinBtns();
             setupCancelBtns();
@@ -1183,31 +1201,47 @@ $status_badges = [
                         if (!result.isConfirmed) return;
 
                         var promises = checkedRows.map(function (row) {
-                            var uid = row.dataset.apptUid;
+                            var uid = row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid || '';
                             var data = new FormData();
                             data.append('action', 'dior_doc_appointment_delete');
                             data.append('nonce', nonce);
                             data.append('appt_uid', uid);
-                            return fetch(ajaxUrl, { method: 'POST', body: data }).then(function (r) { return r.json(); });
+                            return fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: data })
+                                .then(function (r) { return r.json(); })
+                                .then(function (res) { return { row: row, ok: !!(res && res.success), msg: (res && res.data && res.data.message) || '' }; });
                         });
 
-                        Promise.all(promises).then(function () {
-                            checkedRows.forEach(function (row) {
-                                allRows = allRows.filter(function (r) { return r !== row; });
-                                row.remove();
+                        Promise.all(promises).then(function (results) {
+                            var deletedCount = 0;
+                            results.forEach(function (item) {
+                                if (item.ok) {
+                                    deletedCount++;
+                                    allRows = allRows.filter(function (r) { return r !== item.row; });
+                                    item.row.remove();
+                                }
                             });
+                            var masterCb = document.getElementById('va-select-all');
+                            if (masterCb) masterCb.checked = false;
                             updateBulkBar();
                             updateKpiCounters();
                             renderPage(currentPage);
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Deleted',
-                                text: checkedRows.length + ' appointment(s) removed.',
-                                toast: true,
-                                position: 'top-end',
-                                timer: 2000,
-                                showConfirmButton: false
-                            });
+                            if (deletedCount > 0) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Deleted',
+                                    text: deletedCount + ' appointment(s) removed.',
+                                    toast: true,
+                                    position: 'top-end',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Delete Failed',
+                                    text: (results[0] && results[0].msg) || 'Unable to delete selected appointments.'
+                                });
+                            }
                         }).catch(function () {
                             Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to delete selected appointments.' });
                         });
@@ -2169,6 +2203,70 @@ $status_badges = [
             }
         }
 
+        function setupStatusSelect() {
+            var tbody = document.getElementById('va-appointments-tbody');
+            if (!tbody) return;
+
+            tbody.addEventListener('change', function (e) {
+                var sel = e.target.closest('.va-status-select');
+                if (!sel) return;
+                var row = sel.closest('tr');
+                var uid = sel.dataset.uid || (row ? (row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid) : '') || '';
+                var newStatus = sel.value;
+                var prevStatus = sel.dataset.prevStatus || newStatus;
+
+                if (!uid) {
+                    sel.value = prevStatus;
+                    return;
+                }
+
+                sel.disabled = true;
+                var data = new FormData();
+                data.append('action', 'dior_doctor_update_appt_status');
+                data.append('nonce', nonce);
+                data.append('appt_uid', uid);
+                data.append('status', newStatus);
+
+                fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: data })
+                    .then(function (r) { return r.json(); })
+                    .then(function (res) {
+                        sel.disabled = false;
+                        if (res && res.success) {
+                            sel.dataset.prevStatus = newStatus;
+                            if (row) row.dataset.status = newStatus.toLowerCase();
+                            updateKpiCounters();
+                            if (window.Swal) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Status Updated',
+                                    text: 'Appointment marked as ' + newStatus + '.',
+                                    toast: true,
+                                    position: 'top-end',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                        } else {
+                            sel.value = prevStatus;
+                            if (window.Swal) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Update Failed',
+                                    text: (res && res.data && res.data.message) ? res.data.message : 'Unable to update status.'
+                                });
+                            }
+                        }
+                    })
+                    .catch(function () {
+                        sel.disabled = false;
+                        sel.value = prevStatus;
+                        if (window.Swal) {
+                            Swal.fire({ icon: 'error', title: 'Error', text: 'Network error while updating status.' });
+                        }
+                    });
+            });
+        }
+
         function setupDeleteBtns() {
             var tbody = document.getElementById('va-appointments-tbody');
             if (!tbody) return;
@@ -2176,8 +2274,9 @@ $status_badges = [
             tbody.addEventListener('click', function (e) {
                 var btn = e.target.closest('.va-delete-appt-btn');
                 if (!btn) return;
+                var row = btn.closest('tr');
                 var patientName = btn.dataset.name || 'this patient';
-                var uid = btn.dataset.uid;
+                var uid = btn.dataset.uid || (row ? (row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid) : '') || '';
 
                 Swal.fire({
                     title: 'Delete Appointment?',
@@ -2194,7 +2293,7 @@ $status_badges = [
                     data.append('action', 'dior_doc_appointment_delete');
                     data.append('nonce', nonce);
                     data.append('appt_uid', uid);
-                    fetch(ajaxUrl, { method: 'POST', body: data })
+                    fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: data })
                         .then(function (r) { return r.json(); })
                         .then(function (res) {
                             if (res.success) {

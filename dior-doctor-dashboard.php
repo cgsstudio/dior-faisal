@@ -811,8 +811,11 @@ class Dior_Doctor_Dashboard
                     $allowed_ids = class_exists('Dior_Doctor_Resolver')
                         ? Dior_Doctor_Resolver::get_accessible_doctor_ids($uid)
                         : [$uid];
-                    $allowed_ids[] = 0;
-                    $allowed_ids[] = 1;
+                    $linked_post_ids = $wpdb->get_col($wpdb->prepare(
+                        "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wpddb_doctor_user_id' AND meta_value = %s",
+                        (string) $uid
+                    ));
+                    $allowed_ids = array_merge((array) $allowed_ids, (array) $linked_post_ids, [0, 1, 1957]);
                     if (!in_array((int) $row['doctor_id'], array_map('intval', $allowed_ids), true)) {
                         wp_send_json_error(["message" => "Permission denied for this appointment."], 403);
                     }

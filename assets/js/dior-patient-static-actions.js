@@ -694,10 +694,28 @@
         }
 
         var performDelete = function() {
+            var ids = [];
             checkedBoxes.forEach(function(cb) {
                 var row = cb.closest('tr');
-                if (row) row.remove();
+                if (row) {
+                    var rid = row.getAttribute('data-record-id') || (row.querySelector('[data-appt-uid]') && row.querySelector('[data-appt-uid]').getAttribute('data-appt-uid')) || '';
+                    if (rid) ids.push(rid.trim());
+                    row.remove();
+                }
             });
+
+            if ((table.id === 'dior-today-appointments-table' || table.id === 'dior-upcoming-appointments-table' || table.id === 'dior-past-appointments-table') && ids.length) {
+                var cfg = window.dior_vars || window.dior_patient_dashboard || {};
+                var ajaxUrl = cfg.ajax_url || (window.ajaxurl || '/wp-admin/admin-ajax.php');
+                var nonce = cfg.nonce || cfg.portal_nonce || '';
+                if (ajaxUrl) {
+                    var body = new FormData();
+                    body.append('action', 'dior_patient_bulk_delete_appointments');
+                    if (nonce) body.append('nonce', nonce);
+                    ids.forEach(function(id) { body.append('ids[]', id); });
+                    fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body });
+                }
+            }
             var masterCb = table.querySelector('thead input[type="checkbox"]');
             if (masterCb) masterCb.checked = false;
             
