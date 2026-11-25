@@ -864,6 +864,243 @@ class Dior_Doctor_Dashboard
         wp_send_json_success(["message" => "Appointment permanently deleted."]);
     }
 
+    public static function ajax_edit_appointment()
+    {
+        Dior_Auth_Service::verify_ajax_nonce(["dior_doctor_nonce", "dior_auth_nonce", "dior_portal_nonce", "dior_admin_nonce"]);
+        if (!self::can_access()) {
+            wp_send_json_error(["message" => "Unauthorized access."], 403);
+        }
+
+        // Accept the first non-empty canonical UID or legacy numeric database ID.
+        $appt_uid = self::get_post_appointment_identifier();
+        $patient_id = (int)(!empty($_POST['patient_id']) ? $_POST['patient_id'] : 0);
+
+        global $wpdb;
+        $table_appts = $wpdb->prefix . 'dior_appointments';
+        $table_patients = $wpdb->prefix . 'dior_patients';
+
+        if (empty($appt_uid) || $appt_uid === 'new' || $appt_uid === 'undefined') {
+            if (!$patient_id) {
+                wp_send_json_error(["message" => "Please select a valid patient to schedule or update an appointment."]);
+            }
+            $appt_uid = 'APT-' . strtoupper(wp_generate_password(8, false));
+            $wpdb->insert($table_appts, [
+                'appt_uid'       => $appt_uid,
+                'patient_id'     => $patient_id,
+                'doctor_id'      => (int)($_POST['doctor_id'] ?? get_current_user_id()),
+                'appt_date'      => sanitize_text_field($_POST['appt_date'] ?? ($_POST['date'] ?? current_time('Y-m-d'))),
+                'appt_time'      => sanitize_text_field($_POST['appt_time'] ?? ($_POST['time'] ?? '10:00 AM')),
+                'status'         => sanitize_text_field($_POST['status'] ?? 'Confirmed'),
+                'visit_type'     => sanitize_text_field($_POST['visit_type'] ?? 'Video Visit (HD)'),
+                'condition_name' => sanitize_text_field($_POST['condition_name'] ?? 'General Consultation'),
+                'join_url'       => esc_url_raw($_POST['join_url'] ?? ''),
+                'payment_status' => sanitize_text_field($_POST['payment_status'] ?? 'Paid'),
+                'notes'          => sanitize_textarea_field($_POST['notes'] ?? ''),
+                'is_deleted'     => 0,
+                'created_at'     => current_time('mysql'),
+                'updated_at'     => current_time('mysql'),
+            ]);
+            $appt = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_appts WHERE appt_uid = %s", $appt_uid), ARRAY_A);
+        } else {
+            // Accept both the stable appointment UID and legacy numeric database IDs.
+            if (ctype_digit((string) $appt_uid)) {
+                $appt = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM $table_appts WHERE (id = %d OR appt_uid = %s) AND is_deleted = 0 LIMIT 1",
+                    (int) $appt_uid,
+                    $appt_uid
+                ), ARRAY_A);
+            } else {
+                $appt = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM $table_appts WHERE appt_uid = %s AND is_deleted = 0 LIMIT 1",
+                    $appt_uid
+                ), ARRAY_A);
+            }
+
+            if (!$appt) {
+                wp_send_json_error(["message" => "Appointment not found."]);
+            }
+
+            // Always use the canonical UID for subsequent updates and notifications.
+            $appt_uid = (string) $appt['appt_uid'];
+        }
+
+        if (!$patient_id && !empty($appt['patient_id'])) {
+            $patient_id = (int)$appt['patient_id'];
+        }
+
+        // 1. Core Appointment fields
+        $new_date        = sanitize_text_field($_POST['appt_date'] ?? ($_POST['date'] ?? $appt['appt_date']));
+        $new_time        = sanitize_text_field($_POST['appt_time'] ?? ($_POST['time'] ?? $appt['appt_time']));
+        $new_status      = sanitize_text_field($_POST['status'] ?? $appt['status']);
+        // Keep status values compatible with the database ENUM; legacy clients may still send Success.
+        if ($new_status === 'Success') {
+            $new_status = 'Confirmed';
+        }
+        $new_condition   = sanitize_text_field($_POST['condition_name'] ?? $appt['condition_name']);
+        $new_visit_type  = sanitize_text_field($_POST['visit_type'] ?? $appt['visit_type']);
+        $new_join_url    = esc_url_raw($_POST['join_url'] ?? $appt['join_url']);
+        $new_payment     = sanitize_text_field($_POST['payment_status'] ?? $appt['payment_status']);
+        $new_notes       = sanitize_textarea_field($_POST['notes'] ?? $appt['notes']);
+        $new_doctor_id   = (int)($_POST['doctor_id'] ?? $appt['doctor_id']);
+
+        $allowed_statuses = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled', 'No Show'];
+        if (!in_array($new_status, $allowed_statuses, true)) {
+            $new_status = $appt['status'];
+        }
+
+        $allowed_payments = ['Pending', 'Paid', 'Refunded', 'Failed'];
+        if (!in_array($new_payment, $allowed_payments, true)) {
+            $new_payment = $appt['payment_status'];
+        }
+
+        $now = current_time('mysql');
+        $old_date = $appt['appt_date'];
+        $old_time = $appt['appt_time'];
+        $old_status = $appt['status'];
+
+        $updated = $wpdb->update(
+            $table_appts,
+            [
+                'patient_id'     => $patient_id,
+                'condition_name' => $new_condition,
+                'visit_type'     => $new_visit_type,
+                'status'         => $new_status,
+                'appt_date'      => $new_date,
+                'appt_time'      => $new_time,
+                'join_url'       => $new_join_url,
+                'payment_status' => $new_payment,
+                'notes'          => $new_notes,
+                'doctor_id'      => $new_doctor_id ?: get_current_user_id(),
+                'updated_at'     => $now,
+            ],
+            ['appt_uid' => $appt_uid]
+        );
+
+        if ($updated === false) {
+            wp_send_json_error(["message" => "Database error while updating appointment."]);
+        }
+
+        // 2. Update Patient details if patient_id is valid
+        if ($patient_id > 0) {
+            $first_name = sanitize_text_field($_POST['first_name'] ?? '');
+            $last_name  = sanitize_text_field($_POST['last_name'] ?? '');
+            $phone      = sanitize_text_field($_POST['phone'] ?? '');
+            $gender     = sanitize_text_field($_POST['gender'] ?? '');
+            $dob        = sanitize_text_field($_POST['dob'] ?? '');
+            $blood_group= sanitize_text_field($_POST['blood_group'] ?? '');
+            $address    = sanitize_textarea_field($_POST['address'] ?? '');
+
+            if (!empty($first_name) || !empty($phone)) {
+                $patient_update = [];
+                if (!empty($first_name)) $patient_update['first_name'] = $first_name;
+                if (!empty($last_name)) $patient_update['last_name'] = $last_name;
+                if (!empty($phone)) $patient_update['phone'] = $phone;
+                if (!empty($gender)) $patient_update['gender'] = $gender;
+                if (!empty($dob)) $patient_update['dob'] = $dob;
+                if (!empty($blood_group)) $patient_update['blood_group'] = $blood_group;
+                if (!empty($address)) $patient_update['address'] = $address;
+                $patient_update['updated_at'] = $now;
+
+                $patient_exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table_patients WHERE user_id = %d", $patient_id));
+                if ($patient_exists) {
+                    $wpdb->update($table_patients, $patient_update, ['user_id' => $patient_id]);
+                }
+
+                if (!empty($first_name)) update_user_meta($patient_id, 'first_name', $first_name);
+                if (!empty($last_name)) update_user_meta($patient_id, 'last_name', $last_name);
+                if (!empty($phone)) update_user_meta($patient_id, 'phone', $phone);
+                if (!empty($gender)) update_user_meta($patient_id, 'gender', $gender);
+                if (!empty($dob)) update_user_meta($patient_id, 'dob', $dob);
+                if (!empty($blood_group)) update_user_meta($patient_id, 'blood_group', $blood_group);
+                if (!empty($address)) update_user_meta($patient_id, 'address', $address);
+            }
+
+            // Insurance Meta
+            if (isset($_POST['insurance_provider'])) update_user_meta($patient_id, 'dior_insurance_provider', sanitize_text_field($_POST['insurance_provider']));
+            if (isset($_POST['insurance_policy_number'])) update_user_meta($patient_id, 'dior_insurance_policy', sanitize_text_field($_POST['insurance_policy_number']));
+            if (isset($_POST['insurance_group_number'])) update_user_meta($patient_id, 'dior_insurance_group', sanitize_text_field($_POST['insurance_group_number']));
+            if (isset($_POST['insurance_holder_name'])) update_user_meta($patient_id, 'dior_insurance_holder', sanitize_text_field($_POST['insurance_holder_name']));
+            if (isset($_POST['insurance_relation'])) update_user_meta($patient_id, 'dior_insurance_relation', sanitize_text_field($_POST['insurance_relation']));
+
+            // Medical History Meta
+            if (isset($_POST['medical_conditions'])) update_user_meta($patient_id, 'dior_medical_conditions', sanitize_textarea_field($_POST['medical_conditions']));
+            if (isset($_POST['medications'])) update_user_meta($patient_id, 'dior_current_medications', sanitize_textarea_field($_POST['medications']));
+            if (isset($_POST['allergies'])) update_user_meta($patient_id, 'dior_allergies', sanitize_textarea_field($_POST['allergies']));
+            if (isset($_POST['surgeries'])) update_user_meta($patient_id, 'dior_past_surgeries', sanitize_textarea_field($_POST['surgeries']));
+
+            // Emergency Contact Meta
+            if (isset($_POST['emergency_contact_name'])) update_user_meta($patient_id, 'emergency_contact_name', sanitize_text_field($_POST['emergency_contact_name']));
+            if (isset($_POST['emergency_contact_relation'])) update_user_meta($patient_id, 'emergency_contact_relation', sanitize_text_field($_POST['emergency_contact_relation']));
+            if (isset($_POST['emergency_contact_phone'])) update_user_meta($patient_id, 'emergency_contact_phone', sanitize_text_field($_POST['emergency_contact_phone']));
+
+            // Sync legacy user meta for appointments
+            if (class_exists('Dior_Appointment_Service')) {
+                Dior_Appointment_Service::sync_legacy_usermeta($patient_id);
+            }
+        }
+
+        // 3. Log history & audit if rescheduled or status changed
+        if (($old_date !== $new_date || $old_time !== $new_time) && class_exists('Dior_Appointment_Service')) {
+            Dior_Appointment_Service::log_history_public($appt, 'rescheduled', [
+                'old_status' => $old_status,
+                'new_status' => $new_status,
+                'old_date'   => $old_date,
+                'new_date'   => $new_date,
+                'old_time'   => $old_time,
+                'new_time'   => $new_time,
+                'notes'      => $new_notes,
+            ]);
+            Dior_Audit_Service::log('appointment_reschedule', 'appointment', $appt_uid, $patient_id, 'success', [
+                'from' => $old_date . ' ' . $old_time,
+                'to'   => $new_date . ' ' . $new_time,
+                'by'   => 'doctor'
+            ]);
+            if (class_exists('Dior_Notification_Service')) {
+                Dior_Notification_Service::send_appointment_rescheduled(
+                    $appt_uid,
+                    $old_date,
+                    $old_time,
+                    $new_date,
+                    $new_time,
+                    'doctor'
+                );
+            }
+        }
+
+        if ($old_status !== $new_status) {
+            if (class_exists('Dior_Appointment_Service')) {
+                Dior_Appointment_Service::log_history_public($appt, 'status_changed', [
+                    'old_status' => $old_status,
+                    'new_status' => $new_status,
+                    'notes'      => 'Status updated via doctor appointment form'
+                ]);
+            }
+            if (class_exists('Dior_Notification_Service')) {
+                Dior_Notification_Service::send_status_change_notification(
+                    $appt_uid,
+                    $old_status,
+                    $new_status,
+                    $new_notes,
+                    'doctor'
+                );
+            }
+        }
+
+        // Return updated appointment object
+        $updated_appt = $wpdb->get_row($wpdb->prepare(
+            "SELECT a.*, p.first_name, p.last_name, p.patient_uid, p.phone, p.gender, p.dob, p.blood_group, p.address
+             FROM $table_appts a
+             LEFT JOIN $table_patients p ON p.user_id = a.patient_id
+             WHERE a.appt_uid = %s",
+            $appt_uid
+        ), ARRAY_A);
+
+        wp_send_json_success([
+            "message"     => "Appointment #{$appt_uid} updated successfully.",
+            "appointment" => $updated_appt
+        ]);
+    }
+
     public static function ajax_get_patient_appointment_details()
     {
         Dior_Auth_Service::verify_ajax_nonce(["dior_doctor_nonce", "dior_auth_nonce", "dior_portal_nonce", "dior_admin_nonce"]);
