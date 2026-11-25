@@ -7,7 +7,15 @@ if (!defined('ABSPATH')) {
 global $wpdb;
 
 // Fetch patient list for prescription assignment dropdown
-$patients_query = $wpdb->get_results("SELECT ID, display_name, user_email FROM {$wpdb->users} ORDER BY display_name ASC LIMIT 100");
+$patients_query = $wpdb->get_results(
+    "SELECT u.ID, u.display_name, u.user_email
+     FROM {$wpdb->users} u
+     WHERE NOT EXISTS (
+         SELECT 1 FROM {$wpdb->usermeta} um
+         WHERE um.user_id = u.ID AND um.meta_key = 'dior_patient_status' AND um.meta_value = 'deleted'
+     )
+     ORDER BY u.display_name ASC LIMIT 100"
+);
 $patients_list = [];
 foreach ($patients_query as $pq) {
     $puid = get_user_meta($pq->ID, 'patient_id', true) ?: ('DM-' . (10000 + $pq->ID));
