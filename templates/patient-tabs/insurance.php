@@ -66,6 +66,13 @@
                             <?php
                             $insurance_claims = get_user_meta($user_id, 'dior_insurance_claims', true);
                             $insurance_claims = is_array($insurance_claims) ? $insurance_claims : [];
+                            $hidden_claim_ids = get_user_meta($user_id, 'dior_hidden_insurance_ids', true);
+                            $hidden_claim_ids = is_array($hidden_claim_ids) ? array_map('strval', $hidden_claim_ids) : [];
+                            if ($hidden_claim_ids) {
+                                $insurance_claims = array_values(array_filter($insurance_claims, static function ($claim) use ($hidden_claim_ids) {
+                                    return !is_array($claim) || !in_array((string)($claim['claim_id'] ?? ''), $hidden_claim_ids, true);
+                                }));
+                            }
                             ?>
                             <?php if (!empty($insurance_claims)): ?>
                                 <?php foreach ($insurance_claims as $claim): ?>
