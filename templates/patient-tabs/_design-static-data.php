@@ -124,25 +124,7 @@ for ($i = count($appointments); $i < 10; $i++) {
     ];
 }
 
-for ($i = count($prescriptions); $i < 10; $i++) {
-    $meds = ['Loratadine 10 mg','Metformin 500 mg','Atorvastatin 20 mg','Omeprazole 20 mg','Amlodipine 5 mg','Ibuprofen 200 mg','Levothyroxine 50 mcg','Amoxicillin 500 mg'];
-    $med = $meds[$i - 2] ?? 'Daily Multivitamin';
-    $prescriptions[] = [
-        'id'=>'RX-'.(1003+$i),'order_id'=>'RX-'.(1003+$i),'medication'=>$med,'name'=>$med,
-        'dosage'=>preg_replace('/[^0-9.]+/','',$med).' mg','quantity'=>'30 tablets','refills'=>(string)($i % 3),
-        'date_prescribed'=>wp_date('Y-m-d', current_time('timestamp') - ($i * DAY_IN_SECONDS)),
-        'prescribed_by'=>$design_doctors[$i][0],'condition'=>'Routine Medication','status'=>($i % 4 === 0 ? 'Completed' : 'Active'),
-        'instructions'=>'Take as directed by your physician.'
-    ];
-}
-
-for ($i = count($patient_rx_rows); $i < 10; $i++) {
-    $rx = $prescriptions[$i];
-    $patient_rx_rows[] = [
-        'prescription_id'=>$rx['id'],'medications'=>$rx['medication'],'doctor_name'=>$rx['prescribed_by'],
-        'prescription_date'=>$rx['date_prescribed'],'dosage'=>$rx['dosage'].' — Once daily'
-    ];
-}
+// Removed static prescriptions synthetic row generators to preserve dynamic prescription data.
 
 // Removed static payments synthetic row generator to preserve dynamic billing data.
 
