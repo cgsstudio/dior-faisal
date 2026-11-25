@@ -731,7 +731,12 @@
                     var deletedSet = new Set((result.data && result.data.deleted_ids ? result.data.deleted_ids : []).map(String));
                     rows.forEach(function(row) {
                         var rowId = String(row.getAttribute('data-record-id') || '').trim();
-                        if (deletedSet.has(rowId)) row.remove();
+                        if (deletedSet.has(rowId)) {
+                            row.remove();
+                        } else {
+                            var checkbox = row.querySelector('input[type="checkbox"]');
+                            if (checkbox) checkbox.checked = false;
+                        }
                     });
                     var masterCb = table.querySelector('thead input[type="checkbox"]');
                     if (masterCb) masterCb.checked = false;
