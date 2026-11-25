@@ -9,6 +9,22 @@
  * (.dior-page-btn: prev / numbers / next) so both dashboards share
  * one visual language: light square buttons + blue active page.
  * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------
+ * Submenu-parent detection.
+ * A nav row that owns a submenu (the patient's "Appointments") must never
+ * take the .active fill — the Doctor Dashboard's parent row does not, and
+ * the fill was the stray background to remove. Declared at top level so it
+ * is available to the very first function that needs it; it previously sat
+ * inside diorSwitchApptSubTab's own body and threw ReferenceError, which
+ * killed the sub-tab switching entirely.
+ * ------------------------------------------------------------------ */
+function diorIsSubmenuParentBtn(btn) {
+    if (!btn) return false;
+    if (btn.classList.contains('submenu-btn')) return false;
+    return !!(btn.closest('.dior-nav-item-has-children') ||
+              btn.closest('.dior-nav-item.has-submenu'));
+}
+
 function diorPagerChevron(direction) {
     return '<i class="fa-solid fa-chevron-' + direction + ' dior-pager-chevron"></i>';
 }
@@ -339,7 +355,16 @@ let diorBookingState = {
                     msg.style.color = '#059669';
                     msg.innerText = 'Appointment booked successfully! Redirecting to your dashboard...';
                     setTimeout(() => {
-                        window.location.href = (window.dior_patient_dashboard && window.dior_patient_dashboard.dashboard_url) || (window.dior_vars && window.dior_vars.portal_url) || '/patient-dashboard/';
+                        // Keep the user on the dashboard page they came from instead of
+                        // dropping back to the bare dashboard URL (which renders Overview).
+                        let target = (window.dior_patient_dashboard && window.dior_patient_dashboard.dashboard_url) || (window.dior_vars && window.dior_vars.portal_url) || '/patient-dashboard/';
+                        const currentHash = window.location.hash || '';
+                        const targetHash = currentHash.indexOf('#tab=') === 0
+                            ? currentHash
+                            : '#tab=appointments&subtab=today';
+                        const hashIndex = target.indexOf('#');
+                        if (hashIndex !== -1) target = target.substring(0, hashIndex);
+                        window.location.href = target + targetHash;
                     }, 1500);
                 } else {
                     msg.style.color = '#DC2626';
@@ -686,13 +711,20 @@ let diorPastCurrentPage = 1;
 // --- Extracted dashboard script 5 ---
 window.diorSwitchApptSubTab = function(targetSubTab) {
                         if (!targetSubTab) targetSubTab = 'book';
+                        // The calendar subtab was removed — never fall back to a pane that no longer exists.
+                        if (targetSubTab === 'calendar' || !document.getElementById('dior-subtab-' + targetSubTab)) {
+                            targetSubTab = 'today';
+                        }
                         var navBtns = document.querySelectorAll('.dior-nav-btn');
                         var tabPanels = document.querySelectorAll('.dior-tab-panel');
                         
                         // Switch Main Tab to Appointments
                         navBtns.forEach(function(b) {
-                            if (b.getAttribute('data-tab') === 'appointments') b.classList.add('active');
-                            else b.classList.remove('active');
+                            if (b.getAttribute('data-tab') === 'appointments' && !diorIsSubmenuParentBtn(b)) {
+                                b.classList.add('active');
+                            } else {
+                                b.classList.remove('active');
+                            }
                         });
                         tabPanels.forEach(function(p) {
                             if (p.id === 'tab-appointments') {
@@ -724,6 +756,7 @@ window.diorSwitchApptSubTab = function(targetSubTab) {
                         var titles = {
                             'calendar': 'Appointment Calendar',
                             'book': 'Book Appointment',
+                            'schedule': 'Schedule Appointment',
                             'today': "Today's Appointments",
                             'upcoming': 'Upcoming Appointments',
                             'past': 'Past Appointments'
@@ -738,8 +771,12 @@ window.diorSwitchApptSubTab = function(targetSubTab) {
                         var dropdownWrap = document.getElementById('dior-appt-dropdown-wrap');
                         if (dropdownWrap) {
                             dropdownWrap.classList.add('open');
-                            var chevron = dropdownWrap.querySelector('.fa-chevron-down');
-                            if (chevron) chevron.style.transform = 'rotate(180deg)';
+                            // Doctor contract: the affordance is a +/− toggle icon.
+                            var toggleIcon = dropdownWrap.querySelector('.submenu-icon');
+                            if (toggleIcon) {
+                                toggleIcon.classList.remove('fa-plus');
+                                toggleIcon.classList.add('fa-minus');
+                            }
                         }
                         document.querySelectorAll('#dior-appt-dropdown-wrap .dior-nav-dropdown-item').forEach(function(item) {
                             if (item.getAttribute('data-appt-subtab') === targetSubTab) {
@@ -1005,6 +1042,48 @@ window.diorSwitchApptSubTab = function(targetSubTab) {
     }
 
 
+    // Guard: a Join control must never point at an empty or non-http href.
+    // Appointments created before the Zoom credentials were configured carry
+    // an empty join_url; clicking such a link did nothing at all, which is what
+    // made "Join Video Consultation Room" look broken. In that case we open the
+    // Telemedicine details modal instead, so the patient still learns where and
+    // when the visit is and can reschedule.
+    document.addEventListener('click', function (event) {
+        var joinEl = event.target.closest('a[data-dior-meeting-join], button[data-dior-meeting-join]');
+        if (!joinEl) return;
+        var rawHref = (joinEl.getAttribute('href') || '').trim();
+        var looksUsable = joinEl.tagName === 'BUTTON' ? true : /^https?:\/\//i.test(rawHref);
+        if (looksUsable) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        var uid = joinEl.getAttribute('data-appt-uid') || '';
+        var row = uid ? document.querySelector('#dior-tele-table tr[data-tele-id="' + uid.replace(/"/g, '') + '"]') : null;
+        var portal = document.getElementById('dior-patient-portal-app');
+
+        if (typeof window.diorSwitchTab === 'function') {
+            window.diorSwitchTab('telemedicine');
+        }
+
+        if (row && typeof window.diorViewTelemedicine === 'function') {
+            // Prefer the real row so the modal shows live appointment data.
+            var btn = row.querySelector('.tele-join-btn') || row.querySelector('.edit-btn');
+            window.setTimeout(function () {
+                window.diorViewTelemedicine(btn || row);
+            }, 120);
+        } else if (typeof window.Swal !== 'undefined') {
+            window.Swal.fire({
+                icon: 'info',
+                title: 'Meeting link not ready yet',
+                text: 'A video link has not been created for this appointment. Please open Telemedicine for the details, or reschedule if you need to.',
+                confirmButtonText: 'Open Telemedicine'
+            }).then(function () {
+                if (portal) portal.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        }
+    }, true);
+
     // Track patient clicks on Join Visit / Join Telehealth Room and notify the doctor.
     document.addEventListener('click', function (event) {
         var link = event.target.closest('a[data-dior-meeting-join], button[data-dior-meeting-join], .dior-tele-join-btn');
@@ -1033,7 +1112,7 @@ window.diorSwitchApptSubTab = function(targetSubTab) {
             agendaListEl.innerHTML = '<div class="card border-0 bg-light p-4 text-center text-muted rounded-4">' +
                 '<i class="far fa-calendar-xmark fs-2 text-secondary mb-2"></i>' +
                 '<p class="mb-2 fw-medium">No appointments match the selected filters.</p>' +
-                '<div><button type="button" class="btn btn-primary btn-sm rounded-pill" onclick="diorOpenDocBookerModal();"><i class="fas fa-calendar-plus me-1"></i> Book New Consultation</button></div>' +
+                '<div><button type="button" class="btn btn-primary btn-sm rounded-pill" onclick="diorGoToDocBookerPage();"><i class="fas fa-calendar-plus me-1"></i> Book New Consultation</button></div>' +
                 '</div>';
             return;
         }
@@ -1063,7 +1142,7 @@ window.diorSwitchApptSubTab = function(targetSubTab) {
             html += '<div class="d-flex flex-wrap align-items-center justify-content-between gap-3">';
             
             html += '<div class="d-flex align-items-center gap-3">';
-            html += '<div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 44px; height: 44px; background: linear-gradient(135deg, #1A528E 0%, #3730a3 100%); font-size: 14px;">';
+            html += '<div class="rounded-circle d-flex align-items-center justify-content-center text-white fw-bold shadow-sm" style="width: 44px; height: 44px; background: linear-gradient(135deg, #1A528E 0%, #1A528E 100%); font-size: 14px;">';
             html += '<i class="fas ' + (isVideo ? 'fa-video' : 'fa-user-doctor') + '"></i>';
             html += '</div>';
             html += '<div>';
@@ -1121,7 +1200,7 @@ window.diorSwitchApptSubTab = function(targetSubTab) {
                 '<div class="mb-3" style="font-size: 2.2rem; color: #cbd5e1;"><i class="far fa-calendar-xmark"></i></div>' +
                 '<h6 class="text-dark fw-bold mb-1">No Consultations</h6>' +
                 '<p class="small text-muted mb-3">There are no appointments scheduled for this date.</p>' +
-                '<button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold shadow-sm" onclick="diorOpenDocBookerModal();">' +
+                '<button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold shadow-sm" onclick="diorGoToDocBookerPage();">' +
                 '<i class="fas fa-calendar-plus me-1"></i> Schedule Consultation' +
                 '</button>' +
                 '</div>';
@@ -1385,12 +1464,189 @@ let diorBillCurrentPage = 1;
         document.getElementById('billModalTax').innerText = tax;
         document.getElementById('billModalDisc').innerText = disc;
         document.getElementById('billModalTotal').innerText = total;
-        document.getElementById('billModalAvatar').src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(doc) + '&background=random';
+        /* Initials avatar drawn inline. The modal used to request
+           ui-avatars.com, which is an external image call and rendered as a
+           broken-image icon whenever it was blocked or offline. */
+        var initials = String(doc).replace(/^Dr\.?\s*/i, '').trim().split(/\s+/)
+            .slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join('') || '?';
+        var avatarSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80">' +
+            '<rect width="80" height="80" rx="40" fill="#F0F6FC"/>' +
+            '<text x="40" y="40" text-anchor="middle" dominant-baseline="central" ' +
+            'font-family="Montserrat,Arial,sans-serif" font-size="30" font-weight="700" fill="#1A528E">' +
+            initials + '</text></svg>';
+        document.getElementById('billModalAvatar').src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(avatarSvg);
         document.getElementById('diorBillingModal').style.display = 'flex';
     }
     function diorCloseBillingModal() {
         document.getElementById('diorBillingModal').style.display = 'none';
     }
+
+    /* Insurance & Claims detail popup. The eye button on that table had no
+       handler at all, so clicking it did nothing. */
+    window.diorOpenInsuranceModal = function (claimId, policyId, date, type, amount, approved, submitted, status) {
+        var set = function (id, value) {
+            var el = document.getElementById(id);
+            if (el) el.textContent = (value === '' || value == null) ? '--' : value;
+        };
+        set('insModalClaimId', claimId);
+        set('insModalPolicyId', policyId);
+        set('insModalDate', date);
+        set('insModalType', type);
+        set('insModalAmount', amount);
+        set('insModalApproved', approved);
+        set('insModalSubmitted', submitted);
+        set('insModalStatus', status);
+
+        // What the patient actually pays out of pocket on an approved claim.
+        var money = function (v) {
+            var n = parseFloat(String(v).replace(/[^0-9.\-]/g, ''));
+            return isNaN(n) ? null : n;
+        };
+        var claimed = money(amount), covered = money(approved);
+        var oop = document.getElementById('insModalOop');
+        if (oop) {
+            if (claimed !== null && covered !== null && covered <= claimed) {
+                oop.textContent = '$' + (claimed - covered).toFixed(2).replace(/\.00$/, '');
+            } else {
+                oop.textContent = '--';
+            }
+        }
+
+        var modal = document.getElementById('diorInsuranceModal');
+        if (modal) {
+            modal.classList.add('open');
+            modal.style.display = 'flex';
+        }
+    };
+
+    window.diorCloseInsuranceModal = function () {
+        var modal = document.getElementById('diorInsuranceModal');
+        if (modal) {
+            modal.classList.remove('open');
+            modal.style.display = 'none';
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var insModal = document.getElementById('diorInsuranceModal');
+        if (!insModal) return;
+        insModal.addEventListener('click', function (e) {
+            if (e.target === insModal) window.diorCloseInsuranceModal();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && insModal.style.display === 'flex') {
+                window.diorCloseInsuranceModal();
+            }
+        });
+    });
+
+    /* Build the printable body of a single bill. Shared by download and print so
+       both produce the same document. */
+    function diorBuildBillHtml(inv, doc, date, amt, tax, disc, total) {
+        var logo = (window.dior_vars && window.dior_vars.logo_url) || '';
+        var row = function (label, value) {
+            return '<tr><th>' + label + '</th><td>' + value + '</td></tr>';
+        };
+        var esc = function (v) {
+            return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        };
+        return '<div class="dior-bill-doc">' +
+            '<div class="bill-doc-head">' +
+                (logo ? '<img src="' + esc(logo) + '" alt="Dior Medical">' : '') +
+                '<div><h1>DIOR MEDICAL TELEHEALTH</h1>' +
+                '<p>Billing Statement &middot; Invoice ' + esc(inv) + '</p></div>' +
+            '</div>' +
+            '<table class="bill-doc-table">' +
+                row('Invoice No', esc(inv)) +
+                row('Doctor', esc(doc)) +
+                row('Date', esc(date)) +
+                row('Amount', esc(amt)) +
+                row('Tax', esc(tax)) +
+                row('Discount', esc(disc)) +
+                '<tr class="bill-doc-total"><th>Total</th><td>' + esc(total) + '</td></tr>' +
+            '</table>' +
+            '<p class="bill-doc-foot">This statement was generated from the Dior Medical patient portal. ' +
+            'For billing questions, contact the clinic using the details on our website.</p>' +
+            '</div>';
+    }
+
+    /* Download the bill as a PDF, with a print-window fallback when the PDF
+       library is unavailable. */
+    window.diorDownloadBillPdf = function (inv, doc, date, amt, tax, disc, total) {
+        var html = diorBuildBillHtml(inv, doc, date, amt, tax, disc, total);
+        var fileName = 'Dior-Bill-' + String(inv).replace(/[^a-zA-Z0-9]/g, '-') + '.pdf';
+
+        if (typeof html2pdf === 'undefined' || !html2pdf) {
+            window.diorPrintBill(inv, doc, date, amt, tax, disc, total);
+            return;
+        }
+
+        var holder = document.createElement('div');
+        holder.style.position = 'fixed';
+        holder.style.left = '0';
+        holder.style.top = '0';
+        holder.style.width = '750px';
+        holder.style.background = '#FFFFFF';
+        holder.style.zIndex = '-999999';
+        holder.style.opacity = '1';
+        holder.style.pointerEvents = 'none';
+        holder.innerHTML = html;
+        document.body.appendChild(holder);
+
+        html2pdf().set({
+            margin: [8, 8, 8, 8],
+            filename: fileName,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: 0, scrollX: 0, windowWidth: 794 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).from(holder.firstElementChild || holder).save()
+            .then(function () {
+                if (holder.parentNode) holder.parentNode.removeChild(holder);
+            })
+            .catch(function (err) {
+                console.error('Bill PDF export failed:', err);
+                if (holder.parentNode) holder.parentNode.removeChild(holder);
+                window.diorPrintBill(inv, doc, date, amt, tax, disc, total);
+            });
+    };
+
+    /* Print the bill in its own window so the dashboard chrome is not printed. */
+    window.diorPrintBill = function (inv, doc, date, amt, tax, disc, total) {
+        var body = diorBuildBillHtml(inv, doc, date, amt, tax, disc, total);
+        var css = (window.dior_patient_dashboard && window.dior_patient_dashboard.refactor_css_url) || '';
+        var styles =
+            '@page{size:A4 portrait;margin:14mm}' +
+            'body{margin:0;background:#fff;color:#0F172A;font-family:Montserrat,Arial,sans-serif;' +
+            '-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+            '.bill-doc-head{display:flex;align-items:center;justify-content:space-between;gap:16px;' +
+            'padding-bottom:14px;margin-bottom:20px;border-bottom:2px solid #1A528E}' +
+            '.bill-doc-head img{max-height:52px;width:auto;object-fit:contain}' +
+            '.bill-doc-head h1{font-size:17px;margin:0;color:#1A528E}' +
+            '.bill-doc-head p{margin:4px 0 0;font-size:12px;color:#64748B}' +
+            '.bill-doc-table{width:100%;border-collapse:collapse}' +
+            '.bill-doc-table th{text-align:left;font-size:11px;letter-spacing:.05em;text-transform:uppercase;' +
+            'color:#64748B;font-weight:700;padding:10px 12px;border-bottom:1px solid #E2E8F0;width:38%}' +
+            '.bill-doc-table td{padding:10px 12px;border-bottom:1px solid #E2E8F0;font-size:13px;font-weight:600}' +
+            '.bill-doc-total th,.bill-doc-total td{border-top:2px solid #1A528E;border-bottom:0;' +
+            'font-size:15px;color:#00346C;font-weight:700}' +
+            '.bill-doc-foot{margin-top:18px;font-size:10px;color:#64748B;line-height:1.5}';
+
+        var win = window.open('', '_blank');
+        if (!win) {
+            window.print();
+            return;
+        }
+        win.document.open();
+        win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Invoice ' +
+            String(inv).replace(/[<>]/g, '') + '</title>' +
+            (css ? '<link rel="stylesheet" href="' + css + '">' : '') +
+            '<style>' + styles + '</style></head><body>' + body + '</body></html>');
+        win.document.close();
+        win.focus();
+        setTimeout(function () { win.print(); }, 350);
+    };
 
     document.addEventListener('DOMContentLoaded', function() {
         diorRenderBillPagination();
@@ -1415,6 +1671,14 @@ let diorInsuranceCurrentPage = 1;
     }
 
     function diorRenderInsurancePagination() {
+        // Insurance & Claims has a single paginator: the shared table controller
+        // (dior-static-table-interactions.js) renders it inside the card's
+        // `.master-table-footer`. Running this 5-per-page helper as well produced
+        // a second pager and made both fight over row visibility.
+        if (document.getElementById('dior-insurance-table')) {
+            return;
+        }
+
         const activeRows = diorGetInsuranceActiveRows();
         const allRows = Array.from(document.querySelectorAll('#dior-insurance-tbody tr'));
         const totalPages = Math.ceil(activeRows.length / diorInsuranceRowsPerPage) || 1;
@@ -1672,64 +1936,13 @@ let diorTeleCurrentPage = 1;
     }
 
 // --- Extracted dashboard script 10 ---
-let diorDocsCurrentPage = 1;
-    const diorDocsRowsPerPage = 6;
+/* Document pagination and search are owned by the shared static-table layer
+   (assets/js/dior-static-table-interactions.js). The old local paginator and
+   the per-category pill filter were removed with the filter bar. */
 
-    function diorGetDocsActiveRows() {
-        const input = document.getElementById('dior-docs-search-input');
-        const filter = input ? input.value.toLowerCase() : '';
-        const allRows = Array.from(document.querySelectorAll('#dior-docs-tbody tr'));
-        
-        return allRows.filter(function(row) {
-            const text = row.innerText.toLowerCase();
-            return text.includes(filter);
-        });
-    }
-
-    function diorRenderDocsPagination() {
-        const activeRows = diorGetDocsActiveRows();
-        const allRows = Array.from(document.querySelectorAll('#dior-docs-tbody tr'));
-        const totalPages = Math.ceil(activeRows.length / diorDocsRowsPerPage) || 1;
-
-        if (diorDocsCurrentPage > totalPages) {
-            diorDocsCurrentPage = totalPages;
-        }
-        if (diorDocsCurrentPage < 1) {
-            diorDocsCurrentPage = 1;
-        }
-
-        allRows.forEach(row => row.style.display = 'none');
-
-        const startIndex = (diorDocsCurrentPage - 1) * diorDocsRowsPerPage;
-        const endIndex = startIndex + diorDocsRowsPerPage;
-        const pageRows = activeRows.slice(startIndex, endIndex);
-
-        pageRows.forEach(row => row.style.display = '');
-
-        const pagContainer = document.getElementById('dior-docs-pagination');
-        if (pagContainer) {
-            pagContainer.innerHTML = diorBuildPagerHtml(diorDocsCurrentPage, totalPages, 'diorGoDocsPage');
-        }
-
-        const pageCountEl = document.getElementById('dior-docs-page-count');
-        if (pageCountEl) {
-            pageCountEl.innerText = `0 selected / ${activeRows.length} total`;
-        }
-    }
-
-    function diorGoDocsPage(page) {
-        diorDocsCurrentPage = page;
-        diorRenderDocsPagination();
-    }
-
-    function diorFilterDocs() {
-        diorDocsCurrentPage = 1;
-        diorRenderDocsPagination();
-    }
-    
     function diorDownloadDocsCSV() {
         let csvContent = "data:text/csv;charset=utf-8,Document Title,Category,Type,Upload Date,Size,Status\n";
-        const activeRows = diorGetDocsActiveRows();
+        const activeRows = Array.from(document.querySelectorAll('#dior-docs-tbody tr'));
         activeRows.forEach(function(row) {
             let cols = row.querySelectorAll('td');
             if(cols.length >= 8) {
@@ -1749,13 +1962,6 @@ let diorDocsCurrentPage = 1;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        diorRenderDocsPagination();
-    });
-    if (document.readyState === 'interactive' || document.readyState === 'complete') {
-        diorRenderDocsPagination();
     }
 
 // Medical Record tab filters: the buttons filter the existing clinical timeline without reloading.
@@ -2242,7 +2448,7 @@ let diorNotifCurrentPage = 1;
                 html: `
                     <div style="text-align:left;font-size:14px;color:#475569;line-height:1.6;margin-top:10px;">
                         <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;">
-                            <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;background:#e0e7ff;color:#3730a3;">${type}</span>
+                            <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;background:#e0e7ff;color:#1A528E;">${type}</span>
                             <span style="font-size:12px;color:#94a3b8;">${date}</span>
                         </div>
                         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;color:#334155;white-space:pre-wrap;">${message}</div>
@@ -2323,9 +2529,6 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
             var routingEl = document.getElementById('pat-modal-rx-routing');
             var statusBadge = document.getElementById('pat-modal-rx-status-badge');
             var pharmNameEl = document.getElementById('pat-modal-rx-pharm-name');
-            var sigNameEl = document.getElementById('pat-modal-rx-sig-name');
-            var sigDateEl = document.getElementById('pat-modal-rx-sig-date');
-            var barcodeTxt = document.getElementById('pat-modal-rx-barcode-txt');
             var adviceEl = document.getElementById('pat-modal-rx-advice');
             var pdfBtn = document.getElementById('pat-modal-rx-pdf-btn');
             var refillBtn = document.getElementById('pat-modal-rx-refill-btn');
@@ -2339,7 +2542,6 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
             var actualPharm = found ? (found.pharmacy || 'Preferred Pharmacy on File') : 'Preferred Pharmacy on File';
 
             if (idEl) idEl.textContent = 'Rx #' + actualId;
-            if (barcodeTxt) barcodeTxt.textContent = '*RX-' + String(actualId).replace(/[^0-9a-zA-Z]/g, '') + '*';
             if (docEl) docEl.textContent = cleanDoc;
             if (docHeaderEl) docHeaderEl.innerHTML = '<span>' + escapeHtml(cleanDoc) + ', MD</span>';
             if (docCellEl) docCellEl.textContent = cleanDoc + ', MD';
@@ -2385,22 +2587,6 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
             if (routingEl) routingEl.innerHTML = '<i class="fa-solid fa-circle-check dior-ic-2eb9f328f2"></i> ' + actualRouting;
             if (statusBadge) statusBadge.innerHTML = '<i class="fa-solid fa-check"></i> ' + (found.routing_status || (actualRouting === 'Sent to Pharmacy' ? 'Transmission Confirmed' : actualRouting));
             if (pharmNameEl) pharmNameEl.textContent = actualPharm;
-            if (sigNameEl) sigNameEl.textContent = '/s/ ' + cleanDoc + ', MD';
-            if (sigDateEl) sigDateEl.textContent = 'SHA256 Encrypted \u2022 Issued ' + actualDate;
-
-            var sigImgEl = document.getElementById('pat-modal-rx-sig-img');
-            var docSigUrl = (found && (found.doctor_signature || found.signature_url)) || (window.dior_vars && window.dior_vars.default_doctor_signature ? window.dior_vars.default_doctor_signature : '');
-            if (sigImgEl) {
-                if (docSigUrl) {
-                    sigImgEl.src = docSigUrl;
-                    sigImgEl.style.display = 'inline-block';
-                    if (sigNameEl) sigNameEl.style.display = 'none';
-                } else {
-                    sigImgEl.style.display = 'none';
-                    if (sigNameEl) sigNameEl.style.display = 'inline-block';
-                }
-            }
-
             function escapeHtml(str) {
                 if (!str) return '';
                 var d = document.createElement('div');
@@ -2866,72 +3052,169 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
         };
 
         window.diorDownloadRxPdf = function (rxId) {
+            // Find the data element (lookup by id or partial match)
             var element = document.getElementById('rx-pdf-template-' + rxId);
             if (!element) {
                 var allTemplates = document.querySelectorAll('[id^="rx-pdf-template-"]');
-                if (allTemplates && allTemplates.length > 0) {
-                    for (var k = 0; k < allTemplates.length; k++) {
-                        var rawIds = (allTemplates[k].getAttribute('data-raw-ids') || '').split(',');
-                        if (allTemplates[k].id.indexOf(rxId) !== -1 || rawIds.indexOf(String(rxId)) !== -1) {
-                            element = allTemplates[k];
-                            break;
-                        }
+                for (var k = 0; k < allTemplates.length; k++) {
+                    if (allTemplates[k].id.indexOf(rxId) !== -1) {
+                        element = allTemplates[k];
+                        break;
                     }
                 }
             }
-            if (!element) { Swal.fire({ title: 'Not Found', text: 'Prescription details not found for Rx #' + rxId, icon: 'warning' }); return; }
-
-            var cleanFileName = 'Dior-Prescription-' + String(rxId).replace(/[^a-zA-Z0-9]/g, '-') + '.pdf';
-            var innerContent = element.innerHTML;
-
-            var tempContainer = document.createElement('div');
-            tempContainer.style.position = 'fixed';
-            tempContainer.style.left = '0';
-            tempContainer.style.top = '0';
-            tempContainer.style.width = '750px';
-            tempContainer.style.background = '#FFFFFF';
-            tempContainer.style.zIndex = '-999999';
-            tempContainer.style.opacity = '1';
-            tempContainer.style.pointerEvents = 'none';
-            tempContainer.style.margin = '0';
-            tempContainer.style.padding = '0';
-            tempContainer.innerHTML = innerContent;
-            document.body.appendChild(tempContainer);
-
-            if (typeof html2pdf !== 'undefined' && html2pdf) {
-                var opt = {
-                    margin: [6, 6, 6, 6],
-                    filename: cleanFileName,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: {
-                        scale: 2,
-                        useCORS: true,
-                        logging: false,
-                        scrollY: 0,
-                        scrollX: 0,
-                        windowWidth: 794
-                    },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-                };
-                try {
-                    html2pdf().set(opt).from(tempContainer.firstElementChild || tempContainer).save().then(function () {
-                        if (tempContainer.parentNode) tempContainer.parentNode.removeChild(tempContainer);
-                    }).catch(function (err) {
-                        console.error('PDF export error:', err);
-                        if (tempContainer.parentNode) tempContainer.parentNode.removeChild(tempContainer);
-                        fallbackPrintWindow(innerContent, 'Prescription #' + rxId);
-                    });
-                } catch (e) {
-                    console.error('PDF generation error:', e);
-                    if (tempContainer.parentNode) tempContainer.parentNode.removeChild(tempContainer);
-                    fallbackPrintWindow(innerContent, 'Prescription #' + rxId);
-                }
-            } else {
-                console.warn('html2pdf library not loaded, falling back to print');
-                if (tempContainer.parentNode) tempContainer.parentNode.removeChild(tempContainer);
-                fallbackPrintWindow(innerContent, 'Prescription #' + rxId);
+            if (!element) {
+                Swal.fire({ title: 'Not Found', text: 'Prescription details not found for Rx #' + rxId, icon: 'warning' });
+                return;
             }
+
+            // Read data from attributes (no DOM rendering needed)
+            var d = {
+                id:      element.getAttribute('data-rx-id')      || rxId,
+                title:   element.getAttribute('data-rx-title')   || 'Prescription',
+                name:    element.getAttribute('data-rx-name')    || '',
+                doctor:  element.getAttribute('data-rx-doctor')  || '',
+                date:    element.getAttribute('data-rx-date')    || '',
+                disease: element.getAttribute('data-rx-disease') || '',
+                status:  element.getAttribute('data-rx-status')  || '',
+                inst:    element.getAttribute('data-rx-inst')    || ''
+            };
+
+            // Resolve jsPDF constructor (bundled inside html2pdf.bundle.min.js)
+            var JsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+            if (!JsPDF) {
+                // Fallback: open print window
+                var printWin = window.open('', '_blank');
+                if (printWin) {
+                    printWin.document.write('<html><body style="font-family:Arial;padding:40px"><h2>Dior Medical — Prescription</h2><b>ID:</b> ' + d.id + '<br><b>Medication:</b> ' + d.name + '<br><b>Doctor:</b> ' + d.doctor + '<br><b>Date:</b> ' + d.date + '<br><b>Condition:</b> ' + d.disease + '<br><b>Status:</b> ' + d.status + (d.inst ? '<br><b>Instructions:</b> ' + d.inst : '') + '</body></html>');
+                    printWin.document.close();
+                    printWin.print();
+                }
+                return;
+            }
+
+            var today = new Date().toISOString().slice(0, 10);
+            var cleanFileName = 'Dior-Prescription-' + String(d.id).replace(/[^a-zA-Z0-9]/g, '-') + '.pdf';
+
+            var doc = new JsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+            var pageW = doc.internal.pageSize.getWidth();   // 210 mm
+            var pageH = doc.internal.pageSize.getHeight();  // 297 mm
+            var lm = 18, rm = 18;                           // left/right margin
+            var cw = pageW - lm - rm;                       // content width
+            var y = 20;                                     // current Y cursor
+
+            // ── Helper: wrap long text ──────────────────────────
+            function wrapText(text, maxWidth) {
+                return doc.splitTextToSize(text || '', maxWidth);
+            }
+
+            // ── HEADER ───────────────────────────────────────────
+            // Brand name
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.setTextColor(0, 52, 108);       // #00346C
+            doc.text('Dior Medical', lm, y);
+
+            // Prescription ID (right-aligned)
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(100, 116, 139);    // #64748b
+            doc.text('Prescription ID', pageW - rm, y - 4, { align: 'right' });
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(11);
+            doc.setTextColor(0, 52, 108);
+            doc.text(d.id, pageW - rm, y + 1, { align: 'right' });
+
+            // Tagline
+            y += 5;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.5);
+            doc.setTextColor(100, 116, 139);
+            doc.text('HIPAA-Compliant Healthcare Platform', lm, y);
+
+            // Divider line
+            y += 5;
+            doc.setDrawColor(0, 52, 108);
+            doc.setLineWidth(0.7);
+            doc.line(lm, y, pageW - rm, y);
+            y += 8;
+
+            // ── PRESCRIPTION TITLE ────────────────────────────────
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
+            doc.setTextColor(15, 23, 42);       // #0f172a
+            var titleLines = wrapText(d.title, cw);
+            doc.text(titleLines, lm, y);
+            y += (titleLines.length * 7) + 4;
+
+            // ── DETAILS TABLE ─────────────────────────────────────
+            var rows = [
+                ['Medication',         d.name    || '—'],
+                ['Prescribed By',      d.doctor  || '—'],
+                ['Date Prescribed',    d.date    || '—'],
+                ['Condition/Diagnosis',d.disease || '—'],
+                ['Status',             d.status  || '—']
+            ];
+            if (d.inst) {
+                rows.push(['Instructions', d.inst]);
+            }
+
+            var col1W = cw * 0.36;
+            var col2W = cw * 0.64;
+            var rowH  = 9;
+            var cellPadX = 4, cellPadY = 6;
+
+            rows.forEach(function (row, i) {
+                var label = row[0];
+                var value = row[1];
+                var valueLines = wrapText(value, col2W - cellPadX * 2);
+                var thisRowH = Math.max(rowH, valueLines.length * 5.5 + cellPadY * 1.5);
+
+                // Row background
+                if (i % 2 === 0) {
+                    doc.setFillColor(241, 245, 249);  // #f1f5f9
+                } else {
+                    doc.setFillColor(255, 255, 255);
+                }
+                doc.rect(lm, y, cw, thisRowH, 'F');
+
+                // Cell borders
+                doc.setDrawColor(203, 213, 225);      // #cbd5e1
+                doc.setLineWidth(0.3);
+                doc.rect(lm, y, col1W, thisRowH, 'S');
+                doc.rect(lm + col1W, y, col2W, thisRowH, 'S');
+
+                // Label
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10);
+                doc.setTextColor(51, 65, 85);         // #334155
+                doc.text(label, lm + cellPadX, y + cellPadY);
+
+                // Value
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(15, 23, 42);
+                doc.text(valueLines, lm + col1W + cellPadX, y + cellPadY);
+
+                y += thisRowH;
+            });
+
+            // ── FOOTER ────────────────────────────────────────────
+            y += 8;
+            doc.setDrawColor(226, 232, 240);    // #e2e8f0
+            doc.setLineWidth(0.3);
+            doc.line(lm, y, pageW - rm, y);
+            y += 5;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.5);
+            doc.setTextColor(148, 163, 184);    // #94a3b8
+            doc.text('Generated by Dior Medical Patient Portal', lm, y);
+            doc.text('Printed: ' + today, pageW - rm, y, { align: 'right' });
+
+            // ── SAVE ──────────────────────────────────────────────
+            doc.save(cleanFileName);
         };
 
         function diorInitThemeMode() {
@@ -3079,14 +3362,34 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
 (function () {
     'use strict';
 
+    // Hash as it was before any other controller touched it, so the tab the user
+    // refreshed on is still the tab that gets restored.
+    var diorInitialHash = window.location.hash || '';
+
     function switchPatientTab(tabId, updateHash) {
+        // Accept the full deep-link shape ("appointments&subtab=today").
+        var requestedSubTab = null;
+        if (typeof tabId === 'string') {
+            if (tabId.indexOf('&subtab=') !== -1) {
+                var subParts = tabId.split('&subtab=');
+                tabId = subParts[0];
+                requestedSubTab = subParts[1] || null;
+            }
+            if (tabId.indexOf('#tab=') === 0) tabId = tabId.substring(5);
+        }
+
+        if (tabId === 'profile') tabId = 'settings';
+
         var panel = document.getElementById('tab-' + tabId);
         if (!panel) {
             return false;
         }
 
         document.querySelectorAll('.dior-nav-btn[data-tab]').forEach(function (btn) {
-            if (btn.getAttribute('data-tab') === tabId) {
+            // A submenu parent row (Appointments) opens its list; it must not
+            // take the .active fill. That fill is reserved for leaf rows and
+            // is exactly the background the doctor sidebar never shows here.
+            if (btn.getAttribute('data-tab') === tabId && !diorIsSubmenuParentBtn(btn)) {
                 btn.classList.add('active');
             } else {
                 btn.classList.remove('active');
@@ -3114,6 +3417,7 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
             }
         });
 
+
         var title = document.getElementById('dior-current-page-title');
         var titles = {
             overview: 'Patient Overview',
@@ -3137,13 +3441,17 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
             var w = document.getElementById('dior-appt-dropdown-wrap');
             if (w) {
                 w.classList.remove('open');
-                var ch = w.querySelector('.fa-chevron-down');
-                if (ch) ch.style.transform = 'rotate(0deg)';
+                if (typeof diorSetApptToggleIcon === 'function') diorSetApptToggleIcon(w, false);
             }
         }
 
         if (updateHash !== false && window.history && window.history.replaceState) {
             window.history.replaceState(null, '', '#tab=' + encodeURIComponent(tabId));
+        }
+
+        if (tabId === 'appointments' && requestedSubTab &&
+            typeof window.diorSwitchApptSubTab === 'function') {
+            window.diorSwitchApptSubTab(requestedSubTab);
         }
 
         return true;
@@ -3177,12 +3485,10 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
                             var isOpen = w.classList.contains('open');
                             if (isOpen) {
                                 w.classList.remove('open');
-                                var ch = w.querySelector('.fa-chevron-down');
-                                if (ch) ch.style.transform = 'rotate(0deg)';
+                                diorSetApptToggleIcon(w, false);
                             } else {
                                 w.classList.add('open');
-                                var ch = w.querySelector('.fa-chevron-down');
-                                if (ch) ch.style.transform = 'rotate(180deg)';
+                                diorSetApptToggleIcon(w, true);
                                 switchPatientTab('appointments');
                                 if (typeof window.diorSwitchApptSubTab === 'function') {
                                     window.diorSwitchApptSubTab('book');
@@ -3210,7 +3516,7 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
         });
 
         // Restore hash only when it points to an actual panel.
-        var hash = window.location.hash || '';
+        var hash = diorInitialHash || window.location.hash || '';
         if (hash.indexOf('#tab=') === 0) {
             var raw = hash.substring(5);
             var requested = raw;
@@ -3227,8 +3533,15 @@ window.dior_patient_appts_data = (window.dior_patient_dashboard && window.dior_p
                 if (requested === 'appointments' && typeof window.diorSwitchApptSubTab === 'function') {
                     var s = requestedSub || (function(){
                         try { return sessionStorage.getItem('dior_active_appt_subtab'); } catch(e){ return null; }
-                    })() || 'calendar';
+                    })() || 'today';
                     window.diorSwitchApptSubTab(s);
+                } else if (window.history && window.history.replaceState) {
+                    // Keep the address bar showing the restored page without adding
+                    // a history entry (deep links stay valid and shareable).
+                    var desiredHash = '#tab=' + encodeURIComponent(requested);
+                    if (window.location.hash !== desiredHash) {
+                        window.history.replaceState(null, '', desiredHash);
+                    }
                 }
             }
         }
@@ -3521,7 +3834,7 @@ document.addEventListener('click', function (event) {
           text: 'Are you sure you want to remove this health goal?',
           icon: 'warning',
           showCancelButton: true,
-          confirmButtonColor: '#dc3545',
+          confirmButtonColor: '#DC2626',
           confirmButtonText: 'Yes, remove',
           cancelButtonText: 'Cancel'
         }).then(function (result) {
@@ -3545,6 +3858,16 @@ document.addEventListener('click', function (event) {
 (function () {
     if (window.__diorTodayAppointmentActionsBound) return;
     window.__diorTodayAppointmentActionsBound = true;
+
+    // The Appointments entry follows the Doctor Dashboard's affordance: a
+    // +/− icon that flips with the menu state.
+    function diorSetApptToggleIcon(wrap, isOpen) {
+        if (!wrap) return;
+        var icon = wrap.querySelector('.submenu-icon');
+        if (!icon) return;
+        icon.classList.toggle('fa-minus', !!isOpen);
+        icon.classList.toggle('fa-plus', !isOpen);
+    }
 
     function getAppointmentAjaxConfig() {
         const config = window.dior_patient_dashboard || window.dior_vars || {};
@@ -3579,11 +3902,16 @@ document.addEventListener('click', function (event) {
         return Promise.resolve();
     }
 
+    // Builds the reschedule dialog. The dashboard runs on the Bootstrap alert
+    // shim (window.Swal) rather than SweetAlert2, and that shim has no
+    // preConfirm / showValidationMessage support, so the form lives here as a
+    // plain markup block and validates itself before sending the AJAX call.
     function rescheduleTodayAppointment(button) {
         const uid = (button.getAttribute('data-appt-uid') || '').trim();
-        const currentDate = button.getAttribute('data-appt-date') || '';
-        const currentTime = button.getAttribute('data-appt-time') || '';
         if (!uid) return;
+
+        const currentDate = (button.getAttribute('data-appt-date') || '').trim();
+        const currentTime = (button.getAttribute('data-appt-time') || '').trim();
 
         if (!window.Swal) {
             showAppointmentMessage('error', 'Unavailable', 'Appointment rescheduling requires the dashboard dialog component.');
@@ -3595,55 +3923,121 @@ document.addEventListener('click', function (event) {
             String(today.getMonth() + 1).padStart(2, '0') + '-' +
             String(today.getDate()).padStart(2, '0');
 
+        // Only prefill values the date/time inputs can actually display. The
+        // row templates hand over a display time ("02:00 PM"), so normalise it
+        // to the 24-hour value an <input type="time"> expects.
+        const dateValue = /^\d{4}-\d{2}-\d{2}$/.test(currentDate) && currentDate >= minDate ? currentDate : '';
+        let timeValue = '';
+        const timeMatch = currentTime.match(/^\s*(\d{1,2}):(\d{2})\s*([AaPp][Mm])?\s*$/);
+        if (timeMatch) {
+            let hours = parseInt(timeMatch[1], 10);
+            const minutes = timeMatch[2];
+            const suffix = timeMatch[3] ? timeMatch[3].toUpperCase() : '';
+            if (suffix === 'PM' && hours < 12) hours += 12;
+            if (suffix === 'AM' && hours === 12) hours = 0;
+            if (hours >= 0 && hours <= 23) {
+                timeValue = String(hours).padStart(2, '0') + ':' + minutes;
+            }
+        }
+
         Swal.fire({
             title: 'Reschedule Appointment',
             html:
-                '<div class="text-start">' +
-                    '<label for="dior-reschedule-date" class="form-label">New date</label>' +
-                    '<input id="dior-reschedule-date" type="date" class="swal2-input" min="' + minDate + '" value="' + currentDate + '" style="width:85%;margin:0 auto 14px;">' +
-                    '<label for="dior-reschedule-time" class="form-label">New time</label>' +
-                    '<input id="dior-reschedule-time" type="time" class="swal2-input" value="" style="width:85%;margin:0 auto;">' +
+                '<div class="dior-reschedule-body">' +
+                    '<label class="dior-reschedule-label" for="dior-reschedule-date">New date</label>' +
+                    '<input id="dior-reschedule-date" class="dior-reschedule-field" type="date" min="' + minDate + '" value="' + dateValue + '">' +
+                    '<label class="dior-reschedule-label" for="dior-reschedule-time">New time</label>' +
+                    '<input id="dior-reschedule-time" class="dior-reschedule-field" type="time" value="' + timeValue + '">' +
+                    '<p class="dior-reschedule-error" role="alert" style="display:none;"></p>' +
                 '</div>',
-            focusConfirm: false,
             showCancelButton: true,
             confirmButtonText: 'Confirm Reschedule',
             cancelButtonText: 'Keep Current Time',
-            preConfirm: function () {
-                const dateInput = document.getElementById('dior-reschedule-date');
-                const timeInput = document.getElementById('dior-reschedule-time');
-                const date = dateInput ? dateInput.value : '';
-                const time = timeInput ? timeInput.value : '';
-                if (!date || !time) {
-                    Swal.showValidationMessage('Please select both a date and a time.');
-                    return false;
+            customClass: {
+                popup: 'dior-meeting-swal-popup',
+                confirmButton: 'dior-bs-btn-confirm',
+                cancelButton: 'dior-bs-btn-cancel'
+            },
+            didOpen: function (modalEl) {
+                const dateInput = modalEl.querySelector('#dior-reschedule-date');
+                const timeInput = modalEl.querySelector('#dior-reschedule-time');
+                const confirmBtn = modalEl.querySelector('.dior-bs-btn-confirm');
+                const errorEl = modalEl.querySelector('.dior-reschedule-error');
+
+                if (!dateInput || !timeInput || !confirmBtn) return;
+
+                function showError(message) {
+                    if (!errorEl) return;
+                    errorEl.textContent = message;
+                    errorEl.style.display = 'block';
                 }
-                if (date < minDate) {
-                    Swal.showValidationMessage('Appointment date cannot be in the past.');
-                    return false;
+
+                function clearError() {
+                    if (!errorEl) return;
+                    errorEl.textContent = '';
+                    errorEl.style.display = 'none';
                 }
-                return { date: date, time: time };
+
+                function submit() {
+                    const date = dateInput.value;
+                    const time = timeInput.value;
+
+                    clearError();
+                    if (!date || !time) {
+                        showError('Please select both a new date and a new time.');
+                        return;
+                    }
+                    if (date < minDate) {
+                        showError('Appointment date cannot be in the past.');
+                        return;
+                    }
+
+                    freshConfirm.disabled = true;
+                    freshConfirm.textContent = 'Rescheduling\u2026';
+
+                    sendAppointmentAction('dior_patient_reschedule_appointment', {
+                        appt_id: uid,
+                        date: date,
+                        time: time
+                    }).then(function (response) {
+                        if (!response || !response.success) {
+                            throw new Error(response && response.data && response.data.message ? response.data.message : 'Unable to reschedule this appointment.');
+                        }
+                        if (window.Swal && typeof Swal.close === 'function') {
+                            Swal.close();
+                        }
+                        return showAppointmentMessage('success', 'Appointment Rescheduled', response.data.message || 'Your appointment has been rescheduled.')
+                            .then(function () { window.location.reload(); });
+                    }).catch(function (error) {
+                        freshConfirm.disabled = false;
+                        freshConfirm.textContent = 'Confirm Reschedule';
+                        showError(error.message || 'Please try again.');
+                    });
+                }
+
+                // The shim already bound its own confirm handler (it resolves
+                // the dialog without looking at the fields). Swapping the node
+                // for a clone drops those listeners so only our validating
+                // handler remains.
+                const freshConfirm = confirmBtn.cloneNode(true);
+                confirmBtn.parentNode.replaceChild(freshConfirm, confirmBtn);
+                freshConfirm.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    submit();
+                });
+
+                [dateInput, timeInput].forEach(function (input) {
+                    input.addEventListener('input', clearError);
+                    input.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                            submit();
+                        }
+                    });
+                });
+
+                dateInput.focus();
             }
-        }).then(function (result) {
-            if (!result.isConfirmed || !result.value) return;
-            button.disabled = true;
-            return sendAppointmentAction('dior_patient_reschedule_appointment', {
-                appt_id: uid,
-                date: result.value.date,
-                time: result.value.time
-            }).then(function (response) {
-                if (!response || !response.success) {
-                    throw new Error(response && response.data && response.data.message ? response.data.message : 'Unable to reschedule this appointment.');
-                }
-                return Swal.fire({
-                    icon: 'success',
-                    title: 'Appointment Rescheduled',
-                    text: response.data.message || 'Your appointment has been rescheduled.',
-                    confirmButtonText: 'OK'
-                }).then(function () { window.location.reload(); });
-            }).catch(function (error) {
-                button.disabled = false;
-                showAppointmentMessage('error', 'Reschedule Failed', error.message || 'Please try again.');
-            });
         });
     }
 
@@ -3662,7 +4056,7 @@ document.addEventListener('click', function (event) {
                 showCancelButton: true,
                 confirmButtonText: 'Yes, Cancel Appointment',
                 cancelButtonText: 'Keep Appointment',
-                confirmButtonColor: '#dc3545'
+                confirmButtonColor: '#DC2626'
             })
             : Promise.resolve({ isConfirmed: window.confirm('Cancel this appointment?'), value: '' });
 
@@ -3686,6 +4080,16 @@ document.addEventListener('click', function (event) {
     }
 
     document.addEventListener('click', function (event) {
+        // The Overview consultation card carries its own Reschedule button; it
+        // opens the same dialog as the Appointments tab rows instead of just
+        // switching tabs and leaving the patient to hunt for the row.
+        const cardReschedule = event.target.closest('.dior-card-reschedule');
+        if (cardReschedule) {
+            event.preventDefault();
+            rescheduleTodayAppointment(cardReschedule);
+            return;
+        }
+
         const rescheduleButton = event.target.closest('.dior-today-reschedule');
         if (rescheduleButton) {
             event.preventDefault();
@@ -3709,10 +4113,22 @@ function diorShowMeetingJoinModal(alert, force) {
     var joinUrl = alert.action_url;
     if (!/^https?:\/\//i.test(joinUrl)) return false;
 
+    // GUARD 1: Prevent double-open — if modal is already visible, do nothing.
+    if (window._diorMeetingModalOpen) return false;
+
+    // GUARD 2: Deduplicate by join URL (covers same meeting with different notif IDs).
+    var urlKey = 'dior_dismissed_meeting_url_' + joinUrl.replace(/[^a-z0-9]/gi, '').slice(0, 48);
+    if (!force && window.sessionStorage && sessionStorage.getItem(urlKey)) {
+        return false;
+    }
+
+    // Legacy per-ID dedup (keep for back-compat).
     var notifId = alert.id || ('notif_' + String(alert.timestamp || Date.now()));
     if (!force && window.sessionStorage && sessionStorage.getItem('dior_dismissed_meeting_' + notifId)) {
         return false;
     }
+
+    window._diorMeetingModalOpen = true;
 
     // Gentle notification audio chime
     try {
@@ -3765,12 +4181,17 @@ function diorShowMeetingJoinModal(alert, force) {
             },
             buttonsStyling: false
         }).then(function (result) {
+            // Reset open-guard so a genuinely new meeting call can re-open.
+            window._diorMeetingModalOpen = false;
             if (window.sessionStorage) {
                 sessionStorage.setItem('dior_dismissed_meeting_' + notifId, '1');
+                sessionStorage.setItem(urlKey, '1');
             }
             if (result.isConfirmed) {
                 window.open(joinUrl, '_blank', 'noopener');
             }
+        }).catch(function () {
+            window._diorMeetingModalOpen = false;
         });
         return true;
     }
@@ -3811,13 +4232,21 @@ function diorShowMeetingJoinModal(alert, force) {
     if (cancelBtn) {
         cancelBtn.onclick = function() {
             modalEl.style.display = 'none';
-            if (window.sessionStorage) sessionStorage.setItem('dior_dismissed_meeting_' + notifId, '1');
+            window._diorMeetingModalOpen = false;
+            if (window.sessionStorage) {
+                sessionStorage.setItem('dior_dismissed_meeting_' + notifId, '1');
+                sessionStorage.setItem(urlKey, '1');
+            }
         };
     }
     if (joinBtn) {
         joinBtn.onclick = function() {
             modalEl.style.display = 'none';
-            if (window.sessionStorage) sessionStorage.setItem('dior_dismissed_meeting_' + notifId, '1');
+            window._diorMeetingModalOpen = false;
+            if (window.sessionStorage) {
+                sessionStorage.setItem('dior_dismissed_meeting_' + notifId, '1');
+                sessionStorage.setItem(urlKey, '1');
+            }
             window.open(joinUrl, '_blank', 'noopener');
         };
     }
@@ -3909,4 +4338,173 @@ function diorShowMeetingJoinModal(alert, force) {
     document.addEventListener('visibilitychange', function () {
         if (!document.hidden) pollPatientNotifications();
     });
+})();
+
+/* ------------------------------------------------------------------
+ * Patient Appointments — one pager for all three tables.
+ *
+ * Previously only the Upcoming and Past tables paginated, they hid
+ * rows with inline `display:none` (which the mobile card CSS beats
+ * with `display:grid !important`), and the containers they render
+ * into did not exist in the markup at all, so nothing was visible.
+ *
+ * This renderer is the single source of truth: it hides rows with a
+ * class, prints "Showing X to Y of Z entries" plus the Doctor
+ * Dashboard pager (prev / numbers / next), and pages 10 rows at a
+ * time. The old function names stay as thin wrappers so every
+ * existing onclick / init call keeps working.
+ * ------------------------------------------------------------------ */
+(function () {
+    var PAGE_SIZE = 10;
+    var HIDDEN = 'dior-appt-page-hidden';
+
+    var TABLES = {
+        today: { tbody: 'dior-today-appointments-tbody', bar: 'dior-today-pagination', input: 'dior-today-search-input' },
+        upcoming: { tbody: 'dior-upcoming-appointments-tbody', bar: 'dior-upcoming-pagination', input: 'dior-upcoming-search-input' },
+        past: { tbody: 'dior-past-appointments-tbody', bar: 'dior-past-pagination', input: 'dior-past-search-input' }
+    };
+
+    var state = { today: 1, upcoming: 1, past: 1 };
+
+    function matchingRows(cfg) {
+        var tbody = document.getElementById(cfg.tbody);
+        if (!tbody) return [];
+        var input = document.getElementById(cfg.input);
+        var needle = input ? (input.value || '').toLowerCase().trim() : '';
+
+        return Array.prototype.filter.call(tbody.querySelectorAll('tr'), function (row) {
+            if (!needle) return true;
+            return (row.textContent || '').toLowerCase().indexOf(needle) !== -1;
+        });
+    }
+
+    function render(kind) {
+        var cfg = TABLES[kind];
+        if (!cfg) return;
+
+        var tbody = document.getElementById(cfg.tbody);
+        if (!tbody) return;
+
+        // Clear any legacy inline hiding (it loses to the mobile !important rules).
+        Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function (row) {
+            if (row.style.display) row.style.display = '';
+            row.classList.add(HIDDEN);
+        });
+
+        var active = matchingRows(cfg);
+        var total = active.length;
+        var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        var page = Math.min(Math.max(1, parseInt(state[kind], 10) || 1), totalPages);
+        state[kind] = page;
+
+        var start = (page - 1) * PAGE_SIZE;
+        var end = Math.min(start + PAGE_SIZE, total);
+
+        active.slice(start, end).forEach(function (row) {
+            row.classList.remove(HIDDEN);
+        });
+
+        var bar = document.getElementById(cfg.bar);
+        if (!bar) return;
+
+        if (total <= PAGE_SIZE) {
+            bar.style.display = 'none';
+            bar.innerHTML = '';
+            return;
+        }
+
+        var nav = (typeof window.diorBuildPagerHtml === 'function')
+            ? window.diorBuildPagerHtml(page, totalPages, 'diorApptGoPage_' + kind)
+            : '';
+
+        bar.style.display = 'flex';
+        bar.innerHTML =
+            '<div class="dior-pagination-info">Showing <strong>' + (start + 1) + '</strong> to <strong>' +
+            end + '</strong> of <strong>' + total + '</strong> entries</div>' +
+            '<div class="dior-pagination-nav">' + nav + '</div>';
+    }
+
+    window.diorRenderApptPagination = render;
+
+    Object.keys(TABLES).forEach(function (kind) {
+        var suffix = kind.charAt(0).toUpperCase() + kind.slice(1);
+
+        window['diorApptGoPage_' + kind] = function (page) {
+            state[kind] = page;
+            render(kind);
+        };
+
+        // Same names the template's onkeyup / onchange attributes call.
+        window['diorFilter' + suffix + 'Appointments'] = function () {
+            state[kind] = 1;
+            render(kind);
+        };
+
+        // Same names the older init / bulk-delete code calls.
+        window['diorRender' + suffix + 'Pagination'] = function () {
+            render(kind);
+        };
+    });
+
+    function boot() {
+        Object.keys(TABLES).forEach(function (kind) {
+            render(kind);
+
+            // Row removal (bulk delete) or insertion must re-page immediately,
+            // otherwise a page can stay empty or the pager shows stale numbers.
+            var tbody = document.getElementById(TABLES[kind].tbody);
+            if (tbody && window.MutationObserver && !tbody.dataset.diorPagerBound) {
+                tbody.dataset.diorPagerBound = '1';
+                new MutationObserver(function () { render(kind); })
+                    .observe(tbody, { childList: true });
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
+    window.addEventListener('load', boot);
+})();
+
+/* Hide explicitly seeded demo prescriptions only; preserve all real records. */
+(function () {
+    function removeSeededDemoPrescriptions() {
+        var panel = document.getElementById('tab-docs_meds');
+        var tbody = panel && panel.querySelector('#dior-rx-tbody');
+        if (!tbody) return;
+
+        var removed = 0;
+        Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function (row) {
+            var idCell = row.querySelector('td:nth-child(2)');
+            var doctorCell = row.querySelector('td:nth-child(4)');
+            var conditionCell = row.querySelector('td:nth-child(6)');
+            var prescriptionId = idCell ? (idCell.textContent || '').trim() : '';
+            var doctorName = doctorCell ? (doctorCell.textContent || '').trim() : '';
+            var conditionName = conditionCell ? (conditionCell.textContent || '').trim() : '';
+            var designSampleDoctors = ['Dr. Sarah Smith', 'Dr. James Chen', 'Dr. Helen Miller', 'Dr. Marcus Sterling', 'Dr. Olivia Carter', 'Dr. Daniel Brooks', 'Dr. Emily Wilson', 'Dr. Noah Bennett', 'Dr. Sophia Davis', 'Dr. Ethan Walker'];
+            var isSeededDemo = /^DEMO-RX-/i.test(prescriptionId);
+            var isDesignSample = /^RX-10\d{2}$/i.test(prescriptionId) && conditionName === 'Routine Medication' && designSampleDoctors.some(function (name) { return doctorName.indexOf(name) === 0; });
+            if (!isSeededDemo && !isDesignSample) return;
+            row.remove();
+            removed++;
+            var pdfTemplate = panel.querySelector('#rx-pdf-template-' + prescriptionId);
+            if (pdfTemplate) pdfTemplate.remove();
+        });
+
+        if (removed && !tbody.querySelector('tr')) {
+            var emptyRow = document.createElement('tr');
+            emptyRow.innerHTML = '<td colspan="8" class="dior-empty-state"><div style="padding:40px;text-align:center;"><i class="fas fa-prescription-bottle-medical" style="font-size:40px;color:#CBD5E1;margin-bottom:12px;display:block;"></i><p style="color:#94A3B8;margin:0;">No prescriptions available yet.</p></div></td>';
+            tbody.appendChild(emptyRow);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', removeSeededDemoPrescriptions);
+    } else {
+        removeSeededDemoPrescriptions();
+    }
+    window.addEventListener('load', removeSeededDemoPrescriptions);
 })();

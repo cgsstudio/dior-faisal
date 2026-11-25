@@ -4,10 +4,10 @@
  */
 
 window.diorOnIntakeSubmitted = function(e) {
-    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    var detector = window.diorHipaatizerCompletion;
+    if (!e || typeof detector !== 'function' || !detector(e)) return;
 
-    // Remove the one-time registration flag after successful intake submission.
-    // This prevents the HIPAAtizer form from opening again on a normal refresh/login.
+    // Remove the one-time registration flag after confirmed intake submission.
     try {
         const cleanUrl = new URL(window.location.href);
         if (cleanUrl.searchParams.has('intake_required')) {
@@ -17,17 +17,15 @@ window.diorOnIntakeSubmitted = function(e) {
     } catch (cleanupError) {}
 
     const hipaaWrap = document.getElementById('dior-hipaa-form-container');
-    const bookingSec = document.getElementById('dior-dashboard-booking-section');
     const stepNotice = document.getElementById('dior-intake-step-notice');
     const compNotice = document.getElementById('dior-intake-completed-notice');
 
     if (hipaaWrap) {
         hipaaWrap.style.setProperty('display', 'none', 'important');
     }
-    if (bookingSec) {
-        bookingSec.style.setProperty('display', 'block', 'important');
-        bookingSec.scrollIntoView({ behavior: 'smooth' });
-    }
+    // Nothing is revealed after a successful intake any more. The schedule form
+    // that used to appear here is removed; HIPAAtizer's own success message is
+    // what the patient sees, and the intake form stays on screen, completed.
     if (stepNotice) {
         stepNotice.style.setProperty('display', 'none', 'important');
     }
@@ -35,44 +33,45 @@ window.diorOnIntakeSubmitted = function(e) {
         compNotice.style.setProperty('display', 'flex', 'important');
     }
 
-    if (typeof window.diorInBookingGoToStep === 'function') {
-        window.diorInBookingGoToStep('doctor');
+    const intakePopup = window.Swal && typeof window.Swal.getPopup === 'function'
+        ? window.Swal.getPopup()
+        : null;
+    if (intakePopup && intakePopup.classList.contains('dior-hipaatizer-popup-v17')) {
+        window.Swal.close();
     }
 
-    if (typeof showToast === 'function') {
-        showToast('Clinical Intake Submitted! Unlocking physician scheduling calendar...', false);
+    if (document.getElementById('dior-subtab-schedule') &&
+        typeof window.diorSwitchApptSubTab === 'function') {
+        window.diorSwitchApptSubTab('schedule');
+        try {
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, '', '#tab=appointments&subtab=schedule');
+            } else {
+                window.location.hash = '#tab=appointments&subtab=schedule';
+            }
+        } catch (e) {}
+    } else if (document.getElementById('dior-subtab-book') &&
+        typeof window.diorSwitchApptSubTab === 'function') {
+        window.diorSwitchApptSubTab('book');
+    } else {
+        window.location.hash = '#tab=appointments&subtab=schedule';
     }
 };
 
-// Automatic HIPAAtizer Embed Message Listener
-window.addEventListener('message', function(event) {
+// A confirmed HIPAAtizer workflow completion still runs the handler above (it
+// clears the one-time intake flag and hides the completed intake card), but it
+// no longer reveals a schedule form — that section was removed on request.
+// Progress messages are ignored by the shared detector.
+window.addEventListener('message', function (event) {
     if (!event || !event.data) return;
-    var data = event.data;
-    var isSubmitted = false;
 
-    if (typeof data === 'string') {
-        try {
-            data = JSON.parse(data);
-        } catch(e) {}
-    }
+    var detector = window.diorHipaatizerCompletion;
+    if (typeof detector !== 'function') return;
 
-    if (data && typeof data === 'object') {
-        if (data.type === 'hipaatizer-form-submitted' ||
-            data.action === 'form_submitted' ||
-            data.event === 'form_submitted' ||
-            (data.source && String(data.source).indexOf('hipaatizer') !== -1 &&
-                (data.action === 'submit' || data.event === 'submit'))
-        ) {
-            isSubmitted = true;
-        }
-    } else if (typeof data === 'string' && (data.indexOf('hipaatizer') !== -1 && (data.indexOf('submitted') !== -1 || data.indexOf('completed') !== -1))) {
-        isSubmitted = true;
-    }
+    if (!detector(event)) return;
 
-    if (isSubmitted) {
-        if (typeof window.diorOnIntakeSubmitted === 'function') {
-            window.diorOnIntakeSubmitted();
-        }
+    if (typeof window.diorOnIntakeSubmitted === 'function') {
+        window.diorOnIntakeSubmitted(event);
     }
 });
 
@@ -98,51 +97,6 @@ try {
         }, 900);
     }
 } catch (e) {}
-
-// Check URL parameters for direct redirect from HIPAAtizer settings
-try {
-    var urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('intake_completed') === '1' || urlParams.get('intake') === 'success' || urlParams.get('submitted') === '1' || window.location.hash.indexOf('booking') !== -1) {
-        setTimeout(function() {
-            if (typeof window.diorOnIntakeSubmitted === 'function') {
-                window.diorOnIntakeSubmitted();
-            }
-        }, 500);
-    }
-} catch(e) {}
-
-// Automatic Background Poller to detect intake webhook completion in real-time
-(function initIntakeWatcher() {
-    var checkTimer = null;
-    function checkStatus() {
-        var hipaaWrap = document.getElementById('dior-hipaa-form-container');
-        if (!hipaaWrap || hipaaWrap.style.display === 'none') {
-            if (checkTimer) clearInterval(checkTimer);
-            return;
-        }
-
-        if (typeof jQuery !== 'undefined' && typeof dior_vars !== 'undefined' && dior_vars.ajax_url) {
-            jQuery.ajax({
-                url: dior_vars.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'dior_patient_check_intake_status',
-                    nonce: dior_vars.nonce
-                },
-                dataType: 'json',
-                success: function(res) {
-                    if (res && res.success && res.data && res.data.has_intake) {
-                        if (checkTimer) clearInterval(checkTimer);
-                        window.diorOnIntakeSubmitted();
-                    }
-                }
-            });
-        }
-    }
-
-    // Check every 5 seconds while intake form is active
-    checkTimer = setInterval(checkStatus, 5000);
-})();
 
 window.diorToggleIntakeReview = function() {
     const card = document.getElementById('dior-intake-review-card');
@@ -753,13 +707,32 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
         }
         window.diorPromptCompleteProfile = promptCompleteProfile;
 
-        function switchTab(tabId) {
+        function switchTab(tabId, updateHash) {
             // Navigation must always work. Profile completeness is validated when the
             // patient actually submits an appointment/intake action, not when opening a tab.
             // This keeps every dashboard section accessible and preserves the existing UI.
 
-            if (!document.getElementById('tab-' + tabId)) {
-                tabId = 'overview';
+            // Accept the full deep-link shape ("appointments&subtab=today") so links
+            // and notification actions keep their subtab instead of failing.
+            let requestedSubTab = null;
+            if (typeof tabId === 'string' && tabId.indexOf('&subtab=') !== -1) {
+                const subParts = tabId.split('&subtab=');
+                tabId = subParts[0];
+                requestedSubTab = subParts[1] || null;
+            }
+            if (typeof tabId === 'string' && tabId.indexOf('#tab=') === 0) {
+                tabId = tabId.substring(5);
+            }
+
+            // "profile" is rendered inside the Settings panel.
+            if (tabId === 'profile') tabId = 'settings';
+
+            // Unknown targets must never hijack the page: previously any unparsed
+            // value (for example "appointments&subtab=book") fell back to Overview
+            // and rewrote the URL hash, which is what dropped the user on Overview
+            // after a refresh. Keep the current view and URL untouched instead.
+            if (!tabId || !document.getElementById('tab-' + tabId)) {
+                return false;
             }
 
             navButtons.forEach(btn => {
@@ -790,10 +763,14 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
                 pageTitleEl.textContent = tabTitles[tabId];
             }
 
-            if (history.pushState) {
-                history.pushState(null, null, '#tab=' + tabId);
-            } else {
-                location.hash = '#tab=' + tabId;
+            // Hash updates are skipped when a tab is being restored from the URL so
+            // that a refresh neither rewrites the address nor adds a history entry.
+            if (updateHash !== false) {
+                if (history.pushState) {
+                    history.pushState(null, null, '#tab=' + tabId);
+                } else {
+                    location.hash = '#tab=' + tabId;
+                }
             }
 
             if (tabId === 'notifications') {
@@ -817,6 +794,13 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
 
             closeMobileDrawer();
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (tabId === 'appointments' && requestedSubTab &&
+                typeof window.diorSwitchApptSubTab === 'function') {
+                window.diorSwitchApptSubTab(requestedSubTab);
+            }
+
+            return true;
         }
 
         // Restore previously dismissed badges from session
@@ -924,15 +908,36 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
             }
         });
 
-        // Deep linking via URL hash & hashchange listener
+        // Deep linking via URL hash & hashchange listener.
+        // Full hash shape is "#tab=<tabId>" or "#tab=appointments&subtab=<subtab>";
+        // the subtab part must be split off before the tab id is resolved.
         function handleUrlHash() {
-            if (window.location.hash && window.location.hash.startsWith('#tab=')) {
-                const hashTab = window.location.hash.replace('#tab=', '');
-                if (typeof window.diorSwitchTab === 'function') {
-                    window.diorSwitchTab(hashTab);
-                } else {
-                    switchTab(hashTab);
-                }
+            const hash = window.location.hash || '';
+            if (!hash.startsWith('#tab=')) return;
+
+            let raw = hash.substring(5);
+            let subTab = null;
+            const subIndex = raw.indexOf('&subtab=');
+            if (subIndex !== -1) {
+                subTab = raw.substring(subIndex + 8);
+                raw = raw.substring(0, subIndex);
+            }
+
+            let requestedTab = raw;
+            try { requestedTab = decodeURIComponent(requestedTab); } catch (e) {}
+            if (subTab !== null) {
+                try { subTab = decodeURIComponent(subTab); } catch (e) {}
+            }
+            if (requestedTab === 'profile') requestedTab = 'settings';
+
+            // Restore only real panels; anything else leaves the page as it is.
+            if (!requestedTab || !document.getElementById('tab-' + requestedTab)) return;
+
+            switchTab(requestedTab, false);
+
+            if (requestedTab === 'appointments' && subTab &&
+                typeof window.diorSwitchApptSubTab === 'function') {
+                window.diorSwitchApptSubTab(subTab);
             }
         }
         handleUrlHash();
@@ -1049,15 +1054,9 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
             }
         };
 
-        document.querySelectorAll('.dior-modal-close').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const overlay = this.closest('.dior-modal-overlay');
-                if (overlay) {
-                    overlay.classList.remove('open');
-                    document.body.style.overflow = '';
-                }
-            });
-        });
+        // NOTE: .dior-modal-close buttons already have inline onclick="diorCloseModal(...)"
+        // Adding another addEventListener here caused every close to fire twice.
+        // The click-outside-to-close listener below is kept as it handles overlay backdrop clicks.
 
         document.querySelectorAll('.dior-modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', function(e) {
@@ -2934,39 +2933,6 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
         }
 
         // =========================================================================
-        // 10. PHARMACY PREFERENCE CONTROLLER
-        // =========================================================================
-        window.diorOnPharmacySelectChange = function(selectEl) {
-            const val = selectEl.value;
-            if (val === 'custom') {
-                return;
-            }
-            const parts = val.split('|');
-            if (parts.length >= 3) {
-                document.getElementById('q_pharm_name').value = parts[0];
-                document.getElementById('q_pharm_address').value = parts[1];
-                document.getElementById('q_pharm_phone').value = parts[2];
-            }
-        };
-
-        const quickPharmForm = document.getElementById('dior-form-quick-pharmacy');
-        if (quickPharmForm) {
-            quickPharmForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const data = {
-                    pharmacy_name: this.pharmacy_name.value,
-                    pharmacy_address: this.pharmacy_address.value,
-                    pharmacy_phone: this.pharmacy_phone.value
-                };
-
-                sendAjax('dior_patient_update_pharmacy', data, () => {
-                    diorCloseModal('modal-change-pharmacy');
-                    setTimeout(() => window.location.reload(), 1000);
-                });
-            });
-        }
-
-        // =========================================================================
         // 11. RECEIPT, DOCUMENT & RX DETAIL VIEWERS
         // =========================================================================
         window.diorViewReceipt = function(id, amount, service, date) {
@@ -3296,9 +3262,6 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
                 var routingEl = document.getElementById('pat-modal-rx-routing');
                 var statusBadge = document.getElementById('pat-modal-rx-status-badge');
                 var pharmNameEl = document.getElementById('pat-modal-rx-pharm-name');
-                var sigNameEl = document.getElementById('pat-modal-rx-sig-name');
-                var sigDateEl = document.getElementById('pat-modal-rx-sig-date');
-                var barcodeTxt = document.getElementById('pat-modal-rx-barcode-txt');
                 var adviceEl = document.getElementById('pat-modal-rx-advice');
                 var pdfBtn = document.getElementById('pat-modal-rx-pdf-btn');
                 var refillBtn = document.getElementById('pat-modal-rx-refill-btn');
@@ -3312,7 +3275,6 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
                 var actualPharm = found ? (found.pharmacy || 'Preferred Pharmacy on File') : 'Preferred Pharmacy on File';
 
                 if (idEl) idEl.textContent = 'Rx #' + actualId;
-                if (barcodeTxt) barcodeTxt.textContent = '*RX-' + String(actualId).replace(/[^0-9a-zA-Z]/g, '') + '*';
                 if (docEl) docEl.textContent = cleanDoc;
                 if (docHeaderEl) docHeaderEl.innerHTML = '<span>' + escapeHtml(cleanDoc) + ', MD</span>';
                 if (docCellEl) docCellEl.textContent = cleanDoc + ', MD';
@@ -3358,22 +3320,6 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
                 if (routingEl) routingEl.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#059669;"></i> ' + actualRouting;
                 if (statusBadge) statusBadge.innerHTML = '<i class="fa-solid fa-check"></i> ' + (found.routing_status || (actualRouting === 'Sent to Pharmacy' ? 'Transmission Confirmed' : actualRouting));
                 if (pharmNameEl) pharmNameEl.textContent = actualPharm;
-                if (sigNameEl) sigNameEl.textContent = '/s/ ' + cleanDoc + ', MD';
-                if (sigDateEl) sigDateEl.textContent = 'SHA256 Encrypted \u2022 Issued ' + actualDate;
-
-                var sigImgEl = document.getElementById('pat-modal-rx-sig-img');
-                var docSigUrl = (found && (found.doctor_signature || found.signature_url)) || (window.dior_vars && window.dior_vars.default_doctor_signature ? window.dior_vars.default_doctor_signature : '');
-                if (sigImgEl) {
-                    if (docSigUrl) {
-                        sigImgEl.src = docSigUrl;
-                        sigImgEl.style.display = 'inline-block';
-                        if (sigNameEl) sigNameEl.style.display = 'none';
-                    } else {
-                        sigImgEl.style.display = 'none';
-                        if (sigNameEl) sigNameEl.style.display = 'inline-block';
-                    }
-                }
-
                 function escapeHtml(str) {
                     if (!str) return '';
                     var d = document.createElement('div');

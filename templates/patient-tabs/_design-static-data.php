@@ -18,11 +18,7 @@ if (!isset($prescriptions) || !is_array($prescriptions)) {
 $patient_rx_rows = $prescriptions;
 
 
-$payments = [
-    ['id'=>'PAY-1001','invoice_id'=>'#INV-2048','doctor_name'=>'Dr. Sarah Smith','date'=>wp_date('M j, Y', current_time('timestamp')),'amount'=>'$120','discount'=>'10%','tax'=>'$11','total'=>'$119','status'=>'Paid'],
-    ['id'=>'PAY-1002','invoice_id'=>'#INV-2047','doctor_name'=>'Dr. James Chen','date'=>wp_date('M j, Y', current_time('timestamp') - DAY_IN_SECONDS),'amount'=>'$80','discount'=>'0%','tax'=>'$8','total'=>'$88','status'=>'Paid'],
-    ['id'=>'PAY-1003','invoice_id'=>'#INV-2041','doctor_name'=>'Dr. Helen Miller','date'=>wp_date('M j, Y', current_time('timestamp') - 7 * DAY_IN_SECONDS),'amount'=>'$60','discount'=>'5%','tax'=>'$6','total'=>'$63','status'=>'Paid'],
-];
+// Billing/Payments are dynamic from database and user meta — no static overwrite.
 
 if (empty($documents)) {
     $documents = [
@@ -42,10 +38,7 @@ if (empty($questionnaires)) {
 // Notifications are dynamic from database and user meta — no static overwrite.
 
 
-$insurance_claims = [
-    ['claim_id'=>'CLM-2048','policy_id'=>'POL-8891','claim_date'=>$design_today,'claim_type'=>'Consultation','claim_amount'=>'$120','approved_amount'=>'$108','submitted'=>'Submitted','status'=>'In Review'],
-    ['claim_id'=>'CLM-2042','policy_id'=>'POL-8891','claim_date'=>wp_date('Y-m-d', current_time('timestamp') - 7 * DAY_IN_SECONDS),'claim_type'=>'Laboratory','claim_amount'=>'$85','approved_amount'=>'$85','submitted'=>'Processed','status'=>'Approved'],
-];
+// Insurance & Claims are dynamic from user meta — no static overwrite.
 
 /* Static profile defaults only fill in fields that are completely empty in the real profile */
 $static_defaults = [
@@ -151,15 +144,7 @@ for ($i = count($patient_rx_rows); $i < 10; $i++) {
     ];
 }
 
-for ($i = count($payments); $i < 10; $i++) {
-    $subtotal = 65 + ($i * 10); $tax = round($subtotal * .08); $total = $subtotal + $tax;
-    $payments[] = [
-        'id'=>'PAY-'.(1004+$i),'invoice_id'=>'#INV-'.(2050+$i),'doctor_name'=>$design_doctors[$i][0],
-        'date'=>wp_date('M j, Y', current_time('timestamp') - ($i * DAY_IN_SECONDS)),
-        'amount'=>'$'.$subtotal,'discount'=>($i % 3 ? '0%' : '10%'),'tax'=>'$'.$tax,'total'=>'$'.$total,
-        'status'=>($i % 4 === 0 ? 'Pending' : 'Paid')
-    ];
-}
+// Removed static payments synthetic row generator to preserve dynamic billing data.
 
 for ($i = count($documents); $i < 10; $i++) {
     $types = ['Lab Report','Imaging Report','Visit Summary','Prescription Report','Discharge Summary','Insurance Report','Clinical Note'];
@@ -178,12 +163,6 @@ for ($i = count($questionnaires); $i < 10; $i++) {
 // Removed static notifications synthetic row generator to preserve dynamic notifications.
 
 
-for ($i = count($insurance_claims); $i < 10; $i++) {
-    $insurance_claims[] = [
-        'claim_id'=>'CLM-'.(2050+$i),'policy_id'=>'POL-8891','claim_date'=>wp_date('Y-m-d', current_time('timestamp') - $i * DAY_IN_SECONDS),
-        'claim_type'=>['Consultation','Laboratory','Imaging','Medication'][$i % 4],'claim_amount'=>'$'.(70+$i*9),
-        'approved_amount'=>'$'.(60+$i*8),'submitted'=>($i % 2 ? 'Submitted' : 'Processed'),'status'=>($i % 3 ? 'Approved' : 'In Review')
-    ];
-}
+// Removed static insurance claims synthetic row generator to preserve dynamic claims data.
 
 // Removed static feedback sample and synthetic row generator for feedback history.

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Dior Medical - Direct HIPAAtizer Webhook Receiver
  *
@@ -12,15 +13,22 @@
  */
 
 // Load WordPress so all plugin/database/user functions are available.
-$wp_root_path = dirname(dirname(dirname(dirname(__DIR__))));
-$wp_load = $wp_root_path . '/wp-load.php';
+$wp_load = '';
+$curr_dir = __DIR__;
+for ($i = 0; $i < 6; $i++) {
+    $curr_dir = dirname($curr_dir);
+    if (file_exists($curr_dir . '/wp-load.php')) {
+        $wp_load = $curr_dir . '/wp-load.php';
+        break;
+    }
+}
 
-if (!file_exists($wp_load)) {
+if (!$wp_load || !file_exists($wp_load)) {
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
     echo wp_json_encode([
         'success' => false,
-        'code'    => 'wordpress_not_found',
+        'code' => 'wordpress_not_found',
         'message' => 'WordPress core could not be loaded.',
     ]);
     exit;
@@ -41,7 +49,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     header('Allow: POST, OPTIONS');
     echo wp_json_encode([
         'success' => false,
-        'code'    => 'method_not_allowed',
+        'code' => 'method_not_allowed',
         'message' => 'Only POST requests are accepted.',
     ]);
     exit;
@@ -57,28 +65,37 @@ if (!function_exists('dior_fallback_save_hipaa_intake')) {
     }
 }
 
-// Validate the same secret used by the existing REST webhook.
-$configured_secret = defined('DIOR_HIPAATIZER_WEBHOOK_SECRET')
-    ? (string) DIOR_HIPAATIZER_WEBHOOK_SECRET
-    : (string) get_option('dior_hipaatizer_webhook_secret', '');
-
+// Validate the shared webhook token configured in HIPAAtizer.
+// Accept the live token DiorHipaa2026X9K7M4P8, constants, or DB option.
 $received_token = isset($_GET['token']) ? (string) wp_unslash($_GET['token']) : '';
-
-if ($configured_secret === '') {
-    http_response_code(500);
-    echo wp_json_encode([
-        'success' => false,
-        'code'    => 'webhook_secret_not_configured',
-        'message' => 'HIPAAtizer webhook secret is not configured.',
-    ]);
-    exit;
+if ($received_token === '' && isset($_POST['token'])) {
+    $received_token = (string) wp_unslash($_POST['token']);
 }
 
-if ($received_token === '' || !hash_equals($configured_secret, $received_token)) {
+$valid_tokens = array_filter([
+    'DiorHipaa2026X9K7M4P8',
+    defined('DIOR_HIPAATIZER_WEBHOOK_SECRET') ? (string) DIOR_HIPAATIZER_WEBHOOK_SECRET : '',
+    (string) get_option('dior_hipaatizer_webhook_secret', ''),
+]);
+
+// Persist the default secret to database if not already stored
+if (empty(get_option('dior_hipaatizer_webhook_secret'))) {
+    update_option('dior_hipaatizer_webhook_secret', 'DiorHipaa2026X9K7M4P8', false);
+}
+
+$token_matched = false;
+foreach ($valid_tokens as $secret) {
+    if ($secret !== '' && hash_equals($secret, $received_token)) {
+        $token_matched = true;
+        break;
+    }
+}
+
+if (!$token_matched) {
     http_response_code(401);
     echo wp_json_encode([
         'success' => false,
-        'code'    => 'invalid_webhook_token',
+        'code' => 'invalid_webhook_token',
         'message' => 'Invalid HIPAAtizer webhook token.',
     ]);
     exit;
@@ -86,13 +103,20 @@ if ($received_token === '' || !hash_equals($configured_secret, $received_token))
 
 // Read and decode the JSON body sent by HIPAAtizer.
 $raw_body = file_get_contents('php://input');
-$payload  = json_decode($raw_body, true);
+$payload = json_decode($raw_body, true);
+
+if (!is_array($payload) || empty($payload)) {
+    // Fallback: check $_POST form variables
+    if (!empty($_POST) && is_array($_POST)) {
+        $payload = $_POST;
+    }
+}
 
 if (!is_array($payload) || empty($payload)) {
     http_response_code(400);
     echo wp_json_encode([
         'success' => false,
-        'code'    => 'invalid_json',
+        'code' => 'invalid_json',
         'message' => 'The webhook body is empty or is not valid JSON.',
     ]);
     exit;
@@ -119,7 +143,7 @@ try {
     http_response_code(500);
     echo wp_json_encode([
         'success' => false,
-        'code'    => 'webhook_processing_error',
+        'code' => 'webhook_processing_error',
         'message' => 'HIPAAtizer data could not be synchronized.',
     ]);
 }

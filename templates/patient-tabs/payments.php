@@ -51,51 +51,77 @@
                 </thead>
                 <tbody id="dior-bill-tbody">
                     <?php
-                    $billing_mock = [
-                        ['#A348', 'Dr.Jacob Ryan', 'Mar 4, 2016', '$40', '10%', '$5', '$39'],
-                        ['#A645', 'Dr.Rajesh', 'Apr 11, 2016', '$25', '10%', '$5', '$22'],
-                        ['#A873', 'Dr.Jay Soni', 'Apr 18, 2016', '$50', '10%', '$5', '$47'],
-                        ['#A927', 'Dr.John Deo', 'May 22, 2016', '$45', '10%', '$5', '$42'],
-                        ['#A228', 'Dr.Megha Trivedi', 'Jul 9, 2016', '$62', '10%', '$5', '$57'],
-                        ['#A345', 'Dr.Sarah Smith', 'Jul 14, 2016', '$60', '10%', '$5', '$56'],
-                        ['#A765', 'Dr.Jacob Ryan', 'Jun 22, 2016', '$40', '10%', '$5', '$39'],
-                        ['#A125', 'Dr.Rajesh', 'Jun 23, 2016', '$30', '10%', '$5', '$29']
-                        ,
-                        ['#A905', 'Dr.Sarah Smith', 'Aug 2, 2016', '$72', '8%', '$4', '$74']
-                        ,
-                        ['#A981', 'Dr.James Chen', 'Aug 16, 2016', '$95', '8%', '$0', '$103']
-                    ];
-                    foreach ($billing_mock as $bm):
-                        ?>
-                        <tr onclick="diorOpenBillingModal('<?php echo esc_js($bm[0]); ?>', '<?php echo esc_js($bm[1]); ?>', '<?php echo esc_js($bm[2]); ?>', '<?php echo esc_js($bm[3]); ?>', '<?php echo esc_js($bm[4]); ?>', '<?php echo esc_js($bm[5]); ?>', '<?php echo esc_js($bm[6]); ?>')"
+                    $billing_rows = (!empty($payments) && is_array($payments)) ? $payments : [];
+                    if (!empty($billing_rows)):
+                        foreach ($billing_rows as $pm):
+                            $inv_no = $pm['invoice_uid'] ?? $pm['invoice_id'] ?? $pm['payment_uid'] ?? $pm['id'] ?? '—';
+                            $doc_name = $pm['doctor_name'] ?? '';
+                            if ($doc_name === '' && !empty($pm['doctor_id'])) {
+                                $doc_user = get_userdata((int) $pm['doctor_id']);
+                                $doc_name = $doc_user ? $doc_user->display_name : '—';
+                            }
+                            if ($doc_name === '') {
+                                $doc_name = '—';
+                            }
+                            $raw_date = $pm['date'] ?? $pm['paid_at'] ?? $pm['created_at'] ?? '';
+                            $bill_date = $raw_date !== '' ? (strtotime($raw_date) ? wp_date('M j, Y', strtotime($raw_date)) : $raw_date) : '—';
+                            $raw_amount = $pm['amount'] ?? '$0';
+                            $bill_amount = is_numeric($raw_amount) ? ('$' . number_format((float) $raw_amount, 2)) : $raw_amount;
+                            $raw_tax = $pm['tax'] ?? '$0';
+                            $bill_tax = is_numeric($raw_tax) ? ('$' . number_format((float) $raw_tax, 2)) : $raw_tax;
+                            $raw_disc = $pm['discount'] ?? '$0';
+                            $bill_disc = is_numeric($raw_disc) ? ('$' . number_format((float) $raw_disc, 2)) : $raw_disc;
+                            $raw_total = $pm['total'] ?? $bill_amount;
+                            $bill_total = is_numeric($raw_total) ? ('$' . number_format((float) $raw_total, 2)) : $raw_total;
+
+                            $bm_args = sprintf(
+                                "'%s','%s','%s','%s','%s','%s','%s'",
+                                esc_js($inv_no),
+                                esc_js($doc_name),
+                                esc_js($bill_date),
+                                esc_js($bill_amount),
+                                esc_js($bill_tax),
+                                esc_js($bill_disc),
+                                esc_js($bill_total)
+                            );
+                            ?>
+                        <tr onclick="diorOpenBillingModal(<?php echo $bm_args; ?>)"
                             class="dior-ic-8e7e606bc6">
-                            <td><span class="cell-text"><?php echo esc_html($bm[0]); ?></span></td>
-                            <td><span class="cell-text"><?php echo esc_html($bm[1]); ?></span></td>
+                            <td><span class="cell-text"><?php echo esc_html($inv_no); ?></span></td>
+                            <td><span class="cell-text"><?php echo esc_html($doc_name); ?></span></td>
                             <td>
                                 <div class="cell-content cell-icon-text">
                                     <i class="far fa-calendar cell-icon dior-ic-d53ea48df0"></i>
-                                    <span class="cell-text"><?php echo esc_html($bm[2]); ?></span>
+                                    <span class="cell-text"><?php echo esc_html($bill_date); ?></span>
                                 </div>
                             </td>
-                            <td><span class="cell-text"><?php echo esc_html($bm[3]); ?></span></td>
-                            <td><span class="cell-text"><?php echo esc_html($bm[4]); ?></span></td>
-                            <td><span class="cell-text"><?php echo esc_html($bm[5]); ?></span></td>
-                            <td><span class="cell-text"><?php echo esc_html($bm[6]); ?></span></td>
+                            <td><span class="cell-text"><?php echo esc_html($bill_amount); ?></span></td>
+                            <td><span class="cell-text"><?php echo esc_html($bill_tax); ?></span></td>
+                            <td><span class="cell-text"><?php echo esc_html($bill_disc); ?></span></td>
+                            <td><span class="cell-text"><?php echo esc_html($bill_total); ?></span></td>
                             <td>
                                 <div class="cell-content action-cell" style="gap:8px;">
-                                    <button type="button" class="btn btn-sm btn-success" title="Download Bill">
+                                    <button type="button" class="btn btn-sm btn-success" title="Download Bill"
+                                        onclick="event.stopPropagation(); diorDownloadBillPdf(<?php echo $bm_args; ?>)">
                                         <i class="fas fa-download"></i>
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-info" title="View Bill">
+                                    <button type="button" class="btn btn-sm btn-info" title="View Bill"
+                                        onclick="event.stopPropagation(); diorOpenBillingModal(<?php echo $bm_args; ?>)">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-secondary" title="Print Bill">
+                                    <button type="button" class="btn btn-sm btn-secondary" title="Print Bill"
+                                        onclick="event.stopPropagation(); diorPrintBill(<?php echo $bm_args; ?>)">
                                         <i class="fas fa-print"></i>
                                     </button>
                                 </div>
                             </td>
                         </tr>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="8" class="dior-empty-state">No billing records available.</td>
+                        </tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
@@ -107,7 +133,7 @@
             <div class="modal-header details-modal-header dior-ic-feb0429751">
                 <div class="header-left dior-ic-fbd29a13bb">
                     <div class="header-icon-wrapper dior-ic-01e9887431">
-                        info
+                        <i class="fas fa-file-invoice-dollar"></i>
                     </div>
                     <div class="header-title-wrapper">
                         <h4 class="modal-title dior-ic-515659bf18">Billing Details</h4>

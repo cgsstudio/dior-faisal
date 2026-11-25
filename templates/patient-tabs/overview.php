@@ -8,6 +8,18 @@ $past_list     = (!empty($past_list) && is_array($past_list)) ? $past_list : [];
 $documents     = (!empty($documents) && is_array($documents)) ? $documents : [];
 $hipaa_intake  = (!empty($hipaa_intake) && is_array($hipaa_intake)) ? $hipaa_intake : Dior_Patient_Portal_Data::get_normalized_hipaa_intake($user_id);
 $has_intake    = !empty($hipaa_intake) && (!empty($hipaa_intake['is_submitted']) || !empty($hipaa_intake['submitted_at']));
+
+// The Book An Appointment shortcut must stay on whatever domain and page slug
+// this site actually uses. A hardcoded absolute path stopped working as soon
+// as the site moved, so resolve the dashboard page instead.
+$dior_overview_dashboard_url = home_url('/patient-dashboard/');
+if (class_exists('Dior_Medical_Auth') && method_exists('Dior_Medical_Auth', 'portal_dashboard_url')) {
+    $resolved_dashboard = Dior_Medical_Auth::portal_dashboard_url();
+    if (!empty($resolved_dashboard)) {
+        $dior_overview_dashboard_url = $resolved_dashboard;
+    }
+}
+$dior_overview_book_url = trailingslashit($dior_overview_dashboard_url) . '#tab=appointments&subtab=book';
 ?>
 <section class="dior-tab-panel active custom-patient-overview" id="tab-overview">
   <div
@@ -17,7 +29,7 @@ $has_intake    = !empty($hipaa_intake) && (!empty($hipaa_intake['is_submitted'])
       <h1 class="h3 fw-bold text-dark mb-1">Welcome Back, <?php echo esc_html(strtoupper($display_first_name)); ?></h1>
       <p class="text-secondary small mb-0">Manage your telehealth visits, prescriptions, and medical records.</p>
     </div>
-    <a href="https://bagheeraventures.com/diormedical/patient-dashboard/#tab=appointments&subtab=book" data-appt-subtab="book"
+    <a href="<?php echo esc_url($dior_overview_book_url); ?>" data-appt-subtab="book"
       class="btn dior-btn-gold rounded-pill fw-semibold py-2 px-4 shadow-sm d-inline-flex align-items-center gap-2">
       <i class="fas fa-calendar-plus"></i>
       <span>Book An Appointment</span>
@@ -152,7 +164,7 @@ $has_intake    = !empty($hipaa_intake) && (!empty($hipaa_intake['is_submitted'])
                         <span class="text-secondary small">Weight</span>
                       </div>
                     </div>
-                    <span role="button" tabindex="0" class="btn-sm rounded-circle d-inline-flex align-items-center justify-content-center p-0 border border-light-subtle bg-light text-secondary shadow-none" style="width: 28px; height: 28px; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#diorHealthGoalsModal" onclick="if(window.bootstrap&&bootstrap.Modal){bootstrap.Modal.getOrCreateInstance(document.getElementById('diorHealthGoalsModal')).show();}" title="Edit Vitals">
+                    <span role="button" tabindex="0" class="btn-sm rounded-circle d-inline-flex align-items-center justify-content-center p-0 border border-light-subtle bg-light text-secondary shadow-none" style="width: 28px; height: 28px; cursor: pointer;" data-bs-toggle="modal" data-bs-target="#diorHealthGoalsModal" title="Edit Vitals">
                       <i class="fas fa-pencil-alt text-secondary" style="font-size: 11px;"></i>
                     </span>
                   </div>
@@ -170,7 +182,7 @@ $has_intake    = !empty($hipaa_intake) && (!empty($hipaa_intake['is_submitted'])
             id="dior-patient-goals-card">
             <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-3 border-secondary-subtle">
               <h3 class="section-title mb-0 fs-5 fw-bold text-primary">Health Goals</h3>
-              <button type="button" class="btn btn-outline-primary btn-sm rounded-circle d-inline-flex align-items-center justify-content-center p-0 shadow-sm dior-icon-btn-32" data-bs-toggle="modal" data-bs-target="#diorHealthGoalsModal" onclick="if(window.bootstrap&&bootstrap.Modal){bootstrap.Modal.getOrCreateInstance(document.getElementById('diorHealthGoalsModal')).show();}" title="Manage Health Goals">
+              <button type="button" class="btn btn-outline-primary btn-sm rounded-circle d-inline-flex align-items-center justify-content-center p-0 shadow-sm dior-icon-btn-32" data-bs-toggle="modal" data-bs-target="#diorHealthGoalsModal" title="Manage Health Goals">
                 <i class="fas fa-plus small"></i>
               </button>
             </div>
@@ -434,6 +446,10 @@ $has_intake    = !empty($hipaa_intake) && (!empty($hipaa_intake['is_submitted'])
             $ha_date = '—';
             $ha_time = '—';
             $ha_avatar = '';
+            // Real meeting link for the nearest appointment. When absent we
+            // fall back to the Telehealth tab instead of a dead button.
+            $ha_join_url = '';
+            $ha_status = '';
 
             if (!empty($next_appointment)) {
               $ha_name = !empty($next_appointment['doctor_name']) ? $next_appointment['doctor_name'] : (!empty($next_appointment['provider']) ? $next_appointment['provider'] : $ha_name);
@@ -441,6 +457,27 @@ $has_intake    = !empty($hipaa_intake) && (!empty($hipaa_intake['is_submitted'])
               $ha_date = !empty($next_appointment['date']) ? $next_appointment['date'] : $ha_date;
               $ha_time = !empty($next_appointment['time']) ? $next_appointment['time'] : $ha_time;
               $ha_avatar = !empty($next_appointment['avatar']) ? $next_appointment['avatar'] : '';
+              // Meeting link resolution order:
+              //   1. the appointment's own Zoom/Jitsi join_url
+              //   2. the doctor's Telehealth URL from Settings → Practice
+              //   3. nothing — the card falls back to the details modal
+              // Without step 2 a patient whose appointment was created before the
+              // Zoom credentials were configured had no way into the room, even
+              // though the provider had published a meeting link.
+              $ha_join_url = !empty($next_appointment['join_url']) ? trim((string) $next_appointment['join_url']) : '';
+              if ($ha_join_url === '') {
+                $ha_doc_uid = !empty($next_appointment['doctor_user_id']) ? (int) $next_appointment['doctor_user_id'] : 0;
+                if (!$ha_doc_uid && !empty($next_appointment['doctor_id'])) {
+                  $ha_doc_uid = (int) $next_appointment['doctor_id'];
+                }
+                if ($ha_doc_uid > 0) {
+                  $ha_doc_zoom = trim((string) get_user_meta($ha_doc_uid, 'doctor_zoom_link', true));
+                  if ($ha_doc_zoom !== '' && preg_match('#^https://#i', $ha_doc_zoom)) {
+                    $ha_join_url = $ha_doc_zoom;
+                  }
+                }
+              }
+              $ha_status = !empty($next_appointment['status']) ? $next_appointment['status'] : '';
 
               $doc_id = !empty($next_appointment['doctor_id']) ? $next_appointment['doctor_id'] : (!empty($next_appointment['provider_id']) ? $next_appointment['provider_id'] : 0);
               if (empty($ha_avatar)) {
@@ -472,13 +509,69 @@ $has_intake    = !empty($hipaa_intake) && (!empty($hipaa_intake['is_submitted'])
               </div>
             </div>
             <div class="d-flex flex-column gap-2 mt-3">
-              <button type="button" class="btn btn-primary rounded-3 fw-semibold py-2 px-3 shadow-sm w-100"
-                data-switch-tab="consultation"
-                onclick="if(typeof diorSwitchTab==='function') diorSwitchTab('consultation');">Join Video Consultation
-                Room</button>
-              <button type="button" class="btn btn-outline-primary rounded-3 fw-semibold py-2 px-3 w-100"
-                data-switch-tab="appointments"
-                onclick="if(typeof diorSwitchTab==='function') diorSwitchTab('appointments');">Reschedule</button>
+              <?php if (!empty($next_appointment)): ?>
+                <?php
+                $next_uid = !empty($next_appointment['id']) ? $next_appointment['id'] : (!empty($next_appointment['appt_uid']) ? $next_appointment['appt_uid'] : '');
+                // Only offer "Join" when there is a real meeting link to go to.
+                // Without one the button used to land the patient on an empty
+                // Telehealth tab even though the card said "No upcoming
+                // consultation".
+                $join_is_safe = $ha_join_url !== '' && preg_match('#^https://#i', $ha_join_url);
+                ?>
+                <?php if ($join_is_safe): ?>
+                  <a class="btn btn-primary rounded-3 fw-semibold py-2 px-3 shadow-sm w-100"
+                    href="<?php echo esc_url($ha_join_url); ?>" target="_blank" rel="noopener noreferrer"
+                    data-dior-meeting-join>
+                    <i class="fas fa-video me-2"></i>Join Video Consultation Room
+                  </a>
+                <?php else: ?>
+                  <?php
+                  // No meeting link yet (Zoom credentials missing or the link was
+                  // not created). Open the Telemedicine details modal, which is the
+                  // same fallback the Telemedicine tab itself uses for these rows.
+                  ?>
+                  <button type="button" class="btn btn-primary rounded-3 fw-semibold py-2 px-3 shadow-sm w-100"
+                    data-switch-tab="telemedicine"
+                    data-open-tele-row="<?php echo esc_attr($next_uid); ?>"
+                    onclick="if(typeof diorSwitchTab==='function') diorSwitchTab('telemedicine');">
+                    <i class="fas fa-video me-2"></i>View Consultation Details
+                  </button>
+                <?php endif; ?>
+                <?php
+                // Reschedule opens the reschedule dialog directly for this
+                // appointment. Before this the button only switched to the
+                // Appointments tab and the patient had to find the row again.
+                $next_date_raw = !empty($next_appointment['date']) ? $next_appointment['date'] : '';
+                $next_ts = $next_date_raw ? strtotime($next_date_raw) : 0;
+                $next_ymd = $next_ts ? date('Y-m-d', $next_ts) : '';
+                $next_time_raw = !empty($next_appointment['time']) ? $next_appointment['time'] : '';
+                $next_time_hm = '';
+                if ($next_time_raw && preg_match('/(\d{1,2}):(\d{2})\s*([AP]M)?/i', $next_time_raw, $tm)) {
+                  $h = (int) $tm[1];
+                  $mins = $tm[2];
+                  if (!empty($tm[3])) {
+                    $pm = (strtoupper($tm[3]) === 'PM');
+                    if ($pm && $h < 12) { $h += 12; }
+                    if (!$pm && $h === 12) { $h = 0; }
+                  }
+                  $next_time_hm = sprintf('%02d:%s', $h, $mins);
+                }
+                ?>
+                <button type="button" class="btn btn-outline-primary rounded-3 fw-semibold py-2 px-3 w-100 dior-card-reschedule"
+                  data-appt-uid="<?php echo esc_attr($next_uid); ?>"
+                  data-appt-date="<?php echo esc_attr($next_ymd); ?>"
+                  data-appt-time="<?php echo esc_attr($next_time_hm); ?>">
+                  <i class="far fa-calendar me-2"></i>Reschedule
+                </button>
+              <?php else: ?>
+                <button type="button" class="btn btn-primary rounded-3 fw-semibold py-2 px-3 shadow-sm w-100"
+                  data-switch-tab="appointments"
+                  onclick="if(typeof diorSwitchTab==='function') diorSwitchTab('appointments');"
+                  data-appt-subtab="book">
+                  <i class="fas fa-calendar-plus me-2"></i>Book An Appointment
+                </button>
+                <p class="text-secondary small text-center mb-0">No consultation scheduled yet.</p>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -617,13 +710,13 @@ $has_intake    = !empty($hipaa_intake) && (!empty($hipaa_intake['is_submitted'])
               <h3 class="fs-6 fw-bold text-dark mb-1">
                 <?php echo esc_html(!empty($hipaa_intake['service_condition']) ? $hipaa_intake['service_condition'] : 'Medical Intake Questionnaire'); ?>
               </h3>
-              <p class="small text-secondary mb-3">
+              <div class="small text-secondary mb-3">
                 <?php if ($has_intake): ?>
                   Submitted on <?php echo esc_html(date('M j, Y', strtotime($hipaa_intake['submitted_at'] ?? 'now'))); ?> &bull; Data verified for physician review
                 <?php else: ?>
                   Please complete your clinical questionnaire prior to your appointment.
                 <?php endif; ?>
-              </p>
+                </div>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <button type="button" class="btn btn-primary rounded-3 fw-semibold py-2 px-3 shadow-sm flex-grow-1"
@@ -650,7 +743,13 @@ $has_intake    = !empty($hipaa_intake) && (!empty($hipaa_intake['is_submitted'])
   <!-- ============================================================== -->
   <!-- HEALTH GOALS & VITALS MODAL (100% Bootstrap 5 - Simple Clean Standard) -->
   <!-- ============================================================== -->
-  <div class="modal fade" id="diorHealthGoalsModal" tabindex="-1" aria-labelledby="diorHealthGoalsModalLabel"
+  
+
+</section>
+
+<!-- Rendered outside #tab-overview: Bootstrap modals cannot be opened while
+     an ancestor .dior-tab-panel is display:none, which left only the backdrop visible. -->
+<div class="modal fade" id="diorHealthGoalsModal" tabindex="-1" aria-labelledby="diorHealthGoalsModalLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
@@ -776,5 +875,3 @@ $has_intake    = !empty($hipaa_intake) && (!empty($hipaa_intake['is_submitted'])
       </div>
     </div>
   </div>
-
-</section>

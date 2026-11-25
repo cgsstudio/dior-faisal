@@ -74,12 +74,12 @@
         }
 
         #tab-telemedicine #dior-tele-table .action-icon-btn.delete-btn {
-            color: #ef4444 !important;
+            color: #DC2626 !important;
         }
 
         #tab-telemedicine #dior-tele-table .action-icon-btn.delete-btn:hover {
             color: #dc2626 !important;
-            border-color: #ef4444 !important;
+            border-color: #DC2626 !important;
             background: #fef2f2 !important;
         }
 
@@ -117,8 +117,9 @@
                         title="Delete Selected" onclick="diorBulkDeleteStaticRows(this)">
                         <i class="fas fa-trash"></i>
                     </button>
-                    <button type="button" aria-label="Add new record"
-                        class="docs-icon-btn docs-btn-primary btn" title="Add New Consultation">
+                    <button type="button" aria-label="Add new record" id="dior-tele-book-btn"
+                        class="docs-icon-btn docs-btn-primary btn" title="Add New Consultation"
+                        onclick="if(typeof window.diorGoToDocBookerPage==='function'){window.diorGoToDocBookerPage();}else if(typeof window.diorSwitchTab==='function'){window.diorSwitchTab('appointments');if(typeof window.diorSwitchApptSubTab==='function'){window.diorSwitchApptSubTab('book');}}">
                         <i class="fas fa-plus"></i>
                     </button>
                     <button type="button" aria-label="Export to CSV" class="docs-icon-btn docs-btn-success btn"
@@ -232,15 +233,19 @@
         </div>
     </div>
 
-    <!-- Telemedicine Session Details Modal (Strict Bootstrap 5 Rule 3.F Standard) -->
-    <div class="modal fade" id="diorTelemedicineModal" tabindex="-1" aria-labelledby="diorTelemedicineModalLabel" aria-hidden="true">
+
+</section>
+
+<!-- Rendered outside #tab-telemedicine: Bootstrap modals cannot be opened while
+     an ancestor .dior-tab-panel is display:none, which left only the backdrop visible. -->
+<div class="modal fade" id="diorTelemedicineModal" tabindex="-1" aria-labelledby="diorTelemedicineModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
                 <div class="modal-header border-bottom py-3 px-4 bg-white d-flex align-items-center justify-content-between">
                     <h5 class="modal-title fw-bold text-dark fs-5 mb-0" id="diorTelemedicineModalLabel">
                         <i class="fas fa-video text-primary me-2"></i>Telemedicine Consultation
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="diorCloseTelemedicineModal()"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 bg-white">
                     <div class="row g-3">
@@ -286,7 +291,7 @@
                     </div>
                 </div>
                 <div class="modal-footer border-top py-3 px-4 bg-white d-flex justify-content-between">
-                    <button type="button" class="btn btn-outline-secondary rounded-3 px-4 fw-semibold" data-bs-dismiss="modal" onclick="diorCloseTelemedicineModal()">Close</button>
+                    <button type="button" class="btn btn-outline-secondary rounded-3 px-4 fw-semibold" data-bs-dismiss="modal">Close</button>
                     <a href="#" id="dior-tele-modal-join-btn" class="btn btn-primary rounded-3 px-4 fw-semibold shadow-sm" target="_blank" rel="noopener">
                         <i class="fas fa-video me-1"></i> Join Call
                     </a>
@@ -294,8 +299,6 @@
             </div>
         </div>
     </div>
-
-</section>
 <!-- ============================================================== -->
 <!-- 5. MEDICAL RECORD TAB -->
 <!-- ============================================================== -->

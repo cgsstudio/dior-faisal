@@ -21,6 +21,8 @@ final class Dior_HIPAAtizer_API_Sync {
         add_action('dior_hipaatizer_auto_sync', [__CLASS__, 'run_sync']);
         // Secure, patient-scoped status polling for the post-HIPAAtizer redirect.
         add_action('wp_ajax_dior_visit_sync_status', [__CLASS__, 'ajax_visit_sync_status']);
+        add_action('wp_ajax_dior_clear_visit_sync_pending', [__CLASS__, 'ajax_clear_visit_sync_pending']);
+        add_action('wp_ajax_nopriv_dior_clear_visit_sync_pending', [__CLASS__, 'ajax_clear_visit_sync_pending']);
         add_action('template_redirect', [__CLASS__, 'mark_start_visit_pending'], 1);
         add_action('wp_footer', [__CLASS__, 'render_visit_sync_overlay'], 99);
     }
@@ -45,9 +47,13 @@ final class Dior_HIPAAtizer_API_Sync {
     private static function settings() {
         $saved = get_option(self::OPTION_KEY, []);
         if (!is_array($saved)) { $saved = []; }
+        $workflow_id = (string) ($saved['workflow_id'] ?? '');
+        if ($workflow_id === '') {
+            $workflow_id = '01a11515-b491-79dc-b59b-e4be2a345a49';
+        }
         return [
             'api_key' => defined('DIOR_HIPAATIZER_API_KEY') ? (string) DIOR_HIPAATIZER_API_KEY : (string) ($saved['api_key'] ?? ''),
-            'workflow_id' => (string) ($saved['workflow_id'] ?? ''),
+            'workflow_id' => $workflow_id,
         ];
     }
 
@@ -155,19 +161,23 @@ final class Dior_HIPAAtizer_API_Sync {
         ?>
         <div id="dior-visit-sync-overlay" role="status" aria-live="polite">
             <div class="dior-visit-sync-card">
+                <button type="button" id="dior-visit-sync-close" aria-label="Close" title="Close and open dashboard">&times;</button>
                 <div class="dior-visit-sync-spinner" aria-hidden="true"></div>
                 <h2>Preparing Your Patient Dashboard</h2>
                 <p id="dior-visit-sync-message">Your visit details are being securely retrieved. Please wait…</p>
-                <button type="button" id="dior-visit-sync-retry" hidden>Try Again</button>
+                <button type="button" id="dior-visit-sync-continue">Continue to Dashboard &rarr;</button>
             </div>
         </div>
         <style>
-            #dior-visit-sync-overlay{position:fixed;inset:0;z-index:999999;background:rgba(247,250,255,.97);display:flex;align-items:center;justify-content:center;padding:24px;font-family:inherit}
-            #dior-visit-sync-overlay .dior-visit-sync-card{width:min(100%,460px);padding:34px 28px;background:#fff;border:1px solid #e2eaf5;border-radius:16px;box-shadow:0 18px 55px rgba(20,50,90,.12);text-align:center}
-            #dior-visit-sync-overlay h2{font-size:22px;margin:18px 0 8px;color:#172b4d}
+            #dior-visit-sync-overlay{position:fixed;inset:0;z-index:999999;background:rgba(247,250,255,.97);display:flex;align-items:center;justify-content:center;padding:24px;font-family:inherit;transition:opacity .35s ease}
+            #dior-visit-sync-overlay .dior-visit-sync-card{position:relative;width:min(100%,460px);padding:36px 30px 30px;background:#fff;border:1px solid #e2eaf5;border-radius:18px;box-shadow:0 18px 55px rgba(20,50,90,.14);text-align:center}
+            #dior-visit-sync-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:24px;line-height:1;color:#94a3b8;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color .2s}
+            #dior-visit-sync-close:hover{color:#1e293b}
+            #dior-visit-sync-overlay h2{font-size:22px;margin:18px 0 8px;color:#172b4d;font-weight:700}
             #dior-visit-sync-overlay p{margin:0;color:#5b6b82;line-height:1.6;font-size:14px}
             #dior-visit-sync-overlay .dior-visit-sync-spinner{width:44px;height:44px;margin:0 auto;border:4px solid #dce8f8;border-top-color:#2869c7;border-radius:50%;animation:diorVisitSpin .8s linear infinite}
-            #dior-visit-sync-retry{margin-top:18px;padding:10px 20px;border:0;border-radius:7px;background:#2869c7;color:#fff;font-weight:600;cursor:pointer}
+            #dior-visit-sync-continue{margin-top:20px;padding:10px 24px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;color:#1e40af;font-weight:600;font-size:13.5px;cursor:pointer;transition:all .2s;display:inline-block}
+            #dior-visit-sync-continue:hover{background:#e2e8f0;color:#0f172a}
             @keyframes diorVisitSpin{to{transform:rotate(360deg)}}
             @media(prefers-reduced-motion:reduce){#dior-visit-sync-overlay .dior-visit-sync-spinner{animation-duration:2s}}
         </style>
@@ -177,24 +187,57 @@ final class Dior_HIPAAtizer_API_Sync {
             var overlay=document.getElementById('dior-visit-sync-overlay');
             if(!overlay)return;
             var message=document.getElementById('dior-visit-sync-message');
-            var retry=document.getElementById('dior-visit-sync-retry');
-            var started=Date.now(), timer=null, busy=false;
+            var continueBtn=document.getElementById('dior-visit-sync-continue');
+            var closeBtn=document.getElementById('dior-visit-sync-close');
+            var started=Date.now(), timer=null, busy=false, finished=false;
             var ajaxUrl=<?php echo wp_json_encode($ajax_url); ?>;
             var nonce=<?php echo wp_json_encode($nonce); ?>;
-            function finish(){
+
+            function finish(shouldReload){
+                if(finished)return;
+                finished=true;
                 if(timer)window.clearInterval(timer);
+
+                // Clear client-side cookie immediately
+                document.cookie = 'dior_visit_sync_pending=; Max-Age=0; path=/;';
+
+                // Also notify server to clear the pending cookie
+                try{
+                    var clearBody=new URLSearchParams();
+                    clearBody.set('action','dior_clear_visit_sync_pending');
+                    fetch(ajaxUrl,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:clearBody.toString()}).catch(function(){});
+                }catch(e){}
+
                 try{
                     var url=new URL(window.location.href);
-                    url.searchParams.delete('dior_visit_sync');
-                    // Reload once without the flag so server-rendered Patient Settings
-                    // and the profile-completion banner reflect the newly saved data.
-                    window.location.replace(url.toString());
-                }catch(e){
-                    overlay.remove();
-                }
+                    if(url.searchParams.has('dior_visit_sync')){
+                        url.searchParams.delete('dior_visit_sync');
+                        if(shouldReload){
+                            window.location.replace(url.toString());
+                            return;
+                        } else if(window.history && window.history.replaceState){
+                            window.history.replaceState({}, document.title, url.toString());
+                        }
+                    }
+                }catch(e){}
+
+                overlay.style.opacity='0';
+                setTimeout(function(){
+                    if(overlay && overlay.parentNode){
+                        overlay.parentNode.removeChild(overlay);
+                    }
+                }, 350);
             }
+
+            if(continueBtn){
+                continueBtn.addEventListener('click', function(){ finish(false); });
+            }
+            if(closeBtn){
+                closeBtn.addEventListener('click', function(){ finish(false); });
+            }
+
             function checkStatus(){
-                if(busy)return;
+                if(busy || finished)return;
                 busy=true;
                 var body=new URLSearchParams();
                 body.set('action','dior_visit_sync_status');
@@ -202,43 +245,48 @@ final class Dior_HIPAAtizer_API_Sync {
                 fetch(ajaxUrl,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},body:body.toString()})
                 .then(function(response){return response.json();})
                 .then(function(result){
-                    if(result&&result.success&&result.data&&result.data.ready){finish();return;}
-                    if(Date.now()-started>120000){
-                        message.textContent='We could not confirm your visit details yet. Please try again, or contact support if this continues.';
-                        retry.hidden=false;
-                        var spinner=overlay.querySelector('.dior-visit-sync-spinner');
-                        if(spinner)spinner.style.display='none';
-                        if(timer)window.clearInterval(timer);
+                    if(result && result.success && result.data && result.data.ready){
+                        finish(true);
+                        return;
+                    }
+                    var elapsed = Date.now() - started;
+                    if(elapsed >= 8000){
+                        // After 8 seconds, automatically let the patient in so they are never trapped
+                        message.textContent = 'Welcome! Opening your patient dashboard…';
+                        setTimeout(function(){ finish(false); }, 1200);
                     }
                 })
                 .catch(function(){
-                    if(Date.now()-started>120000){
-                        message.textContent='We could not connect to verify your visit details. Please try again.';
-                        retry.hidden=false;
-                        var spinner=overlay.querySelector('.dior-visit-sync-spinner');
-                        if(spinner)spinner.style.display='none';
-                        if(timer)window.clearInterval(timer);
+                    var elapsed = Date.now() - started;
+                    if(elapsed >= 6000){
+                        finish(false);
                     }
                 })
                 .finally(function(){busy=false;});
             }
-            retry.addEventListener('click',function(){
-                started=Date.now();retry.hidden=true;message.textContent='Retrying secure visit verification…';
-                var spinner=overlay.querySelector('.dior-visit-sync-spinner');
-                if(spinner)spinner.style.display='block';
-                checkStatus();if(timer)window.clearInterval(timer);timer=window.setInterval(checkStatus,3000);
-            });
+
             checkStatus();
-            timer=window.setInterval(checkStatus,3000);
+            timer=window.setInterval(checkStatus, 2500);
+
+            // Ultimate safety fallback: auto-dismiss after 12 seconds no matter what
+            setTimeout(function(){
+                if(!finished){
+                    finish(false);
+                }
+            }, 12000);
         })();
         </script>
         <?php
     }
 
     /**
-     * AJAX status check used after a patient returns from HIPAAtizer.
-     * Only the currently authenticated patient's own email is queried.
+     * AJAX action to clear the visit sync pending cookie server-side.
      */
+    public static function ajax_clear_visit_sync_pending() {
+        self::clear_visit_pending_cookie();
+        wp_send_json_success();
+    }
+
     /**
      * Mark the current browser as completing the Start Your Visit flow.
      * This allows the loading overlay to work even if HIPAAtizer redirects to
@@ -258,10 +306,10 @@ final class Dior_HIPAAtizer_API_Sync {
         }
         $cookie_path = defined('COOKIEPATH') && COOKIEPATH ? COOKIEPATH : '/';
         setcookie('dior_visit_sync_pending', '1', [
-            'expires' => time() + (30 * MINUTE_IN_SECONDS),
+            'expires' => time() + (5 * MINUTE_IN_SECONDS),
             'path' => $cookie_path,
             'secure' => is_ssl(),
-            'httponly' => true,
+            'httponly' => false,
             'samesite' => 'Lax',
         ]);
         $_COOKIE['dior_visit_sync_pending'] = '1';
@@ -283,7 +331,7 @@ final class Dior_HIPAAtizer_API_Sync {
             'expires' => time() - HOUR_IN_SECONDS,
             'path' => $cookie_path,
             'secure' => is_ssl(),
-            'httponly' => true,
+            'httponly' => false,
             'samesite' => 'Lax',
         ]);
         unset($_COOKIE['dior_visit_sync_pending']);
@@ -298,15 +346,27 @@ final class Dior_HIPAAtizer_API_Sync {
         $user_id = get_current_user_id();
 
         // Throttle upstream API calls; browser can poll more frequently.
-        // The first request after redirect always checks HIPAAtizer, even if an older intake exists.
         $cooldown_key = 'dior_visit_sync_try_' . $user_id;
         if (!get_transient($cooldown_key)) {
-            set_transient($cooldown_key, 1, 10);
+            set_transient($cooldown_key, 1, 6);
             self::sync_user_submission($user_id);
         }
 
         $intake = get_user_meta($user_id, 'dior_hipaa_intake', true);
-        if (is_array($intake) && !empty(get_user_meta($user_id, 'dior_hipaa_intake_submitted', true))) {
+        $submitted = get_user_meta($user_id, 'dior_hipaa_intake_submitted', true);
+
+        // Also check if normalized patient table has record
+        global $wpdb;
+        $patient_table = $wpdb->prefix . 'dior_patients';
+        $patient_exists = false;
+        if ($wpdb->get_var("SHOW TABLES LIKE '{$patient_table}'") === $patient_table) {
+            $patient = $wpdb->get_row($wpdb->prepare("SELECT id FROM {$patient_table} WHERE user_id = %d LIMIT 1", $user_id));
+            if ($patient && !empty($patient->id)) {
+                $patient_exists = true;
+            }
+        }
+
+        if (!empty($intake) || !empty($submitted) || $patient_exists) {
             self::clear_visit_pending_cookie();
             wp_send_json_success(['ready' => true]);
         }

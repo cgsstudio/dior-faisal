@@ -20,37 +20,44 @@
                         <img src="<?php echo esc_url($logo_url); ?>" alt="Dior Medical" class="brand-logo">
                     </a>
                 </div>
-                <!-- <button type="button" class="dior-side-close btn" id="dior-side-close" onclick="diorCloseMobileDrawer()"
-                    aria-label="Close sidebar">
-                    <i class="fas fa-xmark"></i>
-                </button> -->
+                <!-- Close control for the mobile drawer. Hidden on desktop by the
+                     stylesheet, shown while the drawer is open, and wired to the
+                     same close helper as the backdrop. -->
+                <button type="button" class="dior-side-close btn" id="dior-side-close" onclick="diorCloseMobileDrawer()"
+                    aria-label="Close sidebar" title="Close menu">&times;</button>
             </div>
 
             <!-- Navigation Links -->
             <nav class="dior-side-nav">
                 <div class="grp">
+                    <span class="grp-title">PATIENT MENU</span>
                     <button type="button" class="dior-nav-btn active btn" data-tab="overview">
                         <i class="fas fa-gauge-high"></i>
                         <span class="nav-label">Dashboard</span>
                     </button>
-                    <div class="dior-nav-item-has-children" id="dior-appt-dropdown-wrap">
+                    <?php
+                    // Same structure and class contract as the Doctor Dashboard's
+                    // Appointments menu (dior-nav-item / dior-submenu / submenu-btn /
+                    // submenu-icon) so the dropdown inherits the doctor styling —
+                    // indented list, +/− affordance, white hover row — at every
+                    // breakpoint instead of being styled separately.
+                    ?>
+                    <div class="dior-nav-item has-submenu dior-nav-item-has-children" id="dior-appt-dropdown-wrap">
                         <button type="button" class="dior-nav-btn btn" data-tab="appointments"
                             onclick="if(typeof window.diorToggleApptDropdown==='function'){window.diorToggleApptDropdown(event);}">
                             <i class="far fa-calendar-check"></i>
                             <span class="nav-label">Appointments</span>
-                            <i class="fas fa-chevron-down ms-auto dior-ic-fdf55d6c0a"></i>
+                            <i class="fas fa-plus submenu-icon"></i>
                         </button>
-                        <div class="dior-nav-dropdown">
-                            <a href="#tab=appointments&subtab=book" class="dior-nav-dropdown-item active" data-appt-subtab="book"><i
-                                    class="fas fa-angle-right"></i> Book Appointment</a>
-                            <a href="#tab=appointments&subtab=today" class="dior-nav-dropdown-item" data-appt-subtab="today"><i
-                                    class="fas fa-angle-right"></i> Today Appointments</a>
-                            <a href="#tab=appointments&subtab=upcoming" class="dior-nav-dropdown-item" data-appt-subtab="upcoming"><i
-                                    class="fas fa-angle-right"></i> Upcoming Appointments</a>
-                            <a href="#tab=appointments&subtab=past" class="dior-nav-dropdown-item" data-appt-subtab="past"><i
-                                    class="fas fa-angle-right"></i> Past Appointments</a>
-                            <a href="#tab=appointments&subtab=calendar" class="dior-nav-dropdown-item" data-appt-subtab="calendar"><i
-                                    class="fas fa-angle-right"></i> Appointment Calendar</a>
+                        <div class="dior-submenu dior-nav-dropdown">
+                            <a href="#tab=appointments&subtab=book" class="dior-nav-btn submenu-btn dior-nav-dropdown-item active" data-appt-subtab="book"><i
+                                    class="fas fa-calendar-plus"></i><span class="nav-label">Book Appointment</span></a>
+                            <a href="#tab=appointments&subtab=today" class="dior-nav-btn submenu-btn dior-nav-dropdown-item" data-appt-subtab="today"><i
+                                    class="fas fa-calendar-day"></i><span class="nav-label">Today Appointments</span></a>
+                            <a href="#tab=appointments&subtab=upcoming" class="dior-nav-btn submenu-btn dior-nav-dropdown-item" data-appt-subtab="upcoming"><i
+                                    class="fas fa-calendar-week"></i><span class="nav-label">Upcoming Appointments</span></a>
+                            <a href="#tab=appointments&subtab=past" class="dior-nav-btn submenu-btn dior-nav-dropdown-item" data-appt-subtab="past"><i
+                                    class="fas fa-clock-rotate-left"></i><span class="nav-label">Past Appointments</span></a>
                         </div>
                     </div>
                     <button type="button" class="dior-nav-btn btn" data-tab="docs_meds">
@@ -93,8 +100,82 @@
                         <i class="fas fa-gear"></i>
                         <span class="nav-label">Settings</span>
                     </button>
+
+                    <!-- Collapse / Expand Sidebar Toggle (matches the Doctor Dashboard) -->
+                    <button type="button" class="dior-nav-btn dior-patient-collapse-btn btn"
+                        id="dior-patient-sidebar-toggle" onclick="diorTogglePatientSidebarCollapse(event)"
+                        title="Collapse Menu">
+                        <i class="fas fa-angles-left collapse-icon" id="dior-patient-collapse-icon"></i>
+                        <span class="nav-label">Collapse Menu</span>
+                    </button>
                 </div>
             </nav>
+            <script>
+                function diorTogglePatientSidebarCollapse(e) {
+                    if (e) {
+                        if (e.preventDefault) e.preventDefault();
+                        if (e.stopPropagation) e.stopPropagation();
+                    }
+                    var app = document.getElementById('dior-patient-portal-app');
+                    if (!app) return;
+
+                    var isCollapsed = app.classList.toggle('dior-sidebar-collapsed');
+                    var icon = document.getElementById('dior-patient-collapse-icon');
+                    var btn = document.getElementById('dior-patient-sidebar-toggle');
+
+                    if (icon) {
+                        if (isCollapsed) {
+                            icon.classList.remove('fa-angles-left');
+                            icon.classList.add('fa-angles-right');
+                        } else {
+                            icon.classList.remove('fa-angles-right');
+                            icon.classList.add('fa-angles-left');
+                        }
+                    }
+                    if (btn) {
+                        var label = btn.querySelector('.nav-label');
+                        if (isCollapsed) {
+                            btn.setAttribute('title', 'Expand Menu');
+                            if (label) label.textContent = 'Expand Menu';
+                        } else {
+                            btn.setAttribute('title', 'Collapse Menu');
+                            if (label) label.textContent = 'Collapse Menu';
+                        }
+                    }
+
+                    try {
+                        localStorage.setItem('dior_patient_sidebar_collapsed', isCollapsed ? '1' : '0');
+                    } catch (err) { }
+
+                    // Let responsive widgets re-fit after the width transition.
+                    setTimeout(function () {
+                        window.dispatchEvent(new Event('resize'));
+                    }, 280);
+                }
+
+                // Restore the saved collapsed state on load (desktop only).
+                (function () {
+                    try {
+                        if (localStorage.getItem('dior_patient_sidebar_collapsed') === '1' && window.innerWidth >= 1025) {
+                            var app = document.getElementById('dior-patient-portal-app');
+                            if (app) {
+                                app.classList.add('dior-sidebar-collapsed');
+                                var icon = document.getElementById('dior-patient-collapse-icon');
+                                var btn = document.getElementById('dior-patient-sidebar-toggle');
+                                if (icon) {
+                                    icon.classList.remove('fa-angles-left');
+                                    icon.classList.add('fa-angles-right');
+                                }
+                                if (btn) {
+                                    btn.setAttribute('title', 'Expand Menu');
+                                    var label = btn.querySelector('.nav-label');
+                                    if (label) label.textContent = 'Expand Menu';
+                                }
+                            }
+                        }
+                    } catch (e) { }
+                })();
+            </script>
 
             <!-- Bottom Sidebar User Profile Card -->
             <div class="dior-sidebar-bottom-profile">
@@ -138,11 +219,6 @@
                 </div>
 
                 <div class="dior-topbar-right">
-                    <!-- Messages Icon -->
-                    <button type="button" class="dior-msg-btn dior-ic-f2136e6b50 btn" aria-label="Messages">
-                        <i class="far fa-envelope"></i>
-                    </button>
-
                     <!-- Notification Bell Dropdown -->
                     <div class="dior-notif-wrap" id="dior-notif-dropdown-wrap">
                         <button type="button" class="dior-notif-btn btn" onclick="diorToggleNotifDropdown(event)"
@@ -240,7 +316,7 @@
                                     </button>
                                 </li>
                                 <li>
-                                    <a href="<?php echo esc_url(wp_logout_url(home_url('/diro-login/'))); ?>"
+                                    <a href="<?php echo esc_url(wp_logout_url(dior_portal_login_url())); ?>"
                                         class="dior-logout-text-btn">
                                         <i class="fas fa-arrow-right-from-bracket"></i> Logout
                                     </a>
@@ -576,59 +652,6 @@
         </div>
     </div>
 
-    <!-- 5. CHANGE PHARMACY MODAL -->
-    <div class="dior-modal-overlay" id="modal-change-pharmacy">
-        <div class="dior-modal-dialog">
-            <div class="dior-modal-header">
-                <h3><i class="fas fa-store"></i> Update Preferred Pharmacy</h3>
-                <button type="button" class="dior-modal-close btn"
-                    onclick="diorCloseModal('modal-change-pharmacy')">&times;</button>
-            </div>
-            <div class="dior-modal-body">
-                <form id="dior-form-quick-pharmacy">
-                    <div class="dior-form-group">
-                        <label for="quick_pharmacy_select">Select Local Pharmacy or Enter Custom</label>
-                        <select id="quick_pharmacy_select" onchange="diorOnPharmacySelectChange(this)">
-                            <option value="custom">-- Enter Custom Pharmacy Details --</option>
-                            <option value="CVS Pharmacy #4829|9045 Wilshire Blvd, Beverly Hills, CA|(310) 555-0199">CVS
-                                Pharmacy #4829 - Beverly Hills</option>
-                            <option value="Walgreens Pharmacy #1034|300 N Canon Dr, Beverly Hills, CA|(310) 555-0244">
-                                Walgreens Pharmacy #1034 - Beverly Hills</option>
-                            <option
-                                value="Rite Aid Pharmacy #5411|8440 Santa Monica Blvd, West Hollywood, CA|(323) 555-0188">
-                                Rite Aid Pharmacy - West Hollywood</option>
-                            <option
-                                value="Capsule Digital Delivery Pharmacy|Direct Delivery to Doorstep|(888) 910-1212">
-                                Capsule Direct Delivery Pharmacy</option>
-                        </select>
-                    </div>
-
-                    <div class="dior-form-group">
-                        <label for="q_pharm_name">Pharmacy Name <span class="req">*</span></label>
-                        <input type="text" id="q_pharm_name" name="pharmacy_name"
-                            value="<?php echo esc_attr($profile['pharmacy_name']); ?>" required>
-                    </div>
-                    <div class="dior-form-group">
-                        <label for="q_pharm_address">Pharmacy Address <span class="req">*</span></label>
-                        <input type="text" id="q_pharm_address" name="pharmacy_address"
-                            value="<?php echo esc_attr($profile['pharmacy_address']); ?>" required>
-                    </div>
-                    <div class="dior-form-group">
-                        <label for="q_pharm_phone">Pharmacy Phone</label>
-                        <input type="tel" id="q_pharm_phone" name="pharmacy_phone"
-                            value="<?php echo esc_attr($profile['pharmacy_phone']); ?>">
-                    </div>
-
-                    <div class="dior-modal-footer">
-                        <button type="button" class="dior-btn-gold-secondary btn"
-                            onclick="diorCloseModal('modal-change-pharmacy')">Cancel</button>
-                        <button type="submit" class="dior-btn-gold-primary btn">Save Pharmacy</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- 6. VIEW RECEIPT MODAL -->
     <div class="dior-modal-overlay dior-ic-44a70a0420" id="modal-view-receipt">
         <div class="dior-modal-dialog dior-ic-3eca92ddc0">
@@ -815,7 +838,7 @@
                         <div>
                             <strong class="dior-ic-3a5e03a707">Consultation
                                 Mode</strong>
-                            <span id="pat-modal-appt-mode" class="dior-ic-035b2e7453"><i class="fas fa-video me-1" style="color:#22c55e;"></i> Video Visit</span>
+                            <span id="pat-modal-appt-mode" class="dior-ic-035b2e7453"><i class="fas fa-video me-1" style="color:#059669;"></i> Video Visit</span>
                         </div>
                         <div class="dior-ic-b652b6f21e">
                             <strong class="dior-ic-3a5e03a707">Service
@@ -830,7 +853,7 @@
                 <div id="pat-modal-zoom-wrap" class="dior-ic-5d5fe245c5">
                     <div class="dior-ic-63a4b96787">
                         <div class="dior-ic-99e83aaa9f">
-                            <i class="fas fa-video" style="color:#22c55e;font-size:18px;"></i>
+                            <i class="fas fa-video" style="color:#059669;font-size:18px;"></i>
                         </div>
                         <div>
                             <strong class="dior-ic-08abd803b3">Live Virtual Consultation
@@ -840,7 +863,7 @@
                     </div>
                     <a id="pat-modal-zoom-link" href="#" target="_blank" rel="noopener noreferrer"
                         class="dior-ic-459d58fbd7">
-                        <i class="fas fa-video me-1" style="color:#22c55e;"></i> Join Video Call &rarr;
+                        <i class="fas fa-video me-1" style="color:#059669;"></i> Join Video Call &rarr;
                     </a>
                 </div>
 
@@ -910,27 +933,18 @@
                         <!-- Clinic Logo -->
                         <div class="dior-ic-32c53658c7">
                             <?php
-                            $disp_logo = !empty($logo_url) ? $logo_url : site_url('/wp-content/uploads/2026/08/logo.png');
+                            // /uploads/2026/08/logo.png does not exist on this
+                            // install; cropped-logo.png is the real site mark.
+                            $disp_logo = !empty($logo_url) ? $logo_url : site_url('/wp-content/uploads/2026/08/cropped-logo.png');
                             ?>
-                            <img src="<?php echo esc_url($disp_logo); ?>" alt="Dior Medical" class="dior-ic-ac19460d69">
+                            <img src="<?php echo esc_url($disp_logo); ?>" alt="Dior Medical"
+                                 class="dior-ic-ac19460d69" loading="lazy" decoding="async"
+                                 onerror="this.onerror=null;this.style.display='none';">
                         </div>
                     </div>
 
                     <!-- Barcode & Issuance Line (Image 3) -->
                     <div class="dior-ic-7b94dc2c83">
-                        <div class="dior-rx-barcode-wrap">
-                            <div class="dior-rx-barcode-lines">
-                                <span class="dior-ic-8c313dc613"></span><span class="dior-ic-5375fe8cf1"></span><span
-                                    class="dior-ic-a4f6c77c37"></span><span class="dior-ic-0399ac9254"></span>
-                                <span class="dior-ic-9dc00e0931"></span><span class="dior-ic-c7fe51ade1"></span><span
-                                    class="dior-ic-8c313dc613"></span><span class="dior-ic-a4f6c77c37"></span>
-                                <span class="dior-ic-0399ac9254"></span><span class="dior-ic-9dc00e0931"></span><span
-                                    class="dior-ic-5375fe8cf1"></span><span class="dior-ic-a4f6c77c37"></span>
-                                <span class="dior-ic-8c313dc613"></span><span class="dior-ic-9dc00e0931"></span><span
-                                    class="dior-ic-0399ac9254"></span><span class="dior-ic-a4f6c77c37"></span>
-                            </div>
-                            <span class="dior-rx-barcode-txt" id="pat-modal-rx-barcode-txt">*RX-000000*</span>
-                        </div>
                         <div class="dior-ic-5fd58752b8">
                             <div>Prescription Date: <span id="pat-modal-rx-date" class="dior-ic-01276c62f3">—</span>
                             </div>
@@ -1039,29 +1053,14 @@
 
 
 
-                    <!-- Physician Digital Signature & Telehealth Legal Notice (Images 2 & 4) -->
-                    <div class="dior-rx-sig-container">
-                        <div class="dior-rx-legal-notice">
-                            <strong class="dior-ic-03cc0d21b0">TELEHEALTH LEGAL CERTIFICATION:</strong><br>
-                            This prescription was electronically reviewed, approved, and digitally signed by an
-                            authorized healthcare provider pursuant to a valid telehealth encounter under DEA 21 CFR
-                            Part 1311 and state medical practice acts.
-                        </div>
-                        <div class="dior-rx-sig-block">
-                            <div class="dior-rx-sig-line">
-                                <img id="pat-modal-rx-sig-img" src="" alt="Doctor Signature" class="dior-ic-3771746c5d">
-                                <span id="pat-modal-rx-sig-name" class="dior-rx-sig-script">
-                                    /s/ Dr. Marcus Sterling, MD
-                                </span>
-                            </div>
-                            <div class="dior-rx-sig-lbl">
-                                Authorized Physician Signature
-                            </div>
-                            <div id="pat-modal-rx-sig-date" class="dior-rx-sig-stamp">
-                                SHA256 Encrypted &bull; Issued Sep 14, 2026
-                            </div>
-                        </div>
-                    </div>
+                    <?php
+                    // The telehealth legal-certification paragraph and the
+                    // physician signature block were removed on request: the
+                    // sheet is printed by the patient portal, so boilerplate
+                    // legal text and an "authorized signature" panel there add
+                    // nothing a patient can act on. The document title, Rx UID,
+                    // issue date and clinic footer remain.
+                    ?>
 
                     <!-- Letterhead Bottom Clinic Footer Details (Image 2) -->
                     <div class="dior-rx-footer-line">
@@ -1189,5 +1188,3 @@
         </div>
     </div>
 </div>
-<!-- Hidden Intake Form Content for Dashboard Popup -->
-<?php Dior_Medical_Auth::render_docbooker_booking_modal(); ?>

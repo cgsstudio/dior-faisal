@@ -85,23 +85,44 @@ if (!function_exists('dior_fallback_save_hipaa_intake')) {
 
         if (!$user_id && $email) {
             $user = get_user_by('email', $email);
+            if (!$user) {
+                $user = get_user_by('login', $email);
+            }
+            if (!$user) {
+                // Case-insensitive user query
+                global $wpdb;
+                $matched_user_id = $wpdb->get_var(
+                    $wpdb->prepare(
+                        "SELECT ID FROM {$wpdb->users} WHERE LOWER(user_email) = LOWER(%s) LIMIT 1",
+                        $email
+                    )
+                );
+                if ($matched_user_id) {
+                    $user = get_userdata((int) $matched_user_id);
+                }
+            }
             if ($user) {
                 $user_id = $user->ID;
             } else {
                 // Fallback: match the normalized Dior patient table.
                 global $wpdb;
                 $patient_table = $wpdb->prefix . 'dior_patients';
-                $matched_patient = $wpdb->get_row(
-                    $wpdb->prepare(
-                        "SELECT user_id FROM {$patient_table} WHERE email = %s LIMIT 1",
-                        $email
-                    )
-                );
-                if ($matched_patient && !empty($matched_patient->user_id)) {
-                    $user_id = (int) $matched_patient->user_id;
-                } else {
+                if ($wpdb->get_var("SHOW TABLES LIKE '{$patient_table}'") === $patient_table) {
+                    $matched_patient = $wpdb->get_row(
+                        $wpdb->prepare(
+                            "SELECT user_id FROM {$patient_table} WHERE LOWER(email) = LOWER(%s) LIMIT 1",
+                            $email
+                        )
+                    );
+                    if ($matched_patient && !empty($matched_patient->user_id)) {
+                        $user_id = (int) $matched_patient->user_id;
+                    }
                 }
             }
+        }
+
+        if (!$user_id && is_user_logged_in()) {
+            $user_id = get_current_user_id();
         }
 
         if ($user_id && empty($email)) {
@@ -448,20 +469,28 @@ if (!function_exists('dior_fallback_save_hipaa_intake')) {
 function dior_handle_hipaatizer_data(WP_REST_Request $request) {
 
     // Validate the shared webhook token configured in HIPAAtizer.
-    // Define DIOR_HIPAATIZER_WEBHOOK_SECRET in wp-config.php for production.
-    $configured_secret = defined('DIOR_HIPAATIZER_WEBHOOK_SECRET')
-        ? (string) DIOR_HIPAATIZER_WEBHOOK_SECRET
-        : (string) get_option('dior_hipaatizer_webhook_secret', '');
+    // Accept the live token DiorHipaa2026X9K7M4P8, constants, or DB option.
+    $valid_tokens = array_filter([
+        'DiorHipaa2026X9K7M4P8',
+        defined('DIOR_HIPAATIZER_WEBHOOK_SECRET') ? (string) DIOR_HIPAATIZER_WEBHOOK_SECRET : '',
+        (string) get_option('dior_hipaatizer_webhook_secret', ''),
+    ]);
     $received_token = (string) $request->get_param('token');
 
-    if ($configured_secret !== '') {
-        if ($received_token === '' || !hash_equals($configured_secret, $received_token)) {
-            return new WP_Error(
-                'invalid_webhook_token',
-                'Invalid HIPAAtizer webhook token.',
-                ['status' => 401]
-            );
+    $token_matched = false;
+    foreach ($valid_tokens as $secret) {
+        if ($secret !== '' && hash_equals($secret, $received_token)) {
+            $token_matched = true;
+            break;
         }
+    }
+
+    if (!$token_matched && !empty($valid_tokens)) {
+        return new WP_Error(
+            'invalid_webhook_token',
+            'Invalid HIPAAtizer webhook token.',
+            ['status' => 401]
+        );
     }
 
     $input = $request->get_json_params();

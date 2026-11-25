@@ -15,8 +15,7 @@ class Dior_Doctor_Dynamic {
             'get_patient_profile','save_consultation','delete_consultation','document_save','document_delete','document_update_meta',
             'review_save','review_delete','review_bulk_delete','review_get','telemed_save','telemed_delete','notification_read',
             'notification_all_read','settings_save','chat_send','chat_get',
-            'medicine_save','medicine_delete','medicine_bulk_delete',
-            'consent_template_save','consent_template_delete','consent_template_bulk_delete'
+            'medicine_save','medicine_delete','medicine_bulk_delete'
         ];
         foreach ($actions as $action) add_action('wp_ajax_dior_doc_' . $action, [__CLASS__, 'ajax_' . $action]);
         add_action('wp_ajax_dior_doctor_add_patient', [__CLASS__, 'ajax_patient_add']);
@@ -134,74 +133,7 @@ class Dior_Doctor_Dynamic {
             KEY category (category),
             KEY expiry_date (expiry_date)
         ) $cc;";
-        // Consent templates (Documents → Consent Templates). Doctor-scoped so each
-        // provider manages their own clinic templates.
-        $tables[] = "CREATE TABLE " . self::table('consent_templates') . " (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            template_uid VARCHAR(64) NOT NULL,
-            doctor_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
-            template_name VARCHAR(190) NOT NULL,
-            template_category VARCHAR(100) NOT NULL DEFAULT 'Surgery Consent',
-            department VARCHAR(120) NOT NULL DEFAULT 'All Departments',
-            version VARCHAR(20) NOT NULL DEFAULT 'v1.0',
-            status VARCHAR(20) NOT NULL DEFAULT 'Active',
-            created_at DATETIME NOT NULL,
-            updated_at DATETIME NOT NULL,
-            PRIMARY KEY (id),
-            UNIQUE KEY template_uid (template_uid),
-            KEY doctor_id (doctor_id),
-            KEY template_category (template_category),
-            KEY status (status)
-        ) $cc;";
         foreach ($tables as $sql) dbDelta($sql);
-
-        self::seed_consent_templates();
-    }
-
-    /**
-     * The Consent Templates screen used to ship eight hardcoded rows. Seed them
-     * once per doctor so the page keeps its familiar content after the switch
-     * to real storage - only ever runs when the doctor has no templates yet.
-     */
-    private static function seed_consent_templates()
-    {
-        global $wpdb;
-        $table = self::table('consent_templates');
-        $doctor_id = get_current_user_id();
-        if (!$doctor_id) return;
-
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) !== $table) return;
-        $existing = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $table WHERE doctor_id = %d",
-            $doctor_id
-        ));
-        if ($existing > 0) return;
-
-        $seeds = [
-            ['General Surgery Consent Form', 'Surgery Consent', 'General Surgery', 'v2.1', 'Active'],
-            ['Anesthesia Consent Form', 'Anesthesia Consent', 'All Departments', 'v1.5', 'Active'],
-            ['Blood Transfusion Consent', 'Blood Transfusion', 'All Departments', 'v1.3', 'Active'],
-            ['Orthopedic Surgery Consent', 'Surgery Consent', 'Orthopedics', 'v2.0', 'Active'],
-            ['Discharge Against Medical Advice (AMA)', 'Discharge AMA', 'All Departments', 'v1.2', 'Active'],
-            ['Cardiac Procedure Consent', 'Surgery Consent', 'Cardiology', 'v1.8', 'Active'],
-            ['Research Participation Consent', 'Research Participation', 'All Departments', 'v1.0', 'Draft'],
-            ['Photography and Media Consent', 'Photography', 'All Departments', 'v1.1', 'Active'],
-        ];
-
-        $now = current_time('mysql');
-        foreach ($seeds as $index => $seed) {
-            $wpdb->insert($table, [
-                'template_uid'      => 'TPL' . str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT),
-                'doctor_id'         => $doctor_id,
-                'template_name'     => $seed[0],
-                'template_category' => $seed[1],
-                'department'        => $seed[2],
-                'version'           => $seed[3],
-                'status'            => $seed[4],
-                'created_at'        => $now,
-                'updated_at'        => $now,
-            ]);
-        }
     }
 
     public static function patients($doctor_id=0) {
@@ -678,6 +610,56 @@ class Dior_Doctor_Dynamic {
         $intake = is_array($intake) ? $intake : [];
         $questionnaire = get_user_meta($pid, 'dior_medical_questionnaire', true);
         $questionnaire = is_array($questionnaire) ? $questionnaire : [];
+
+        // If questionnaire meta is missing or incomplete, synthesize from intake meta
+        if (empty($questionnaire) && !empty($intake)) {
+            $questionnaire = [
+                'submission_id'          => $intake['submission_id'] ?? '',
+                'submitted_at'           => $intake['submitted_at'] ?? '',
+                'view_submission_link'   => $intake['view_submission_link'] ?? '',
+                'download_pdf_link'      => $intake['download_pdf_link'] ?? '',
+                'view_pdf_link'          => $intake['download_pdf_link'] ?? ($intake['view_submission_link'] ?? ''),
+                'full_name'              => $intake['full_name'] ?? ($p['full_name'] ?? ''),
+                'email'                  => $intake['email'] ?? ($p['email'] ?? ''),
+                'dob'                    => $intake['dob'] ?? ($p['dob'] ?? ''),
+                'gender'                 => $intake['gender'] ?? ($p['gender'] ?? ''),
+                'phone'                  => $intake['phone'] ?? ($p['phone'] ?? ''),
+                'selected_service'       => $intake['service_condition'] ?? ($intake['condition'] ?? 'General Consultation'),
+                'consultation_type'      => $intake['appointment_type'] ?? 'Telehealth Video Visit',
+                'referral_source'        => $intake['referral_source'] ?? 'Patient Portal',
+                'reason_for_visit'       => $intake['chief_complaint'] ?? ($intake['symptoms'] ?? 'Medical Consultation'),
+                'symptom_description'    => $intake['symptoms'] ?? '',
+                'symptom_duration'       => $intake['symptom_duration'] ?? '',
+                'symptom_severity'       => $intake['symptom_severity'] ?? 'Moderate',
+                'has_fever'              => $intake['fever'] ?? 'No',
+                'tried_treatment'        => $intake['treatment_tried'] ?? 'No',
+                'treatment_tried_details'=> $intake['treatment_details'] ?? '',
+                'red_flags'              => $intake['red_flags'] ?? 'No',
+                'medical_history'        => [
+                    'hypertension'    => $intake['hypertension'] ?? 'No',
+                    'diabetes'        => $intake['diabetes'] ?? 'No',
+                    'heart_disease'   => $intake['heart_disease'] ?? 'No',
+                    'lung_disease'    => $intake['lung_disease'] ?? 'No',
+                    'kidney_liver'    => $intake['kidney_liver'] ?? 'No',
+                    'cancer_immune'   => $intake['cancer_immune'] ?? 'No',
+                    'other'           => $intake['other_conditions'] ?? ($intake['medical_history'] ?? ''),
+                ],
+                'medications'            => [
+                    'takes_medications' => $intake['taking_medications'] ?? 'No',
+                    'list'              => $intake['medications_list'] ?? ($intake['medications'] ?? ''),
+                ],
+                'allergies'              => [
+                    'has_drug_allergy'  => $intake['drug_allergies'] ?? 'No',
+                    'list'              => $intake['drug_allergies_list'] ?? ($intake['allergies'] ?? ''),
+                ],
+                'signature'              => $intake['signature'] ?? ($intake['full_legal_name'] ?? ''),
+                'signature_date'         => $intake['signature_date'] ?? '',
+                'raw'                    => $intake['raw_data'] ?? [],
+            ];
+        }
+        if (empty($questionnaire['raw']) && !empty($intake['raw_data'])) {
+            $questionnaire['raw'] = $intake['raw_data'];
+        }
         $prescriptions = $wpdb->get_results($wpdb->prepare(
             "SELECT medication, instructions, status, created_at FROM {$wpdb->prefix}dior_prescriptions WHERE patient_id = %d ORDER BY created_at DESC LIMIT 50", $pid
         ), ARRAY_A) ?: [];
@@ -827,142 +809,6 @@ class Dior_Doctor_Dynamic {
 
     public static function ajax_chat_send(){self::auth();global $wpdb;$uid=sanitize_text_field($_POST['appointment_uid']??'');$a=Dior_Appointment_Service::get_appointment($uid);if(!$a||!self::patient_belongs_to_doctor($a['patient_id'],self::doctor_id())||!in_array((int)$a['doctor_id'],self::doctor_scope_ids(),true))wp_send_json_error(['message'=>'This consultation is not assigned to you.'],403);$msg=sanitize_textarea_field($_POST['message']??'');if(!$msg)wp_send_json_error(['message'=>'Message required.']);$wpdb->insert(self::table('chat_messages'),['appointment_uid'=>$uid,'patient_id'=>$a['patient_id'],'doctor_id'=>self::doctor_id(),'sender_user_id'=>self::doctor_id(),'message'=>$msg,'created_at'=>current_time('mysql')]);wp_send_json_success(['message'=>'Message sent.']);}
     public static function ajax_chat_get(){self::auth();global $wpdb;$uid=sanitize_text_field($_POST['appointment_uid']??'');$a=Dior_Appointment_Service::get_appointment($uid);if(!$a||!self::patient_belongs_to_doctor($a['patient_id'],self::doctor_id())||!in_array((int)$a['doctor_id'],self::doctor_scope_ids(),true))wp_send_json_error(['message'=>'Consultation access denied.'],403);$rows=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table('chat_messages').' WHERE appointment_uid=%s ORDER BY id ASC',$uid),ARRAY_A);wp_send_json_success(['messages'=>$rows,'patient'=>self::patient($a['patient_id']),'appointment'=>$a]);}
-
-    // ── Consent templates (Documents → Consent Templates) ────────────────────
-    public static function render_consent_templates()
-    {
-        global $wpdb;
-        $ids = self::doctor_scope_ids();
-        if (!$ids) return [];
-        $table = self::table('consent_templates');
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) !== $table) {
-            return [];
-        }
-        $in = implode(',', array_fill(0, count($ids), '%d'));
-        return $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM $table WHERE doctor_id IN ($in) ORDER BY id ASC",
-            ...$ids
-        ), ARRAY_A);
-    }
-
-    private static function consent_template_owner_id($id)
-    {
-        global $wpdb;
-        $id = (int) $id;
-        if (!$id) return 0;
-        return (int) $wpdb->get_var($wpdb->prepare(
-            'SELECT doctor_id FROM ' . self::table('consent_templates') . ' WHERE id = %d',
-            $id
-        ));
-    }
-
-    private static function consent_template_can_touch($owner_id)
-    {
-        if (!$owner_id) return false;
-        if (current_user_can('manage_options')) return true;
-        return in_array((int) $owner_id, self::doctor_scope_ids(), true);
-    }
-
-    public static function ajax_consent_template_save()
-    {
-        self::auth();
-        global $wpdb;
-
-        $id = (int) ($_POST['id'] ?? 0);
-        $name = sanitize_text_field(wp_unslash($_POST['template_name'] ?? ''));
-        $category = sanitize_text_field(wp_unslash($_POST['template_category'] ?? ''));
-        $department = sanitize_text_field(wp_unslash($_POST['department'] ?? ''));
-        $version = sanitize_text_field(wp_unslash($_POST['version'] ?? ''));
-        $status = sanitize_text_field(wp_unslash($_POST['status'] ?? 'Active'));
-
-        if ($name === '') {
-            wp_send_json_error(['message' => 'Template name is required.']);
-        }
-        if ($category === '') {
-            wp_send_json_error(['message' => 'Consent category is required.']);
-        }
-        if ($department === '') {
-            $department = 'All Departments';
-        }
-        if ($version === '') {
-            $version = 'v1.0';
-        }
-        if (!in_array($status, ['Active', 'Draft', 'Archived'], true)) {
-            $status = 'Active';
-        }
-
-        $data = [
-            'template_name'     => $name,
-            'template_category' => $category,
-            'department'        => $department,
-            'version'           => $version,
-            'status'            => $status,
-            'updated_at'        => current_time('mysql'),
-        ];
-
-        if ($id) {
-            if (!self::consent_template_can_touch(self::consent_template_owner_id($id))) {
-                wp_send_json_error(['message' => 'You cannot edit this template.'], 403);
-            }
-            $wpdb->update(self::table('consent_templates'), $data, ['id' => $id]);
-            $data['id'] = $id;
-            wp_send_json_success(['message' => 'Template updated.', 'id' => $id, 'row' => $data]);
-        }
-
-        $data['template_uid'] = 'TPL-' . strtoupper(wp_generate_password(6, false, false));
-        $data['doctor_id']    = self::doctor_id();
-        $data['created_at']   = current_time('mysql');
-
-        $wpdb->insert(self::table('consent_templates'), $data);
-        $new_id = (int) $wpdb->insert_id;
-        if (!$new_id) {
-            wp_send_json_error(['message' => 'The template could not be saved. Please try again.']);
-        }
-        $data['id'] = $new_id;
-
-        wp_send_json_success(['message' => 'Template added.', 'id' => $new_id, 'row' => $data]);
-    }
-
-    public static function ajax_consent_template_delete()
-    {
-        self::auth();
-        global $wpdb;
-        $id = (int) ($_POST['id'] ?? 0);
-        if (!self::consent_template_can_touch(self::consent_template_owner_id($id))) {
-            wp_send_json_error(['message' => 'You cannot delete this template.'], 403);
-        }
-        $wpdb->delete(self::table('consent_templates'), ['id' => $id], ['%d']);
-        wp_send_json_success(['message' => 'Template deleted.']);
-    }
-
-    public static function ajax_consent_template_bulk_delete()
-    {
-        self::auth();
-        global $wpdb;
-        $raw = $_POST['ids'] ?? [];
-        if (is_string($raw)) {
-            $raw = explode(',', $raw);
-        }
-        $ids = array_values(array_filter(array_map('absint', (array) $raw)));
-        if (!$ids) {
-            wp_send_json_error(['message' => 'Select at least one template to delete.']);
-        }
-
-        $deleted = 0;
-        foreach ($ids as $id) {
-            if (!self::consent_template_can_touch(self::consent_template_owner_id($id))) {
-                continue;
-            }
-            if ($wpdb->delete(self::table('consent_templates'), ['id' => $id], ['%d'])) {
-                $deleted++;
-            }
-        }
-
-        if (!$deleted) {
-            wp_send_json_error(['message' => 'None of the selected templates could be deleted.']);
-        }
-        wp_send_json_success(['message' => $deleted . ' template(s) deleted.', 'deleted' => $deleted]);
-    }
 
     // ── Pharmacy inventory (Medicine List) ───────────────────────────────────
     // Every write is nonce-checked, capability-checked and scoped to the

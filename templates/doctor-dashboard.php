@@ -140,12 +140,6 @@
                                 data-tab="doc-documents-upload">
                                 <i class="fas fa-file-arrow-up"></i><span class="nav-label">Upload Documents</span>
                             </button>
-                            <button type="button" class="dior-nav-btn submenu-btn btn" data-tab="doc-documents-templates">
-                                <i class="fas fa-file-lines"></i><span class="nav-label">Consent Templates</span>
-                            </button>
-                            <button type="button" class="dior-nav-btn submenu-btn btn" data-tab="doc-documents-signed">
-                                <i class="fas fa-file-signature"></i><span class="nav-label">Signed Consent</span>
-                            </button>
                         </div>
                     </div>
                     <div class="dior-nav-item has-submenu" id="telemedicine-menu-item">
@@ -296,9 +290,6 @@
                     </div>
                 </div>
                 <div class="dior-topbar-right">
-                    <button type="button" class="dior-msg-btn dior-ic-fa44d4cb47 btn">
-                        <i class="far fa-envelope"></i>
-                    </button>
                     <div class="dior-notif-wrap">
                         <button type="button" class="dior-notif-btn btn" onclick="diorDocToggleNotif(event)">
                             <i class="far fa-bell"></i>
@@ -365,7 +356,7 @@
                                     </button>
                                 </li>
                                 <li>
-                                    <a href="<?php echo esc_url(wp_logout_url(home_url('/'))); ?>"
+                                    <a href="<?php echo esc_url(wp_logout_url(dior_portal_login_url())); ?>"
                                         class="dior-logout-text-btn">
                                         <i class="fas fa-arrow-right-from-bracket"></i> Logout
                                     </a>

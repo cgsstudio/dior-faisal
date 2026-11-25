@@ -5,6 +5,10 @@
 (function () {
     'use strict';
 
+    // Hash captured before any other controller runs, so the tab the user
+    // refreshed on is still the one that gets restored.
+    var diorInitialHash = window.location.hash || '';
+
     var titles = {
         overview: 'Patient Overview',
         appointments: 'Telehealth Appointments',
@@ -24,11 +28,23 @@
     function switchTab(tabId, updateHash) {
         var app = document.getElementById('dior-patient-portal-app');
         if (!app || !tabId) return false;
+
+        // Accept the full deep-link shape ("appointments&subtab=today").
+        var requestedSubTab = null;
+        tabId = String(tabId);
+        if (tabId.indexOf('&subtab=') !== -1) {
+            var subParts = tabId.split('&subtab=');
+            tabId = subParts[0];
+            requestedSubTab = subParts[1] || null;
+        }
+        if (tabId.indexOf('#tab=') === 0) tabId = tabId.substring(5);
+
         var panel = document.getElementById('tab-' + tabId);
         if (!panel || !app.contains(panel)) return false;
 
         app.querySelectorAll('.dior-nav-btn[data-tab]').forEach(function (button) {
-            button.classList.toggle('active', button.getAttribute('data-tab') === tabId);
+            var isActive = button.getAttribute('data-tab') === tabId && !diorIsSubmenuParentBtn(button);
+            button.classList.toggle('active', isActive);
         });
 
         app.querySelectorAll('.dior-tab-panel').forEach(function (item) {
@@ -46,8 +62,7 @@
             var w = document.getElementById('dior-appt-dropdown-wrap');
             if (w) {
                 w.classList.remove('open');
-                var ch = w.querySelector('.fa-chevron-down');
-                if (ch) ch.style.transform = 'rotate(0deg)';
+                diorSetApptToggleIcon(w, false);
             }
         }
 
@@ -56,7 +71,33 @@
             if (window.history && window.history.replaceState) window.history.replaceState(null, '', hash);
             else window.location.hash = hash;
         }
+
+        if (tabId === 'appointments' && requestedSubTab &&
+            typeof window.diorSwitchApptSubTab === 'function') {
+            window.diorSwitchApptSubTab(requestedSubTab);
+        }
+
         return true;
+    }
+
+    // Appointments toggle affordance mirrors the Doctor Dashboard: +/−.
+    // A row that owns a submenu (the patient's "Appointments") behaves like the
+    // Doctor Dashboard's parent row: it only toggles the list and never takes
+    // the .active fill. Its label is the thing that stays highlighted, and the
+    // fill was the exact background the user asked to remove.
+    function diorIsSubmenuParentBtn(btn) {
+        if (!btn) return false;
+        if (btn.classList.contains('submenu-btn')) return false;
+        return !!(btn.closest('.dior-nav-item-has-children') ||
+                  btn.closest('.dior-nav-item.has-submenu'));
+    }
+
+        function diorSetApptToggleIcon(wrap, isOpen) {
+        if (!wrap) return;
+        var icon = wrap.querySelector('.submenu-icon');
+        if (!icon) return;
+        icon.classList.toggle('fa-minus', !!isOpen);
+        icon.classList.toggle('fa-plus', !isOpen);
     }
 
     var _diorLastApptToggleTime = 0;
@@ -73,14 +114,13 @@
 
         var w = document.getElementById('dior-appt-dropdown-wrap');
         if (!w) return;
-        var ch = w.querySelector('.fa-chevron-down');
         var isOpen = w.classList.contains('open');
         if (isOpen) {
             w.classList.remove('open');
-            if (ch) ch.style.transform = 'rotate(0deg)';
+            diorSetApptToggleIcon(w, false);
         } else {
             w.classList.add('open');
-            if (ch) ch.style.transform = 'rotate(180deg)';
+            diorSetApptToggleIcon(w, true);
             switchTab('appointments', true);
             if (typeof window.diorSwitchApptSubTab === 'function') {
                 var activeSub = w.querySelector('.dior-nav-dropdown-item.active');
@@ -124,7 +164,7 @@
             }
         }, true);
 
-        var hash = window.location.hash || '';
+        var hash = diorInitialHash || window.location.hash || '';
         var requestedTab = 'overview';
         var requestedSub = null;
         if (hash.indexOf('#tab=') === 0) {

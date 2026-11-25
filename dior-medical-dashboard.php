@@ -988,7 +988,6 @@ class Dior_Medical_Auth
         add_action('wp_ajax_dior_patient_bulk_delete_notifications', [__CLASS__, 'ajax_bulk_delete_notifications']);
         add_action('wp_ajax_dior_patient_get_live_notifications', [__CLASS__, 'ajax_get_live_notifications']);
         add_action('wp_ajax_dior_meeting_participant_joined', [__CLASS__, 'ajax_meeting_participant_joined']);
-        add_action('wp_ajax_dior_patient_update_pharmacy', [__CLASS__, 'ajax_update_pharmacy']);
         add_action('wp_ajax_dior_patient_check_intake_status', [__CLASS__, 'ajax_check_intake_status']);
         add_action('wp_ajax_dior_patient_save_emergency_contact', [__CLASS__, 'ajax_save_emergency_contact']);
         add_action('wp_ajax_dior_patient_delete_emergency_contact', [__CLASS__, 'ajax_delete_emergency_contact']);
@@ -1030,8 +1029,6 @@ class Dior_Medical_Auth
         // Template Canvas Override (Elementor Canvas mode)
         add_filter('template_include', [__CLASS__, 'override_page_template'], 99);
 
-        // DocBooker Booking Modal in wp_footer
-        add_action('wp_footer', [__CLASS__, 'render_docbooker_booking_modal'], 50);
     }
 
     /**
@@ -1079,7 +1076,6 @@ class Dior_Medical_Auth
         wp_register_style('dior-bootstrap-unify-css', false, ['dior-custom-css']);
         wp_register_style('dior-patient-css', false, ['dior-custom-css']);
         wp_register_style('dior-doctor-css', false, ['dior-custom-css']);
-        wp_register_style('dior-docbooker-modal-css', false, ['dior-custom-css']);
         wp_register_style('dior-fda-prescription-modal-css', false, ['dior-custom-css']);
         wp_register_style('dior-hipaatizer-popup-v17', false, ['dior-custom-css']);
 
@@ -1219,15 +1215,10 @@ class Dior_Medical_Auth
             true
         );
 
-        // ── DocBooker Booking Modal Controller ─────────────────────────────
-        $db_modal_js_ver = file_exists(DIOR_PORTAL_PATH . 'assets/js/dior-docbooker-modal.js') ? filemtime(DIOR_PORTAL_PATH . 'assets/js/dior-docbooker-modal.js') : DIOR_PORTAL_VERSION;
-        wp_enqueue_script(
-            'dior-docbooker-modal-js',
-            DIOR_PORTAL_URL . 'assets/js/dior-docbooker-modal.js',
-            ['jquery', 'sweetalert2'],
-            $db_modal_js_ver,
-            true
-        );
+        // Dashboard booking actions return patients to the required intake panel.
+        if (self::is_portal_dashboard_request()) {
+            self::enqueue_docbooker_booking_assets();
+        }
 
         // ── FDA Prescription Modal Controller ────────────────────────────────
         $fda_modal_js_ver = file_exists(DIOR_PORTAL_PATH . 'assets/js/dior-fda-prescription-modal.js') ? filemtime(DIOR_PORTAL_PATH . 'assets/js/dior-fda-prescription-modal.js') : DIOR_PORTAL_VERSION;
@@ -1260,10 +1251,10 @@ class Dior_Medical_Auth
         );
 
         $portal_url = home_url('/patient-dashboard/');
-        $login_url = home_url('/diro-login/');
-        $reg_url = home_url('/diro-registration/');
-        $lost_pwd_url = home_url('/diro-lost-password/');
-        $reset_pwd_url = home_url('/diro-reset-password/');
+        $login_url = self::portal_login_url();
+        $reg_url = self::portal_registration_url();
+        $lost_pwd_url = self::portal_lost_password_url();
+        $reset_pwd_url = self::portal_reset_password_url();
         $current_user_id = get_current_user_id();
         $hipaa_intake_data = $current_user_id ? get_user_meta($current_user_id, 'dior_hipaa_intake', true) : null;
         $profile_data = $current_user_id ? Dior_Patient_Portal_Data::get_patient_profile($current_user_id) : null;
@@ -1363,12 +1354,38 @@ class Dior_Medical_Auth
     }
 
     /**
-     * Ensure /diro-login/, /diro-registration/, /patient-dashboard/, and /book-visit/ pages exist
+     * Create the portal pages once, on a genuinely fresh install.
+     *
+     * IMPORTANT: this must never create a page on a site that is already set
+     * up. It is NOT a self-healing routine. Making it re-check the pages on
+     * every request meant that renaming a page slug made get_page_by_path()
+     * miss it, so the plugin silently inserted a fresh duplicate on every
+     * single init — the user renamed diro-login to dior-login and ended up
+     * with two "Patient Login" pages.
+     *
+     * Page slugs belong to the site owner. So we bail out if the flag is set
+     * OR if any portal page already exists in any form (published, draft or
+     * trashed). Only a site with none of them gets the one-time setup.
      */
     public static function ensure_pages_exist()
     {
         if (get_option('dior_portal_pages_ensured_v1', false)) {
             return;
+        }
+
+        // Sites already running the portal never get pages created for them,
+        // however their slugs have been renamed.
+        $existing_slugs = [
+            'patient-dashboard', 'patient-portal',
+            'dior-login', 'diro-login',
+            'dior-registration', 'diro-registration',
+            'dior-lost-password', 'diro-lost-password',
+            'dior-reset-password', 'diro-reset-password',
+        ];
+        foreach ($existing_slugs as $existing_slug) {
+            if (get_page_by_path($existing_slug, OBJECT, 'page')) {
+                return;
+            }
         }
 
         // Patient Dashboard Page (/patient-dashboard/)
@@ -1397,20 +1414,20 @@ class Dior_Medical_Auth
             update_post_meta($dash_id, '_wp_page_template', 'elementor_canvas');
         }
 
-        // Login Page (/diro-login/)
-        $login_page = get_page_by_path('diro-login');
+        // Login Page (/dior-login/)
+        $login_page = get_page_by_path('dior-login');
         if (!$login_page) {
             $old_login = get_page_by_path('login');
             if ($old_login) {
                 wp_update_post([
                     'ID' => $old_login->ID,
-                    'post_name' => 'diro-login'
+                    'post_name' => 'dior-login'
                 ]);
                 $login_id = $old_login->ID;
             } else {
                 $login_id = wp_insert_post([
                     'post_title' => 'Patient Login',
-                    'post_name' => 'diro-login',
+                    'post_name' => 'dior-login',
                     'post_content' => '[dior_login_form]',
                     'post_status' => 'publish',
                     'post_type' => 'page'
@@ -1423,20 +1440,20 @@ class Dior_Medical_Auth
             update_post_meta($login_id, '_wp_page_template', 'elementor_header_footer');
         }
 
-        // Registration Page (/diro-registration/)
-        $reg_page = get_page_by_path('diro-registration');
+        // Registration Page (/dior-registration/)
+        $reg_page = get_page_by_path('dior-registration');
         if (!$reg_page) {
             $old_reg = get_page_by_path('register');
             if ($old_reg) {
                 wp_update_post([
                     'ID' => $old_reg->ID,
-                    'post_name' => 'diro-registration'
+                    'post_name' => 'dior-registration'
                 ]);
                 $reg_id = $old_reg->ID;
             } else {
                 $reg_id = wp_insert_post([
                     'post_title' => 'Patient Registration',
-                    'post_name' => 'diro-registration',
+                    'post_name' => 'dior-registration',
                     'post_content' => '[dior_registration_form]',
                     'post_status' => 'publish',
                     'post_type' => 'page'
@@ -1562,6 +1579,7 @@ class Dior_Medical_Auth
         update_option('dior_portal_pages_ensured_v1', true, false);
     }
 
+
     /**
      * Override Page Template to Elementor Canvas (or built-in full-screen canvas)
      */
@@ -1572,12 +1590,13 @@ class Dior_Medical_Auth
         }
 
         // Auth pages (Login, Registration, Lost Password, Reset Password) must display Header & Footer!
-        if (is_page(['diro-login', 'diro-registration', 'diro-lost-password', 'diro-reset-password', 'patient-portal-landing-page'])) {
+        $auth_slugs = ['dior-login', 'dior-registration', 'dior-lost-password', 'dior-reset-password', 'diro-login', 'diro-registration', 'diro-lost-password', 'diro-reset-password', 'patient-portal-landing-page'];
+        if (is_page($auth_slugs)) {
             return $template;
         }
 
         global $post;
-        if ($post && in_array($post->post_name, ['diro-login', 'diro-registration', 'diro-lost-password', 'diro-reset-password', 'patient-portal-landing-page'])) {
+        if ($post && in_array($post->post_name, $auth_slugs)) {
             return $template;
         }
 
@@ -1621,6 +1640,46 @@ class Dior_Medical_Auth
     {
         ob_start();
         include DIOR_PORTAL_PATH . 'templates/appointment-page.php';
+        return ob_get_clean();
+    }
+
+    /**
+     * Enqueue the booking controller for dashboard navigation and the schedule tab.
+     */
+    public static function enqueue_docbooker_booking_assets()
+    {
+        static $enqueued = false;
+        if ($enqueued) {
+            return;
+        }
+        $enqueued = true;
+
+        $script_path = DIOR_PORTAL_PATH . 'assets/js/dior-docbooker-booking.js';
+        $script_version = file_exists($script_path) ? filemtime($script_path) : DIOR_PORTAL_VERSION;
+        wp_enqueue_script(
+            'dior-docbooker-booking-js',
+            DIOR_PORTAL_URL . 'assets/js/dior-docbooker-booking.js',
+            ['jquery'],
+            $script_version,
+            true
+        );
+        wp_localize_script('dior-docbooker-booking-js', 'dior_booking_vars', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'rest_url' => esc_url_raw(rest_url()),
+            'rest_nonce' => wp_create_nonce('wp_rest'),
+            'booking_page_url' => home_url('/patient-dashboard/#tab=appointments&subtab=schedule'),
+            'patient_dashboard_url' => home_url('/patient-dashboard/'),
+        ]);
+    }
+
+    /**
+     * Legacy Booking Form Render Helper (shortcode [dior_docbooker_booking] retired in favor of native appointment tab).
+     */
+    public static function render_docbooker_booking_form($atts = [])
+    {
+        self::enqueue_docbooker_booking_assets();
+        ob_start();
+        include DIOR_PORTAL_PATH . 'templates/docbooker-booking-form.php';
         return ob_get_clean();
     }
 
@@ -1962,6 +2021,16 @@ class Dior_Medical_Auth
             if ($logo)
                 return $logo;
         }
+
+        // Known-good site logo in the media library. The plugin's own
+        // assets/images has no logo file, so the old fallback 404'd and every
+        // place that printed it (prescription sheet, book-visit header)
+        // showed a broken image.
+        $fallback = site_url('/wp-content/uploads/2026/08/cropped-logo.png');
+        if (!file_exists(DIOR_PORTAL_PATH . 'assets/images/logo-web.png')) {
+            return $fallback;
+        }
+
         return DIOR_AUTH_URL . 'assets/images/logo-web.png';
     }
 
@@ -2004,7 +2073,7 @@ class Dior_Medical_Auth
             <div class="dior-auth-actions" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
                 <a href="<?php echo esc_url($dash_url); ?>"
                     class="dior-btn-auth-primary"><span><?php echo esc_html($dash_label); ?></span></a>
-                <a href="<?php echo esc_url(wp_logout_url(home_url('/diro-login/'))); ?>"
+                <a href="<?php echo esc_url(wp_logout_url(self::portal_login_url())); ?>"
                     class="dior-btn-auth-secondary"><span>Sign Out</span></a>
             </div>
 
@@ -2052,7 +2121,7 @@ class Dior_Medical_Auth
                         <span class="dior-checkmark"></span>
                         <span class="dior-check-text">Remember me on this device</span>
                     </label>
-                    <a href="<?php echo esc_url(home_url('/diro-lost-password/')); ?>" class="dior-forgot-link">Forgot
+                    <a href="<?php echo esc_url(self::portal_lost_password_url()); ?>" class="dior-forgot-link">Forgot
                         password?</a>
                 </div>
 
@@ -2065,20 +2134,9 @@ class Dior_Medical_Auth
                 </div>
             </form>
 
-            <div class="dior-login-divider">
-                <span>OR</span>
-            </div>
-
-            <button type="button" class="dior-btn-google"
-                onclick="Swal.fire({ icon: 'info', title: 'Google Login', text: 'Google Login will be implemented once Client ID is available.' });">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google Logo"
-                    class="google-logo">
-                Sign In With Google
-            </button>
-
             <!-- BOTTOM: SWITCH LINK TO REGISTRATION -->
             <div class="dior-auth-bottom-link-redesign">
-                <p>First time visiting? <a href="<?php echo esc_url(home_url('/diro-registration/')); ?>">Create Patient
+                <p>First time visiting? <a href="<?php echo esc_url(self::portal_registration_url()); ?>">Create Patient
                         Account</a></p>
             </div>
 
@@ -2110,7 +2168,7 @@ class Dior_Medical_Auth
                 style="text-decoration:none; display:flex; align-items:center; justify-content:center;">
                 <span>Go to Patient Dashboard &rarr;</span>
             </a>
-            <a href="<?php echo esc_url(wp_logout_url(home_url('/diro-registration/'))); ?>" class="dior-btn-google"
+            <a href="<?php echo esc_url(wp_logout_url(self::portal_login_url())); ?>" class="dior-btn-google"
                 style="text-decoration:none; text-align:center;">
                 Sign Out / Switch Account
             </a>
@@ -2268,7 +2326,7 @@ class Dior_Medical_Auth
         </form>
 
         <div class="dior-reg-bottom-link">
-            <p>Already have an account? <a href="<?php echo esc_url(home_url('/diro-login/')); ?>">Log in here</a></p>
+            <p>Already have an account? <a href="<?php echo esc_url(self::portal_login_url()); ?>">Log in here</a></p>
         </div>
 
         <?php endif; ?>
@@ -2378,7 +2436,7 @@ class Dior_Medical_Auth
 
             <!-- BOTTOM: SWITCH LINK TO LOGIN -->
             <div class="dior-auth-bottom-link-redesign">
-                <p>Remember your password? <a href="<?php echo esc_url(home_url('/diro-login/')); ?>">Back to Sign In
+                <p>Remember your password? <a href="<?php echo esc_url(self::portal_login_url()); ?>">Back to Sign In
                         &rarr;</a></p>
             </div>
         </div>
@@ -2441,11 +2499,11 @@ class Dior_Medical_Auth
         </div>
 
         <div class="dior-auth-actions" style="display: flex; flex-direction: column; gap: 12px;">
-            <a href="<?php echo esc_url(home_url('/diro-lost-password/')); ?>" class="dior-btn-auth-primary"
+            <a href="<?php echo esc_url(self::portal_lost_password_url()); ?>" class="dior-btn-auth-primary"
                 style="text-align: center; text-decoration: none;">
                 Request New Reset Link &rarr;
             </a>
-            <a href="<?php echo esc_url(home_url('/diro-login/')); ?>" class="dior-btn-auth-secondary"
+            <a href="<?php echo esc_url(self::portal_login_url()); ?>" class="dior-btn-auth-secondary"
                 style="text-align: center; text-decoration: none; display: block; padding: 12px 16px; border-radius: 8px; background: #F8FAFC; color: #475569; font-weight: 500; font-size: 13.5px; border: 1px solid #E2E8F0;">
                 &larr; Return to Sign In
             </a>
@@ -2511,7 +2569,7 @@ class Dior_Medical_Auth
         <div class="dior-auth-bottom-link"
             style="margin-top: 24px; text-align: center; border-top: 1px solid #F1F5F9; padding-top: 16px;">
             <p style="font-size: 13.5px; color: #64748B; margin: 0;">
-                <a href="<?php echo esc_url(home_url('/diro-login/')); ?>"
+                <a href="<?php echo esc_url(self::portal_login_url()); ?>"
                     style="font-weight: 600; color: #0284C7; text-decoration: none;">&larr; Back to Sign In</a>
             </p>
         </div>
@@ -2525,6 +2583,120 @@ class Dior_Medical_Auth
     }
 
     /**
+     * URL of the published page that renders $shortcode.
+     *
+     * Slugs belong to the site owner: /diro-login/ became /dior-login/ and any
+     * hardcoded path then returns a 404. The shortcode is the stable anchor, so
+     * every link and redirect follows the page wherever it is renamed. Nothing
+     * here creates, publishes or renames a page.
+     *
+     * $fallback_slugs is only consulted when no published page carries the
+     * shortcode (e.g. the page body was edited and lost it).
+     */
+    private static function portal_page_url($shortcode, array $fallback_slugs = [])
+    {
+        static $cache = [];
+        $cache_key = $shortcode . '|' . implode(',', $fallback_slugs);
+        if (array_key_exists($cache_key, $cache)) {
+            return $cache[$cache_key];
+        }
+
+        $candidates = get_posts([
+            'post_type' => 'page',
+            'post_status' => 'publish',
+            'posts_per_page' => 10,
+            'orderby' => 'ID',
+            'order' => 'ASC',
+            'fields' => 'ids',
+            // Search for the bare shortcode name: brackets are not reliable in
+            // a WP_Query search string. has_shortcode() below is the real test.
+            's' => $shortcode,
+            'no_found_rows' => true,
+        ]);
+
+        foreach ($candidates as $candidate_id) {
+            $candidate = get_post((int) $candidate_id);
+            if ($candidate && has_shortcode($candidate->post_content, $shortcode)) {
+                $permalink = get_permalink($candidate);
+                if ($permalink) {
+                    return $cache[$cache_key] = $permalink;
+                }
+            }
+        }
+
+        foreach ($fallback_slugs as $slug) {
+            $page = get_page_by_path($slug, OBJECT, 'page');
+            if ($page && $page->post_status === 'publish') {
+                return $cache[$cache_key] = get_permalink($page);
+            }
+        }
+
+        return $cache[$cache_key] = '';
+    }
+
+    /**
+     * The login URL every redirect should land on.
+     *
+     * Order: the page carrying [dior_login_form], then the known/new slugs,
+     * then the registration page, then the site root. Nothing here creates or
+     * republishes a page — it only reports where the login form already lives.
+     */
+    public static function portal_login_url()
+    {
+        $url = self::portal_page_url('dior_login_form', ['dior-login', 'diro-login']);
+        if ($url) {
+            return $url;
+        }
+
+        $reg = self::portal_page_url('dior_registration_form', ['dior-registration', 'diro-registration']);
+        if ($reg) {
+            return $reg;
+        }
+
+        return home_url('/');
+    }
+
+    /**
+     * The patient dashboard URL, resolved the same way.
+     *
+     * Templates link to the dashboard (e.g. the overview "Book An Appointment"
+     * shortcut) and must not hardcode a domain or slug. Falls back to the
+     * conventional path only when no page carries the shortcode.
+     */
+    public static function portal_dashboard_url()
+    {
+        return self::portal_page_url('dior_patient_dashboard', ['patient-dashboard'])
+            ?: home_url('/patient-dashboard/');
+    }
+
+    /**
+     * The registration URL, resolved the same way.
+     */
+    public static function portal_registration_url()
+    {
+        return self::portal_page_url('dior_registration_form', ['dior-registration', 'diro-registration'])
+            ?: self::portal_login_url();
+    }
+
+    /**
+     * The lost-password URL, resolved the same way.
+     */
+    public static function portal_lost_password_url()
+    {
+        return self::portal_page_url('dior_lost_password_form', ['dior-lost-password', 'diro-lost-password'])
+            ?: self::portal_login_url();
+    }
+
+    /**
+     * The reset-password URL, resolved the same way.
+     */
+    public static function portal_reset_password_url()
+    {
+        return self::portal_page_url('dior_reset_password_form', ['dior-reset-password', 'diro-reset-password'])
+            ?: self::portal_lost_password_url();
+    }
+
+    /**
      * Redirect unauthenticated users from private patient and doctor dashboard pages to login
      */
     public static function check_dashboard_access_redirect()
@@ -2533,7 +2705,7 @@ class Dior_Medical_Auth
             return;
         }
 
-        $login_url = home_url('/diro-login/');
+        $login_url = self::portal_login_url();
 
         global $post;
         $should_redirect = false;
@@ -2577,7 +2749,7 @@ class Dior_Medical_Auth
     {
         // If not logged in, redirect directly to login page
         if (!is_user_logged_in()) {
-            $login_url = home_url('/diro-login/');
+            $login_url = self::portal_login_url();
             if (!headers_sent()) {
                 wp_safe_redirect($login_url);
                 exit;
@@ -2586,6 +2758,12 @@ class Dior_Medical_Auth
         }
 
         self::enqueue_assets();
+
+        // Tell the footer/render helpers that this request really is the
+        // patient portal, so the appointment modal is rendered even though the
+        // post content has already been parsed by the time the footer runs.
+        $GLOBALS['dior_patient_portal_context'] = true;
+        $GLOBALS['dior_rendering_patient_dashboard'] = true;
 
         $logo_url = self::get_logo_url();
         $user_id = get_current_user_id();
@@ -2689,6 +2867,7 @@ class Dior_Medical_Auth
         ?>
 <?php include DIOR_PORTAL_PATH . 'templates/patient-dashboard.php'; ?>
 <?php
+                $GLOBALS['dior_rendering_patient_dashboard'] = false;
                 return ob_get_clean();
     }
     public static function handle_login()
@@ -2746,7 +2925,12 @@ class Dior_Medical_Auth
 
         if ($is_doctor) {
             $redirect = home_url('/doctor-dashboard/');
-        } elseif (!empty($redirect_to) && strpos($redirect_to, 'diro-login') === false && strpos($redirect_to, 'diro-registration') === false && strpos($redirect_to, 'doctor-dashboard') === false) {
+        } elseif (
+            !empty($redirect_to) &&
+            strpos($redirect_to, 'diro-login') === false && strpos($redirect_to, 'dior-login') === false &&
+            strpos($redirect_to, 'diro-registration') === false && strpos($redirect_to, 'dior-registration') === false &&
+            strpos($redirect_to, 'doctor-dashboard') === false
+        ) {
             $redirect = $redirect_to;
         } else {
             $redirect = home_url('/patient-dashboard/');
@@ -2905,7 +3089,7 @@ class Dior_Medical_Auth
      */
     public static function custom_lostpassword_url($lostpassword_url, $redirect)
     {
-        return home_url('/diro-lost-password/');
+        return self::portal_lost_password_url();
     }
 
     /**
@@ -2952,7 +3136,7 @@ class Dior_Medical_Auth
         $reset_url = add_query_arg([
             'key' => $key,
             'login' => rawurlencode($user->user_login),
-        ], home_url('/diro-reset-password/'));
+        ], self::portal_reset_password_url());
 
         $site_name = get_bloginfo('name') ?: 'Dior Medical';
         $user_name = $user->display_name ?: $user->user_login;
@@ -3082,7 +3266,7 @@ class Dior_Medical_Auth
 
         wp_send_json_success([
             'message' => 'Your password has been successfully reset! Redirecting to login...',
-            'redirect' => home_url('/diro-login/?reset=success')
+            'redirect' => self::portal_login_url() . '?reset=success'
         ]);
     }
 
@@ -3140,7 +3324,7 @@ class Dior_Medical_Auth
     {
         wp_logout();
         wp_send_json_success([
-            'redirect' => home_url('/diro-login/')
+            'redirect' => self::portal_login_url()
         ]);
     }
 
@@ -3984,12 +4168,29 @@ class Dior_Medical_Auth
         if (!$join_url || !wp_http_validate_url($join_url) || stripos($join_url, 'https://') !== 0) {
             wp_send_json_error(['message' => 'A valid meeting link is not available for this appointment.'], 409);
         }
-        $event_key = 'dior_meeting_join_' . md5($appt_uid . '|' . $user_id);
-        if (!get_transient($event_key)) {
+        /*
+         * One event per appointment + actor per window.
+         *
+         * Two keys guard this: the per-actor key below stops the same user from
+         * re-firing, and the per-appointment key stops two different code paths
+         * — the dashboard join links, the meeting-join modal, the sendBeacon
+         * fallback — from each delivering their own copy. A join click can
+         * legitimately produce more than one request (a link that is also
+         * caught by a delegated handler), so the appointment-level key is what
+         * actually keeps the patient from receiving the same notification
+         * twice. The window is short: a genuinely new join later still fires.
+         */
+        $actor_key = 'dior_meeting_join_' . md5($appt_uid . '|' . $user_id);
+        $appt_key  = 'dior_meeting_join_appt_' . md5($appt_uid);
+        if (get_transient($appt_key)) {
+            wp_send_json_success(['message' => 'Meeting event already recorded.']);
+        }
+        set_transient($appt_key, $user_id, 15);
+        if (!get_transient($actor_key)) {
             if (class_exists('Dior_Notification_Service')) {
                 Dior_Notification_Service::send_meeting_started_notification($appt, $user_id);
             }
-            set_transient($event_key, 1, 15);
+            set_transient($actor_key, 1, 15);
         }
         wp_send_json_success(['message' => 'Meeting event recorded.']);
     }
@@ -4403,8 +4604,16 @@ class Dior_Medical_Auth
             wp_send_json_error(['message' => $res->get_error_message()]);
         }
 
+        // Patients see this line verbatim in the dialog, so show the slot the
+        // way it is displayed everywhere else instead of the raw DB values.
+        $pretty_date = date_i18n('M j, Y', strtotime($new_date));
+        $pretty_time = $new_time;
+        if (preg_match('/^\d{1,2}:\d{2}/', $new_time)) {
+            $pretty_time = date_i18n('g:i A', strtotime($new_date . ' ' . $new_time));
+        }
+
         wp_send_json_success([
-            'message' => 'Appointment rescheduled successfully to ' . esc_html($new_date) . ' at ' . esc_html($new_time) . '.',
+            'message' => 'Appointment rescheduled successfully to ' . esc_html($pretty_date) . ' at ' . esc_html($pretty_time) . '.',
             'appt_id' => $appt_id,
             'new_date' => $new_date,
             'new_time' => $new_time,
@@ -4888,28 +5097,6 @@ class Dior_Medical_Auth
             'latest_id' => !empty($notifications) ? $notifications[0]['id'] : '',
             'new_alerts' => $new_alerts
         ]);
-    }
-
-    /**
-     * AJAX Update Pharmacy
-     */
-    public static function ajax_update_pharmacy()
-    {
-        Dior_Auth_Service::verify_ajax_nonce(['dior_portal_nonce', 'dior_auth_nonce']);
-
-        $user_id = get_current_user_id();
-        if (!$user_id)
-            wp_send_json_error(['message' => 'Authentication required.']);
-
-        $pharm_name = sanitize_text_field($_POST['pharmacy_name'] ?? '');
-        $pharm_address = sanitize_text_field($_POST['pharmacy_address'] ?? '');
-        $pharm_phone = sanitize_text_field($_POST['pharmacy_phone'] ?? '');
-
-        update_user_meta($user_id, 'preferred_pharmacy_name', $pharm_name);
-        update_user_meta($user_id, 'preferred_pharmacy_address', $pharm_address);
-        update_user_meta($user_id, 'preferred_pharmacy_phone', $pharm_phone);
-
-        wp_send_json_success(['message' => 'Preferred pharmacy updated successfully!']);
     }
 
     /**
@@ -5553,20 +5740,66 @@ class Dior_Medical_Auth
     }
 
     /**
-     * Render DocBooker booking modal template
+     * Is the current request a signed-in portal dashboard screen?
      */
-    public static function render_docbooker_booking_modal()
+    public static function is_portal_dashboard_request()
     {
-        static $rendered = false;
-        if ($rendered) {
-            return;
+        if (is_admin()) {
+            return false;
         }
-        $template = DIOR_PORTAL_PATH . 'templates/modal-docbooker-booking.php';
-        if (file_exists($template)) {
-            $rendered = true;
-            include $template;
+
+        if (!get_current_user_id()) {
+            return false;
         }
+
+        // Explicit marker set by a portal template.
+        if (!empty($GLOBALS['dior_patient_portal_context'])) {
+            return true;
+        }
+
+        // A dashboard shortcode render is in progress, so we are inside the
+        // portal even though the post content has not been parsed yet.
+        if (!empty($GLOBALS['dior_rendering_patient_dashboard']) || !empty($GLOBALS['dior_rendering_doctor_dashboard'])) {
+            return true;
+        }
+
+        global $post;
+        if ($post instanceof WP_Post) {
+            if (
+                has_shortcode($post->post_content, 'dior_patient_dashboard') ||
+                has_shortcode($post->post_content, 'dior_doctor_dashboard') ||
+                in_array($post->post_name, ['patient-dashboard', 'doctor-dashboard'], true)
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
+
+    /**
+     * Backwards-compatible alias for the patient-specific check.
+     */
+    public static function is_patient_portal_request()
+    {
+        return self::is_portal_dashboard_request();
+    }
+
+}
+
+/**
+ * Global wrapper around Dior_Medical_Auth::portal_login_url().
+ *
+ * The dashboard templates are plain includes and should not have to care
+ * whether the auth class happens to be loaded when they render, so they call
+ * this instead. Logout links use it so they can never point at a missing page.
+ */
+function dior_portal_login_url()
+{
+    if (class_exists('Dior_Medical_Auth') && method_exists('Dior_Medical_Auth', 'portal_login_url')) {
+        return Dior_Medical_Auth::portal_login_url();
+    }
+    return home_url('/dior-login/');
 }
 
 /**
@@ -5834,27 +6067,55 @@ if (!class_exists('Dior_HIPAAtizer_Appointment_Popup_V17')) {
             add_action('wp_footer', [__CLASS__, 'render_form_source'], 100);
         }
 
+        /**
+         * The hidden appointment form belongs to the dashboards only.
+         *
+         * It exists purely as the markup source that the "Book An Appointment"
+         * button relocates into a SweetAlert popup. On a public page it is dead
+         * weight, and worse, its HIPAAtizer renderer is live: a guest who
+         * submits the page's own intake form sees this second renderer's
+         * messages side by side with the real form. Scoping the markup to the
+         * signed-in dashboards keeps the popup working exactly as before while
+         * leaving public pages with a single, correct HIPAAtizer form.
+         */
+        private static function is_dashboard_request()
+        {
+            if (is_admin() || !is_user_logged_in()) {
+                return false;
+            }
+            if (class_exists('Dior_Medical_Auth') && method_exists('Dior_Medical_Auth', 'is_portal_dashboard_request')) {
+                return Dior_Medical_Auth::is_portal_dashboard_request();
+            }
+            return false;
+        }
+
         public static function enqueue_assets()
         {
-            if (is_admin()) {
+            if (!self::is_dashboard_request()) {
                 return;
             }
 
             // Note: dior-hipaatizer-popup.css is already merged into dior-custom.css
 
             // SweetAlert2 is already enqueued by the dashboard; declare dependency.
+            // Version from filemtime, like the other dashboard assets: a hardcoded
+            // DIOR_PORTAL_VERSION kept serving the previous file from browser and
+            // CDN caches after every upload until the constant happened to change.
+            $hipaa_popup_js_ver = file_exists(DIOR_PORTAL_PATH . 'assets/js/dior-hipaatizer-popup.js')
+                ? filemtime(DIOR_PORTAL_PATH . 'assets/js/dior-hipaatizer-popup.js')
+                : DIOR_PORTAL_VERSION;
             wp_enqueue_script(
                 'dior-hipaatizer-popup-v17',
                 DIOR_PORTAL_URL . 'assets/js/dior-hipaatizer-popup.js',
                 ['sweetalert2'],
-                DIOR_PORTAL_VERSION,
+                $hipaa_popup_js_ver,
                 true
             );
         }
 
         public static function render_form_source()
         {
-            if (is_admin() || !shortcode_exists('hipaatizer')) {
+            if (!self::is_dashboard_request() || !shortcode_exists('hipaatizer')) {
                 return;
             }
 

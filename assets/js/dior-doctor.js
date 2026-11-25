@@ -3195,21 +3195,25 @@ function diorShowMeetingJoinModal(alert, force) {
     return true;
 }
 
-/* Notify the patient when the doctor opens a video consultation. */
-(function () {
-  'use strict';
-  document.addEventListener('click', function (event) {
-    var link = event.target.closest('a[data-dior-meeting-join], button[data-dior-meeting-join], a[href*="zoom.us"], a[href*="meet.google.com"]');
-    if (!link) return;
-    var cfg = window.dior_doctor_vars || {};
-    var nonce = link.getAttribute('data-meeting-nonce') || cfg.meeting_nonce || cfg.nonce || cfg.portal_nonce || '';
-    var uid = link.getAttribute('data-appt-uid') || (link.closest('[data-appt-uid]') && link.closest('[data-appt-uid]').getAttribute('data-appt-uid')) || '';
-    var body = new URLSearchParams({ action: 'dior_meeting_participant_joined', appt_uid: uid, nonce: nonce });
-    var url = cfg.ajax_url || '/wp-admin/admin-ajax.php';
-    if (navigator.sendBeacon) navigator.sendBeacon(url, new Blob([body.toString()], { type: 'application/x-www-form-urlencoded; charset=UTF-8' }));
-    else fetch(url, { method: 'POST', credentials: 'same-origin', keepalive: true, headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: body.toString() }).catch(function () {});
-  }, true);
-})();
+/* The "notify the patient that the doctor opened the video consultation" click
+   handler lives in the guarded block near the top of this file, which runs once
+   (`__diorDoctorMeetingJoinBound`). It used to be duplicated here as a second,
+   UNguarded listener covering a wider selector set — a[href*="zoom.us"] and
+   a[href*="meet.google.com"]. Every join click therefore posted
+   dior_meeting_participant_joined twice:
+
+     • duplicate #1 — both beacons carried no appt_uid, so the handler fell back
+       to "today's appointment" and picked one at random. Two requests wrote two
+       different `meeting_join_<md5(uid|user)>` transients, so neither 15-second
+       guard could swallow the other and the patient got two notifications.
+     • duplicate #2 — the server-side transient is keyed on appt_uid, but the
+       fallback resolved a DIFFERENT appointment for each request, so the keys
+       never collided and the guard never fired.
+
+   Both causes are fixed: the duplicate listener is gone (one handler, one
+   beacon), and the server ignores repeat events for the same appointment and
+   actor inside the window. Keeping the wider selector set here as a no-op note
+   so a future edit does not silently re-add the second beacon. */
 
 
     // dior-doc-meeting-notif-click: Re-open video consultation modal when clicking meeting notification
@@ -3305,4 +3309,235 @@ function diorShowMeetingJoinModal(alert, force) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync, { once: true });
     else window.setTimeout(sync, 0);
     window.addEventListener('hashchange', sync);
+})();
+
+/* Appointment Registry: icon-only actions and selected-row completion toolbar. */
+(function () {
+    'use strict';
+
+    function enhanceAppointmentActions(root) {
+        var scope = root && root.querySelectorAll ? root : document;
+
+        var rows = [];
+        if (scope.matches && scope.matches('#va-appointments-tbody tr')) rows.push(scope);
+        scope.querySelectorAll('#va-appointments-tbody tr').forEach(function (row) { rows.push(row); });
+
+        rows.forEach(function (row) {
+            var actions = row.querySelector('td:last-child > div');
+            if (!actions) return;
+
+            [
+                ['.va-join-meeting-btn', 'Join Meeting', 'fa-video'],
+                ['.va-view-patient-btn', 'View Patient Profile', 'fa-eye'],
+                ['.va-resched-appt-btn', 'Reschedule Appointment', 'fa-calendar-alt'],
+                ['.va-cancel-appt-btn', 'Cancel Appointment', 'fa-ban']
+            ].forEach(function (entry) {
+                var control = actions.querySelector(entry[0]);
+                if (!control) return;
+                control.title = entry[1];
+                control.setAttribute('aria-label', entry[1]);
+                if (!control.classList.contains('va-action-icon-btn')) {
+                    control.classList.add('va-action-icon-btn');
+                    control.innerHTML = '<i class="fas ' + entry[2] + '" aria-hidden="true"></i>';
+                }
+            });
+
+        });
+    }
+
+    function completeConsultation(button) {
+        var uid = button.getAttribute('data-appt-uid');
+        if (!uid || button.disabled) return;
+
+        var confirmation = typeof Swal !== 'undefined'
+            ? Swal.fire({
+                title: 'Complete Consultation?',
+                text: 'This will mark the appointment as Completed and notify the patient.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Complete Consultation',
+                cancelButtonText: 'Go Back',
+                confirmButtonColor: '#198754'
+            })
+            : Promise.resolve({ isConfirmed: window.confirm('Complete this consultation and notify the patient?') });
+
+        confirmation.then(function (result) {
+            if (!result || !result.isConfirmed) return;
+
+            button.disabled = true;
+            var data = new FormData();
+            data.append('action', 'dior_doctor_update_appt_status');
+            data.append('nonce', (window.dior_doctor_vars && window.dior_doctor_vars.nonce) ? window.dior_doctor_vars.nonce : '');
+            data.append('appt_uid', uid);
+            data.append('status', 'Completed');
+
+            fetch((window.dior_doctor_vars && window.dior_doctor_vars.ajax_url) ? window.dior_doctor_vars.ajax_url : '/wp-admin/admin-ajax.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                body: data
+            })
+            .then(function (response) { return response.json(); })
+            .then(function (response) {
+                if (!response || !response.success) {
+                    throw new Error(response && response.data && response.data.message ? response.data.message : 'Unable to complete this consultation.');
+                }
+
+                var row = button.closest('tr');
+                if (row) {
+                    row.setAttribute('data-status', 'Completed');
+                    var badge = row.querySelector('.va-badge');
+                    if (badge) {
+                        badge.textContent = 'Completed';
+                        badge.className = 'va-badge badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 small fw-semibold';
+                    }
+                    row.querySelectorAll('.va-complete-appt-btn, .va-join-meeting-btn, .va-resched-appt-btn, .va-cancel-appt-btn').forEach(function (item) { item.remove(); });
+                }
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'success', title: 'Consultation Completed', text: 'The patient has been notified.' });
+                }
+            })
+            .catch(function (error) {
+                button.disabled = false;
+                if (typeof Swal !== 'undefined') Swal.fire({ icon: 'error', title: 'Update Failed', text: error.message || 'Please try again.' });
+                else window.alert(error.message || 'Please try again.');
+            });
+        });
+    }
+
+    document.addEventListener('click', function (event) {
+        var button = event.target.closest('.va-complete-appt-btn');
+        if (button) completeConsultation(button);
+    });
+
+    function positionBulkCompletionToolbar() {
+        var bulkBar = document.getElementById('va-bulk-bar');
+        if (!bulkBar) return;
+
+        var originalParent = document.querySelector('.va-actions-wrapper');
+        if (!bulkBar.__diorAnchor && originalParent && bulkBar.parentNode) {
+            var anchor = document.createComment('Dior bulk completion toolbar position');
+            bulkBar.parentNode.insertBefore(anchor, bulkBar);
+            bulkBar.__diorAnchor = anchor;
+        }
+
+        var bulkButton = document.getElementById('va-bulk-complete-btn');
+        if (bulkButton) {
+            bulkButton.className = 'btn btn-primary btn-sm rounded-3 fw-semibold va-action-icon-btn';
+            bulkButton.innerHTML = '<i class="fas fa-check" aria-hidden="true"></i>';
+            bulkButton.title = 'Complete Selected Appointments';
+            bulkButton.setAttribute('aria-label', 'Complete Selected Appointments');
+        }
+
+        var selected = Array.from(document.querySelectorAll('#va-appointments-tbody .va-row-check:checked'));
+        if (selected.length === 1) {
+            var row = selected[0].closest('tr');
+            var actions = row && row.querySelector('td:last-child > div');
+            if (actions && bulkBar.parentNode !== actions) {
+                actions.insertBefore(bulkBar, actions.firstChild);
+            }
+            bulkBar.classList.add('va-bulk-bar-inline');
+        } else {
+            if (bulkBar.__diorAnchor && bulkBar.__diorAnchor.parentNode) {
+                bulkBar.__diorAnchor.parentNode.insertBefore(bulkBar, bulkBar.__diorAnchor.nextSibling);
+            } else if (originalParent && bulkBar.parentNode !== originalParent) {
+                originalParent.appendChild(bulkBar);
+            }
+            bulkBar.classList.remove('va-bulk-bar-inline');
+        }
+    }
+
+    function init() {
+        enhanceAppointmentActions(document);
+        positionBulkCompletionToolbar();
+        document.addEventListener('change', function (event) {
+            if (event.target.matches('.va-row-check, #va-select-all')) {
+                window.setTimeout(positionBulkCompletionToolbar, 0);
+            }
+        });
+        document.addEventListener('click', function (event) {
+            if (event.target.closest('#va-refresh-btn, #va-pagination')) {
+                window.setTimeout(positionBulkCompletionToolbar, 80);
+            }
+        });
+        var style = document.createElement('style');
+        style.textContent = '.va-action-icon-btn{width:42px;min-width:42px;height:36px;padding:0!important;display:inline-flex!important;align-items:center;justify-content:center;white-space:nowrap}.va-action-icon-btn i{margin:0!important}.va-bulk-bar-inline{display:inline-flex!important;align-items:center;gap:6px;margin-right:4px;vertical-align:middle}.va-bulk-bar-inline .badge{white-space:nowrap}';
+        document.head.appendChild(style);
+        var observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                mutation.addedNodes.forEach(function (node) {
+                    if (node.nodeType === 1) enhanceAppointmentActions(node);
+                });
+            });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+    else init();
+})();
+
+/* HIPAAtizer response table: hide integration/system metadata, retain patient questions. */
+(function () {
+    'use strict';
+
+    var technicalQuestion = /^(?:increment|form submission limit|profile business name|form name|submission created date|submission id|date today(?:\s|$)|previous year(?:\s|$)|time now(?:\s|$)|edit submission link|view submission link|download access log link|download csv link|download merged csv link|download attachments link|notification template settings link|show pdf password link|submissions filtered table link)$/i;
+
+    function cleanHipaAtizerQuestionRows() {
+        var tbody = document.getElementById('pp-qa-tbody');
+        if (!tbody) return;
+
+        var removed = false;
+        Array.from(tbody.querySelectorAll('tr')).forEach(function (row) {
+            var cells = row.querySelectorAll('td');
+            if (cells.length < 3) return;
+
+            var prompt = (cells[1].textContent || '').replace(/\s+/g, ' ').trim();
+            var normalized = prompt.replace(/\s*\([^)]*\)\s*$/, '').trim();
+
+            var isTechnical = technicalQuestion.test(prompt) ||
+                technicalQuestion.test(normalized) ||
+                /^(?:edit|view|download|show)\s+.+\s+(?:link|url)$/i.test(prompt) ||
+                /^(?:https?:\/\/|www\.)/i.test(prompt);
+
+            if (isTechnical) {
+                row.remove();
+                removed = true;
+            }
+        });
+
+        if (removed) {
+            var count = tbody.querySelectorAll('tr').length;
+            var search = document.getElementById('pp-qa-search');
+            var badge = document.getElementById('pp-qa-count');
+            if (badge) {
+                var query = search ? search.value.trim() : '';
+                var visible = Array.from(tbody.querySelectorAll('tr')).filter(function (row) {
+                    return row.style.display !== 'none';
+                }).length;
+                badge.textContent = query ? visible + ' Matched' : count + ' Questions Answered';
+            }
+        }
+    }
+
+    function initHipaAtizerQuestionFilter() {
+        cleanHipaAtizerQuestionRows();
+
+        var observer = new MutationObserver(function () {
+            cleanHipaAtizerQuestionRows();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        document.addEventListener('input', function (event) {
+            if (event.target && event.target.id === 'pp-qa-search') {
+                window.setTimeout(cleanHipaAtizerQuestionRows, 0);
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initHipaAtizerQuestionFilter, { once: true });
+    } else {
+        initHipaAtizerQuestionFilter();
+    }
 })();

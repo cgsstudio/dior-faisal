@@ -81,9 +81,27 @@ class Dior_Doctor_Dashboard
         }
 
         global $wpdb;
-        $page = $wpdb->get_var("SELECT ID FROM {$wpdb->posts} WHERE post_content LIKE '%[dior_doctor_dashboard]%' AND post_status='publish' LIMIT 1");
+
+        // Look for the shortcode in ANY status, not just published. If the page
+        // exists but was moved to draft/private/trash, or its slug was renamed,
+        // adopt it instead of inserting a second Doctor Dashboard page.
+        $page = $wpdb->get_var("SELECT ID FROM {$wpdb->posts} WHERE post_content LIKE '%[dior_doctor_dashboard]%' AND post_type='page' AND post_status <> 'auto-draft' LIMIT 1");
         if ($page) {
-            update_option("dior_doctor_page_id", (int) $page, false);
+            $page_id = (int) $page;
+            if (get_post_status($page_id) !== 'publish') {
+                wp_update_post([
+                    'ID' => $page_id,
+                    'post_status' => 'publish',
+                ]);
+            }
+            update_option("dior_doctor_page_id", $page_id, false);
+            return;
+        }
+
+        // The site may point at a custom slug instead of /doctor-dashboard/.
+        // Anything carrying the shortcode is already accounted for above, so a
+        // missing known slug is not a reason to create a page here.
+        if (get_option('dior_doctor_page_id', 0)) {
             return;
         }
         $page_id = wp_insert_post([
@@ -535,7 +553,8 @@ class Dior_Doctor_Dashboard
                     'id' => 'notif-sys-003',
                     'title' => 'Signed Patient Consent Uploaded',
                     'message' => 'Signed telehealth and treatment consent document has been securely archived.',
-                    'action_url' => '#tab=doc-documents-signed',
+                    /* the Signed Consent tab was removed; land on the documents list */
+                    'action_url' => '#tab=doc-documents-upload',
                     'icon' => 'fa-file-signature',
                     'priority' => 'Medium',
                     'type' => 'document',
@@ -660,7 +679,11 @@ class Dior_Doctor_Dashboard
     public static function render($atts = [])
     {
         if (!is_user_logged_in()) {
-            $login_url = home_url("/diro-login/");
+            // Follow the page that actually carries [dior_login_form]; the slug
+            // is the site owner's to rename and a hardcoded path 404s after it.
+            $login_url = function_exists('dior_portal_login_url')
+                ? dior_portal_login_url()
+                : (class_exists('Dior_Medical_Auth') ? Dior_Medical_Auth::portal_login_url() : home_url('/dior-login/'));
             if (!headers_sent()) {
                 wp_safe_redirect($login_url);
                 exit;
@@ -673,6 +696,8 @@ class Dior_Doctor_Dashboard
 
         if (class_exists('Dior_Medical_Auth')) {
             Dior_Medical_Auth::enqueue_assets();
+            // Mark this request so dashboard-specific booking assets are enqueued.
+            $GLOBALS['dior_rendering_doctor_dashboard'] = true;
         }
 
         $user_id       = get_current_user_id();
@@ -709,6 +734,7 @@ class Dior_Doctor_Dashboard
 
         ob_start();
         include DIOR_PORTAL_PATH . "templates/doctor-dashboard.php";
+        $GLOBALS['dior_rendering_doctor_dashboard'] = false;
         return ob_get_clean();
     }
 

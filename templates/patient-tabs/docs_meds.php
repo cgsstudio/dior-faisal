@@ -5,13 +5,6 @@
         <div>
             <h4 class="mb-0 text-dark" style="font-size:20px;font-weight:700;">Prescriptions</h4>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;">
-            <button type="button" class="btn btn-sm btn-outline-primary"
-                onclick="diorOpenModal('modal-change-pharmacy')">
-                <i class="fas fa-store"></i> Update Pharmacy
-            </button>
-
-        </div>
     </div>
 
     <!-- Prescriptions Table (same design as Appointments) -->
@@ -30,10 +23,6 @@
                                 placeholder="Search records..." aria-label="Search box" onkeyup="diorFilterRxTable()">
                         </div>
                         <div class="docs-actions-group">
-                            <button type="button" aria-label="Delete selected items" class="docs-icon-btn docs-btn-danger btn"
-                                title="Delete Selected" onclick="diorBulkDeleteRxRows()">
-                                <i class="fas fa-trash"></i>
-                            </button>
                             <button type="button" aria-label="Export to CSV" class="docs-icon-btn docs-btn-success btn"
                                 title="Export to CSV" onclick="diorDownloadRxCSV()">
                                 <i class="fas fa-file-arrow-down"></i>
@@ -90,7 +79,7 @@
                                     </td>
                                     <td>
                                         <span class="cell-text"
-                                            style="font-family:monospace;font-size:12px;color:#6366f1;"><?php echo esc_html($rx_id); ?></span>
+                                            style="font-family:monospace;font-size:12px;color:#1A528E;"><?php echo esc_html($rx_id); ?></span>
                                     </td>
                                     <td>
                                         <div class="cell-content cell-image-name" style="align-items: flex-start;">
@@ -162,6 +151,32 @@
         </div>
     </div>
 
+    <?php /* ── Hidden PDF template divs — one per prescription row ── */ ?>
+    <?php foreach ($patient_rx_rows as $rx):
+        $pdf_id      = $rx['id'] ?? ($rx['order_id'] ?? '');
+        $pdf_name    = $rx['name'] ?? ($rx['medication'] ?? 'Prescription');
+        $pdf_title   = !empty($rx['title']) ? $rx['title'] : $pdf_name;
+        $pdf_doctor  = $rx['prescribed_by'] ?? 'Attending Physician';
+        $pdf_date    = $rx['date_prescribed'] ?? ($rx['date'] ?? '—');
+        $pdf_disease = !empty($rx['condition']) ? $rx['condition'] : (!empty($rx['diagnosis']) ? $rx['diagnosis'] : 'General Care');
+        $pdf_status  = $rx['status'] ?? 'Active';
+        $pdf_inst    = $rx['instructions'] ?? '';
+        if (!$pdf_id) continue;
+    ?>
+    <div id="rx-pdf-template-<?php echo esc_attr($pdf_id); ?>"
+         style="display:none;"
+         aria-hidden="true"
+         data-rx-id="<?php echo esc_attr($pdf_id); ?>"
+         data-rx-title="<?php echo esc_attr($pdf_title); ?>"
+         data-rx-name="<?php echo esc_attr($pdf_name); ?>"
+         data-rx-doctor="<?php echo esc_attr($pdf_doctor); ?>"
+         data-rx-date="<?php echo esc_attr($pdf_date); ?>"
+         data-rx-disease="<?php echo esc_attr($pdf_disease); ?>"
+         data-rx-status="<?php echo esc_attr(ucfirst($pdf_status)); ?>"
+         data-rx-inst="<?php echo esc_attr($pdf_inst); ?>">
+    </div>
+    <?php endforeach; ?>
+
     <script>
         /* ── Prescriptions Table JS ── */
         (function () {
@@ -193,29 +208,6 @@
                 if (el) el.textContent = selected + ' selected / ' + total + ' total';
             };
 
-            // Bulk delete
-            window.diorBulkDeleteRxRows = function () {
-                var checkboxes = document.querySelectorAll('.rx-row-checkbox:checked');
-                if (!checkboxes.length) {
-                    Swal.fire({ icon: 'info', title: 'Selection Required', text: 'Please select at least one row to delete.' });
-                    return;
-                }
-                Swal.fire({
-                    title: 'Delete Prescriptions?',
-                    text: 'Are you sure you want to delete ' + checkboxes.length + ' selected record(s)?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#EF4444',
-                    cancelButtonColor: '#64748B',
-                    confirmButtonText: 'Yes, delete',
-                    cancelButtonText: 'Cancel'
-                }).then(function (result) {
-                    if (!result.isConfirmed) return;
-                    checkboxes.forEach(function (cb) { cb.closest('tr').remove(); });
-                    diorUpdateRxSelectedCount();
-                    Swal.fire({ icon: 'success', title: 'Deleted', text: 'Selected prescriptions removed.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
-                });
-            };
 
         })();
     </script>
