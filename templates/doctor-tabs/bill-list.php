@@ -93,6 +93,13 @@
                             ARRAY_A
                         );
                     }
+                    $dior_hidden_invoice_ids = get_user_meta(get_current_user_id(), 'dior_hidden_financial_invoice_ids', true);
+                    $dior_hidden_invoice_ids = is_array($dior_hidden_invoice_ids) ? array_map('strval', $dior_hidden_invoice_ids) : [];
+                    if ($dior_hidden_invoice_ids) {
+                        $bill_rows = array_values(array_filter($bill_rows, static function ($invoice) use ($dior_hidden_invoice_ids) {
+                            return !in_array((string)($invoice['id'] ?? ''), $dior_hidden_invoice_ids, true);
+                        }));
+                    }
                     if (empty($bill_rows)): ?>
                         <tr>
                             <td colspan="10" class="dior-empty-state text-center text-muted py-5">
@@ -113,7 +120,7 @@
                             $disc   = isset($br['discount']) ? $br['discount'] . '%' : '0%';
                             $total  = '$' . number_format((float) ($br['total_amount'] ?? $br['amount'] ?? 0), 2);
                     ?>
-                        <tr>
+                        <tr data-record-id="<?php echo esc_attr($br['id'] ?? ''); ?>">
                             <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input"></td>
                             <td><?php echo esc_html($br['invoice_uid'] ?? ('INV-' . ($br['id'] ?? ''))); ?></td>
                             <td>
@@ -131,7 +138,7 @@
                             <td>
                                 <div class="va-row-actions" style="justify-content: center;">
                                     <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                    <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
+                                    <button type="button" class="va-action-btn-sm va-btn-delete btn" title="Remove from active list" onclick="diorHideFinancialRecord(this)"><i class="fas fa-trash"></i></button>
                                 </div>
                             </td>
                         </tr>
