@@ -24,8 +24,7 @@
                             </div>
                             <div class="action-buttons">
                                 <button type="button" aria-label="Delete selected items"
-                                    class="docs-icon-btn docs-btn-danger btn" title="Delete Selected"
-                                    onclick="diorBulkDeleteStaticRows(this)">
+                                    class="docs-icon-btn docs-btn-danger btn" title="Delete Selected">
                                     <i class="fas fa-trash"></i>
                                 </button>
                                 <button type="button" aria-label="Add new record"
@@ -84,7 +83,7 @@
                                         esc_js($claim['status'] ?? 'Under Review')
                                     );
                                     ?>
-                                    <tr>
+                                    <tr data-record-id="<?php echo esc_attr($claim['claim_id'] ?? ''); ?>">
                                         <td><input type="checkbox" class="dior-ic-52ff4d551f form-check-input"></td>
                                         <td><span class="cell-text"><?php echo esc_html($claim['claim_id'] ?? '—'); ?></span>
                                         </td>

@@ -21,7 +21,7 @@
                 </div>
                 <div class="docs-actions-group">
                     <button type="button" aria-label="Delete selected items" class="docs-icon-btn docs-btn-danger btn"
-                        title="Delete Selected" onclick="diorBulkDeleteStaticRows(this)">
+                        title="Delete Selected">
                         <i class="fas fa-trash"></i>
                     </button>
                     <button type="button" aria-label="Export to CSV" class="docs-icon-btn docs-btn-success btn"
@@ -85,7 +85,8 @@
                                 esc_js($bill_total)
                             );
                             ?>
-                        <tr onclick="diorOpenBillingModal(<?php echo $bm_args; ?>)"
+                        <tr data-record-id="<?php echo esc_attr($inv_no); ?>"
+                            onclick="diorOpenBillingModal(<?php echo $bm_args; ?>)"
                             class="dior-ic-8e7e606bc6">
                             <td><span class="cell-text"><?php echo esc_html($inv_no); ?></span></td>
                             <td><span class="cell-text"><?php echo esc_html($doc_name); ?></span></td>

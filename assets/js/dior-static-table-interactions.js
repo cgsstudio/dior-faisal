@@ -187,7 +187,7 @@
         var oldToolbars = card.querySelectorAll('.dior-bulk-actions-toolbar');
         oldToolbars.forEach(function (tb) { tb.remove(); });
 
-        var trashBtn = card.querySelector('.docs-actions-group .docs-btn-danger, .va-actions-group .va-btn-danger, .docs-actions-group button[title*="Delete"], .va-actions-group button[title*="Delete"], #ap-bulk-delete-btn, #va-bulk-delete-btn, #rv-bulk-delete-btn, #dior-pr-bulk-delete, #dior-upcoming-bulk-delete-btn, #dior-clinical-bulk-delete');
+        var trashBtn = card.querySelector('.docs-actions-group .docs-btn-danger, .action-buttons .docs-btn-danger, .va-actions-group .va-btn-danger, .docs-actions-group button[title*="Delete"], .action-buttons button[title*="Delete"], .va-actions-group button[title*="Delete"], #ap-bulk-delete-btn, #va-bulk-delete-btn, #rv-bulk-delete-btn, #dior-pr-bulk-delete, #dior-upcoming-bulk-delete-btn, #dior-clinical-bulk-delete');
 
         if (!trashBtn) {
             var icon = card.querySelector('.docs-actions-group .fa-trash, .docs-actions-group .fa-trash-can, .va-actions-group .fa-trash, .va-actions-group .fa-trash-can');
@@ -362,14 +362,7 @@
 
         var count = checkedRows.length;
 
-        function performDeletion() {
-            var pharmacyApi = isPharmacyTable(table) ? getPharmacyApi() : null;
-            if (pharmacyApi) {
-                // Real inventory: delete the selected rows over AJAX, then
-                // refresh pagination from the server-confirmed state.
-                pharmacyApi.deleteRows(checkedRows, table);
-                return;
-            }
+        function finalizeDomDeletion() {
             checkedRows.forEach(function (row) {
                 row.remove();
             });
@@ -399,6 +392,69 @@
                     timerProgressBar: true
                 });
             }
+        }
+
+        var PATIENT_BULK_ACTIONS = {
+            'dior-bill-table': 'dior_patient_bulk_delete_payments',
+            'dior-rx-table': 'dior_patient_bulk_delete_prescriptions',
+            'dior-insurance-table': 'dior_patient_bulk_delete_insurance'
+        };
+
+        function performDeletion() {
+            var pharmacyApi = isPharmacyTable(table) ? getPharmacyApi() : null;
+            if (pharmacyApi) {
+                // Real inventory: delete the selected rows over AJAX, then
+                // refresh pagination from the server-confirmed state.
+                pharmacyApi.deleteRows(checkedRows, table);
+                return;
+            }
+
+            var ajaxAction = table.id ? PATIENT_BULK_ACTIONS[table.id] : null;
+            if (ajaxAction) {
+                var ids = checkedRows.map(function (row) {
+                    var attrId = row.getAttribute('data-record-id');
+                    if (attrId) return attrId.trim();
+                    var cells = row.querySelectorAll('td');
+                    return cells.length > 1 ? cells[1].innerText.trim() : '';
+                }).filter(Boolean);
+
+                var cfg = window.dior_vars || window.dior_patient_dashboard || {};
+                var ajaxUrl = cfg.ajax_url || (window.ajaxurl || '/wp-admin/admin-ajax.php');
+                var nonce = cfg.nonce || cfg.portal_nonce || '';
+
+                if (ids.length && ajaxUrl) {
+                    var body = new FormData();
+                    body.append('action', ajaxAction);
+                    if (nonce) body.append('nonce', nonce);
+                    ids.forEach(function (id) { body.append('ids[]', id); });
+
+                    fetch(ajaxUrl, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        body: body
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        if (data && data.success) {
+                            finalizeDomDeletion();
+                        } else if (window.Swal) {
+                            Swal.fire({
+                                title: 'Delete failed',
+                                text: (data && data.data && data.data.message) ? data.data.message : 'Unable to delete selected records.',
+                                icon: 'error'
+                            });
+                        }
+                    })
+                    .catch(function () {
+                        if (window.Swal) {
+                            Swal.fire({ title: 'Error', text: 'Network error while deleting records.', icon: 'error' });
+                        }
+                    });
+                    return;
+                }
+            }
+
+            finalizeDomDeletion();
         }
 
         if (window.Swal) {

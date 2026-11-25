@@ -986,6 +986,9 @@ class Dior_Medical_Auth
         add_action('wp_ajax_dior_patient_mark_notification_read', [__CLASS__, 'ajax_mark_notification_read']);
         add_action('wp_ajax_dior_patient_mark_all_notifications_read', [__CLASS__, 'ajax_mark_all_notifications_read']);
         add_action('wp_ajax_dior_patient_bulk_delete_notifications', [__CLASS__, 'ajax_bulk_delete_notifications']);
+        add_action('wp_ajax_dior_patient_bulk_delete_payments', [__CLASS__, 'ajax_bulk_delete_payments']);
+        add_action('wp_ajax_dior_patient_bulk_delete_prescriptions', [__CLASS__, 'ajax_bulk_delete_prescriptions']);
+        add_action('wp_ajax_dior_patient_bulk_delete_insurance', [__CLASS__, 'ajax_bulk_delete_insurance']);
         add_action('wp_ajax_dior_patient_get_live_notifications', [__CLASS__, 'ajax_get_live_notifications']);
         add_action('wp_ajax_dior_meeting_participant_joined', [__CLASS__, 'ajax_meeting_participant_joined']);
         add_action('wp_ajax_dior_patient_check_intake_status', [__CLASS__, 'ajax_check_intake_status']);
@@ -4938,6 +4941,149 @@ class Dior_Medical_Auth
         }
 
         wp_send_json_success(['message' => count($notif_ids) . ' notification(s) deleted successfully.']);
+    }
+
+    /**
+     * AJAX Bulk Delete Patient Billing/Payments
+     */
+    public static function ajax_bulk_delete_payments()
+    {
+        Dior_Auth_Service::verify_ajax_nonce(['dior_portal_nonce', 'dior_auth_nonce']);
+
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            wp_send_json_error(['message' => 'Authentication required.']);
+        }
+
+        $record_ids = isset($_POST['ids']) ? (array) $_POST['ids'] : [];
+        $record_ids = array_values(array_filter(array_map('sanitize_text_field', $record_ids)));
+
+        if (empty($record_ids)) {
+            wp_send_json_error(['message' => 'No billing records selected.']);
+        }
+
+        // 1. Delete from user meta
+        $meta_payments = get_user_meta($user_id, 'dior_payments', true);
+        if (is_array($meta_payments)) {
+            $meta_payments = array_values(array_filter($meta_payments, function ($pm) use ($record_ids) {
+                $candidates = array_filter([
+                    (string) ($pm['invoice_uid'] ?? ''),
+                    (string) ($pm['invoice_id'] ?? ''),
+                    (string) ($pm['payment_uid'] ?? ''),
+                    (string) ($pm['id'] ?? ''),
+                ]);
+                return empty(array_intersect($candidates, $record_ids));
+            }));
+            update_user_meta($user_id, 'dior_payments', $meta_payments);
+        }
+
+        // 2. Delete from relational tables
+        global $wpdb;
+        $payments_table = $wpdb->prefix . 'dior_payments';
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $payments_table)) === $payments_table) {
+            foreach ($record_ids as $rid) {
+                $wpdb->query($wpdb->prepare(
+                    "DELETE FROM $payments_table WHERE patient_id = %d AND (invoice_uid = %s OR payment_uid = %s OR id = %d)",
+                    $user_id,
+                    $rid,
+                    $rid,
+                    ctype_digit($rid) ? (int) $rid : 0
+                ));
+            }
+        }
+        $invoices_table = $wpdb->prefix . 'dior_invoices';
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $invoices_table)) === $invoices_table) {
+            foreach ($record_ids as $rid) {
+                $wpdb->query($wpdb->prepare(
+                    "DELETE FROM $invoices_table WHERE patient_id = %d AND (invoice_uid = %s OR id = %d)",
+                    $user_id,
+                    $rid,
+                    ctype_digit($rid) ? (int) $rid : 0
+                ));
+            }
+        }
+
+        wp_send_json_success(['message' => count($record_ids) . ' billing record(s) deleted successfully.']);
+    }
+
+    /**
+     * AJAX Bulk Delete Patient Prescriptions
+     */
+    public static function ajax_bulk_delete_prescriptions()
+    {
+        Dior_Auth_Service::verify_ajax_nonce(['dior_portal_nonce', 'dior_auth_nonce']);
+
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            wp_send_json_error(['message' => 'Authentication required.']);
+        }
+
+        $record_ids = isset($_POST['ids']) ? (array) $_POST['ids'] : [];
+        $record_ids = array_values(array_filter(array_map('sanitize_text_field', $record_ids)));
+
+        if (empty($record_ids)) {
+            wp_send_json_error(['message' => 'No prescriptions selected.']);
+        }
+
+        // 1. Delete from user meta
+        $meta_rx = get_user_meta($user_id, 'dior_prescriptions', true);
+        if (is_array($meta_rx)) {
+            $meta_rx = array_values(array_filter($meta_rx, function ($rx) use ($record_ids) {
+                $candidates = array_filter([
+                    (string) ($rx['prescription_uid'] ?? ''),
+                    (string) ($rx['order_id'] ?? ''),
+                    (string) ($rx['id'] ?? ''),
+                ]);
+                return empty(array_intersect($candidates, $record_ids));
+            }));
+            update_user_meta($user_id, 'dior_prescriptions', $meta_rx);
+        }
+
+        // 2. Delete from relational table
+        global $wpdb;
+        $rx_table = $wpdb->prefix . 'dior_prescriptions';
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $rx_table)) === $rx_table) {
+            foreach ($record_ids as $rid) {
+                $wpdb->query($wpdb->prepare(
+                    "DELETE FROM $rx_table WHERE patient_id = %d AND (prescription_uid = %s OR id = %d)",
+                    $user_id,
+                    $rid,
+                    ctype_digit($rid) ? (int) $rid : 0
+                ));
+            }
+        }
+
+        wp_send_json_success(['message' => count($record_ids) . ' prescription(s) deleted successfully.']);
+    }
+
+    /**
+     * AJAX Bulk Delete Patient Insurance Claims
+     */
+    public static function ajax_bulk_delete_insurance()
+    {
+        Dior_Auth_Service::verify_ajax_nonce(['dior_portal_nonce', 'dior_auth_nonce']);
+
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            wp_send_json_error(['message' => 'Authentication required.']);
+        }
+
+        $record_ids = isset($_POST['ids']) ? (array) $_POST['ids'] : [];
+        $record_ids = array_values(array_filter(array_map('sanitize_text_field', $record_ids)));
+
+        if (empty($record_ids)) {
+            wp_send_json_error(['message' => 'No insurance claims selected.']);
+        }
+
+        $claims = get_user_meta($user_id, 'dior_insurance_claims', true);
+        if (is_array($claims)) {
+            $claims = array_values(array_filter($claims, function ($claim) use ($record_ids) {
+                return !in_array((string) ($claim['claim_id'] ?? ''), $record_ids, true);
+            }));
+            update_user_meta($user_id, 'dior_insurance_claims', $claims);
+        }
+
+        wp_send_json_success(['message' => count($record_ids) . ' insurance claim(s) deleted successfully.']);
     }
 
     /**

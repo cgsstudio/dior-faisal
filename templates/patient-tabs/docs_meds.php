@@ -72,7 +72,7 @@
                                     $rx_st_cls = 'status-pending';
                                 }
                                 ?>
-                                <tr>
+                                <tr data-record-id="<?php echo esc_attr($rx_id); ?>">
                                     <td style="width:36px;">
                                         <input type="checkbox" class="master-checkbox rx-row-checkbox form-check-input"
                                             onclick="diorUpdateRxSelectedCount()">
