@@ -15,7 +15,7 @@ class Dior_Doctor_Dynamic {
             'get_patient_profile','save_consultation','delete_consultation','document_save','document_delete','document_update_meta',
             'review_save','review_delete','review_bulk_delete','review_get','telemed_save','telemed_delete','notification_read',
             'notification_all_read','settings_save','chat_send','chat_get',
-            'medicine_save','medicine_delete','medicine_bulk_delete'
+            'medicine_save','medicine_delete','medicine_bulk_delete','financial_record_hide'
         ];
         foreach ($actions as $action) add_action('wp_ajax_dior_doc_' . $action, [__CLASS__, 'ajax_' . $action]);
         add_action('wp_ajax_dior_doctor_add_patient', [__CLASS__, 'ajax_patient_add']);
@@ -911,6 +911,40 @@ class Dior_Doctor_Dynamic {
         wp_send_json_success(['message' => "$deleted review(s) deleted."]);
     }
     public static function ajax_review_get(){ self::auth(); global $wpdb; $id=(int)($_POST['id']??0); $r=$wpdb->get_row($wpdb->prepare('SELECT * FROM '.self::table('reviews').' WHERE id=%d',$id),ARRAY_A); if(!$r)wp_send_json_error(['message'=>'Review not found.']); wp_send_json_success(['review'=>$r,'patient'=>self::patient($r['patient_id'])]); }
+    /**
+     * Hide an invoice from the current doctor's active billing lists without
+     * deleting the financial source record required for accounting retention.
+     */
+    public static function ajax_financial_record_hide() {
+        self::auth();
+        global $wpdb;
+        $raw_id = sanitize_text_field(wp_unslash($_POST['invoice_id'] ?? ''));
+        if ($raw_id === '') wp_send_json_error(['message' => 'Invoice ID is required.'], 400);
+
+        $table = self::table('invoices');
+        $record = $wpdb->get_row($wpdb->prepare(
+            "SELECT id, invoice_uid, patient_id, doctor_id FROM {$table} WHERE invoice_uid=%s OR id=%d LIMIT 1",
+            $raw_id,
+            ctype_digit($raw_id) ? (int)$raw_id : 0
+        ), ARRAY_A);
+        if (!$record) wp_send_json_error(['message' => 'Invoice not found.'], 404);
+
+        if (!current_user_can('manage_options') && !in_array((int)$record['doctor_id'], self::doctor_scope_ids(), true)) {
+            wp_send_json_error(['message' => 'You cannot remove this invoice from your account.'], 403);
+        }
+
+        $hidden = get_user_meta(self::doctor_id(), 'dior_hidden_financial_invoice_ids', true);
+        $hidden = is_array($hidden) ? array_map('strval', $hidden) : [];
+        $hidden[] = (string)$record['id'];
+        $hidden = array_values(array_unique($hidden));
+        update_user_meta(self::doctor_id(), 'dior_hidden_financial_invoice_ids', $hidden);
+
+        if (class_exists('Dior_Audit_Service')) {
+            Dior_Audit_Service::log('invoice_hidden', 'invoice', $record['invoice_uid'] ?: (string)$record['id'], (int)$record['patient_id'], 'success', ['retention' => 'financial_record_preserved']);
+        }
+        wp_send_json_success(['message' => 'Invoice removed from your active list. Financial record retained for compliance.']);
+    }
+
 
     public static function ajax_telemed_save() {
         self::auth();
