@@ -75,7 +75,7 @@
 
     foreach ($appointments as $idx => $apt) {
         $a_id = !empty($apt['id']) ? $apt['id'] : (!empty($apt['appt_uid']) ? $apt['appt_uid'] : 'APT-' . (1000 + $idx));
-        $a_doc = !empty($apt['provider']) ? $apt['provider'] : (!empty($apt['doctor_name']) ? $apt['doctor_name'] : 'Dr. Marcus Sterling, DO');
+        $a_doc = !empty($apt['provider']) ? $apt['provider'] : (!empty($apt['doctor_name']) ? $apt['doctor_name'] : '—');
         $a_spec = !empty($apt['provider_spec']) ? $apt['provider_spec'] : 'Telehealth Urgent Care';
         $a_date_raw = !empty($apt['date']) ? $apt['date'] : (!empty($apt['appt_date']) ? $apt['appt_date'] : '');
         $a_time = !empty($apt['time']) ? $apt['time'] : (!empty($apt['appt_time']) ? $apt['appt_time'] : '');
@@ -286,6 +286,14 @@
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
+                                    <?php if (empty($today_mock)): ?>
+                                        <tr class="dior-empty-state">
+                                            <td colspan="8" class="text-center text-muted py-4">
+                                                <i class="far fa-calendar-xmark fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                                <span class="small fw-semibold">No appointments scheduled for today.</span>
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
@@ -447,6 +455,14 @@
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
+                                    <?php if (empty($upcoming_mock)): ?>
+                                        <tr class="dior-empty-state">
+                                            <td colspan="8" class="text-center text-muted py-4">
+                                                <i class="far fa-calendar-xmark fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                                <span class="small fw-semibold">No upcoming appointments found.</span>
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
@@ -559,6 +575,14 @@
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
+                                    <?php if (empty($past_mock)): ?>
+                                        <tr class="dior-empty-state">
+                                            <td colspan="8" class="text-center text-muted py-4">
+                                                <i class="far fa-calendar-xmark fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                                <span class="small fw-semibold">No past appointments found.</span>
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
                                 </tbody>
                             </table>
                         </div>

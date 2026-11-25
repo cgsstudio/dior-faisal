@@ -565,85 +565,40 @@ foreach ($patient_notif_rows as $row) {
     }
 
     function diorMarkAllSystemNotificationsRead() {
-        const config = window.dior_patient_dashboard || window.dior_vars || {};
-        const ajaxUrl = config.ajax_url || '';
-        const nonce = config.portal_nonce || config.nonce || '';
-
-        if (!ajaxUrl || !nonce) {
-            const message = 'Security verification is missing. Please refresh the dashboard and try again.';
-            if (window.Swal) {
-                Swal.fire({ icon: 'error', title: 'Unable to mark notifications as read', text: message });
-            } else {
-                window.alert(message);
-            }
-            return;
-        }
-
-        const button = document.querySelector('#dior-system-notif-list')
-            ? document.querySelector('#dior-system-notif-list').closest('.main-feed-card')?.querySelector('button[onclick="diorMarkAllSystemNotificationsRead()"]')
-            : null;
-        if (button) button.disabled = true;
-
-        const body = new URLSearchParams({
-            action: 'dior_patient_mark_all_notifications_read',
-            nonce: nonce
+        const unreadRows = document.querySelectorAll('#dior-system-notif-list .is-unread-row');
+        unreadRows.forEach(row => {
+            row.classList.remove('is-unread-row');
+            row.dataset.readState = 'read';
+            const strip = row.querySelector('.unread-strip');
+            if (strip) strip.remove();
+            const checkBtn = row.querySelector('.notification-controls .btn-icon-action .fa-check');
+            if (checkBtn) checkBtn.closest('button').remove();
         });
+
+        diorUpdateNotifBadgesAndStats();
+
+        // Sync with WordPress backend
+        const ajaxUrl = (window.dior_patient_dashboard && window.dior_patient_dashboard.ajax_url) || '/diormedical/wp-admin/admin-ajax.php';
+        const nonce = (window.dior_patient_dashboard && window.dior_patient_dashboard.portal_nonce) || '';
 
         fetch(ajaxUrl, {
             method: 'POST',
-            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-            body: body.toString()
-        })
-        .then(function (response) {
-            if (!response.ok) throw new Error('The server could not process this request.');
-            return response.json();
-        })
-        .then(function (data) {
-            if (!data || !data.success) {
-                const message = data && data.data && data.data.message
-                    ? data.data.message
-                    : 'Notifications could not be marked as read. Please try again.';
-                throw new Error(message);
-            }
-
-            // Update the feed only after the server confirms the database change.
-            const unreadRows = document.querySelectorAll('#dior-system-notif-list .notification-item-row.is-unread-row');
-            unreadRows.forEach(function (row) {
-                row.classList.remove('is-unread-row');
-                row.dataset.readState = 'read';
-                const strip = row.querySelector('.unread-strip');
-                if (strip) strip.remove();
-                const checkButton = row.querySelector('.notification-controls .btn-icon-action .fa-check');
-                if (checkButton) checkButton.closest('button').remove();
-            });
-
-            diorUpdateNotifBadgesAndStats();
-
+            body: new URLSearchParams({
+                action: 'dior_patient_mark_all_notifications_read',
+                nonce: nonce
+            }).toString()
+        }).then(res => res.json()).then(data => {
             if (window.Swal) {
                 Swal.fire({
                     position: 'top-end',
                     icon: 'success',
-                    title: data.data && data.data.message ? data.data.message : 'All notifications marked as read',
+                    title: 'All notifications marked as read',
                     showConfirmButton: false,
                     timer: 1500
                 });
             }
-        })
-        .catch(function (error) {
-            if (window.Swal) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Unable to mark notifications as read',
-                    text: error.message || 'Please refresh the page and try again.'
-                });
-            } else {
-                window.alert(error.message || 'Unable to mark notifications as read.');
-            }
-        })
-        .finally(function () {
-            if (button) button.disabled = false;
-        });
+        }).catch(() => { });
     }
 
     function diorDeleteNotificationRow(btn, notifId) {
