@@ -284,23 +284,14 @@
                 }
             }
 
-            // Parent menu click opens its submenu and loads its default panel.
-            // Use the normal tab switcher so the submenu is opened only once.
+            // Check if clicking a parent submenu toggle button
             var parentMenuBtn = event.target.closest('#dior-doc-sidebar .dior-nav-item.has-submenu > .dior-nav-btn');
             if (parentMenuBtn && !parentMenuBtn.getAttribute('data-tab')) {
                 var parentItem = parentMenuBtn.closest('.dior-nav-item.has-submenu');
-                var defaultTabs = {
-                    'appointments-menu-item': 'doc-appointments',
-                    'patients-menu-item': 'doc-patients-all',
-                    'accounts-menu-item': 'doc-accounts-bill-list',
-                    'pharmacy-menu-item': 'doc-pharmacy-list',
-                    'documents-menu-item': 'doc-documents-upload',
-                    'telemedicine-menu-item': 'doc-telemed-video'
-                };
-                if (parentItem && defaultTabs[parentItem.id]) {
+                if (parentItem && parentItem.id) {
                     event.preventDefault();
                     event.stopPropagation();
-                    window.diorDocSwitchTab(defaultTabs[parentItem.id], true);
+                    window.diorToggleSubmenu(event, parentItem.id);
                     return;
                 }
             }

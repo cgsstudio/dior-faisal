@@ -33,7 +33,8 @@
                             class="fas fa-gauge-high"></i><span class="nav-label">Dashboard</span></button>
 
                     <div class="dior-nav-item has-submenu" id="appointments-menu-item">
-                        <button type="button" class="dior-nav-btn btn" title="Appointments">
+                        <button type="button" class="dior-nav-btn btn"
+                            onclick="diorToggleSubmenu(event, 'appointments-menu-item')" title="Appointments">
                             <i class="far fa-calendar"></i><span class="nav-label">Appointments</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -53,7 +54,8 @@
                         </div>
                     </div>
                     <div class="dior-nav-item has-submenu" id="patients-menu-item">
-                        <button type="button" class="dior-nav-btn btn" title="Patients">
+                        <button type="button" class="dior-nav-btn btn"
+                            onclick="diorToggleSubmenu(event, 'patients-menu-item')" title="Patients">
                             <i class="fas fa-users"></i><span class="nav-label">Patients</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -79,7 +81,8 @@
                     <button type="button" class="dior-nav-btn btn" data-tab="doc-analytics" title="Analytics"><i
                             class="fas fa-chart-line"></i><span class="nav-label">Analytics</span></button>
                     <div class="dior-nav-item has-submenu" id="accounts-menu-item">
-                        <button type="button" class="dior-nav-btn btn" title="Accounts">
+                        <button type="button" class="dior-nav-btn btn"
+                            onclick="diorToggleSubmenu(event, 'accounts-menu-item')" title="Accounts">
                             <i class="fas fa-wallet"></i><span class="nav-label">Accounts</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -112,7 +115,8 @@
                             class="fas fa-prescription-bottle-medical"></i><span class="nav-label">E -
                             Prescriptions</span></button>
                     <div class="dior-nav-item has-submenu" id="pharmacy-menu-item">
-                        <button type="button" class="dior-nav-btn btn" title="Pharmacy">
+                        <button type="button" class="dior-nav-btn btn"
+                            onclick="diorToggleSubmenu(event, 'pharmacy-menu-item')" title="Pharmacy">
                             <i class="fas fa-pills"></i><span class="nav-label">Pharmacy</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -126,7 +130,8 @@
                         </div>
                     </div>
                     <div class="dior-nav-item has-submenu" id="documents-menu-item">
-                        <button type="button" class="dior-nav-btn btn" title="Documents & Report">
+                        <button type="button" class="dior-nav-btn btn"
+                            onclick="diorToggleSubmenu(event, 'documents-menu-item')" title="Documents & Report">
                             <i class="fas fa-file-medical"></i><span class="nav-label">Documents & Report</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
@@ -138,7 +143,8 @@
                         </div>
                     </div>
                     <div class="dior-nav-item has-submenu" id="telemedicine-menu-item">
-                        <button type="button" class="dior-nav-btn btn" title="Telemedicine">
+                        <button type="button" class="dior-nav-btn btn"
+                            onclick="diorToggleSubmenu(event, 'telemedicine-menu-item')" title="Telemedicine">
                             <i class="fas fa-video"></i><span class="nav-label">Telemedicine</span>
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
