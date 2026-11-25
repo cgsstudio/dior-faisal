@@ -5094,9 +5094,12 @@ class Dior_Medical_Auth
             $has_prescription = $uid ? $wpdb->get_var($wpdb->prepare(
                 "SELECT id FROM {$wpdb->prefix}dior_prescriptions WHERE appointment_uid=%s LIMIT 1", $uid
             )) : false;
+            $has_telemedicine = $uid ? $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}dior_telemedicine WHERE appointment_uid=%s AND is_deleted=0 LIMIT 1", $uid
+            )) : false;
 
-            // Appointments linked to clinical documents remain in the source of truth.
-            if ($has_encounter || $has_prescription) {
+            // Appointments linked to clinical documents or sessions remain in the source of truth.
+            if ($has_encounter || $has_prescription || $has_telemedicine) {
                 $retained++;
                 continue;
             }
