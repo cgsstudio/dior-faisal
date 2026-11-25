@@ -16,7 +16,15 @@ $patients = $wpdb->get_results(
 
 // Fallback from wp_users if table empty
 if (empty($patients)) {
-    $users = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'number' => 100]);
+    $users = get_users([
+        'role__in' => ['patient', 'subscriber', 'customer'],
+        'number' => 100,
+        'meta_query' => [
+            'relation' => 'OR',
+            ['key' => 'dior_patient_status', 'compare' => 'NOT EXISTS'],
+            ['key' => 'dior_patient_status', 'value' => 'deleted', 'compare' => '!='],
+        ],
+    ]);
     $patients = [];
     foreach ($users as $u) {
         $patients[] = [
