@@ -826,7 +826,7 @@ class Dior_Doctor_Dashboard
 
         $uid = (string)$row['appt_uid'];
         $has_encounter = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}dior_encounters WHERE appointment_id=%s AND is_deleted=0 LIMIT 1",
+            "SELECT id FROM {$wpdb->prefix}dior_encounters WHERE appointment_id=%s LIMIT 1",
             $uid
         ));
         $has_prescription = $wpdb->get_var($wpdb->prepare(
@@ -834,7 +834,7 @@ class Dior_Doctor_Dashboard
             $uid
         ));
         $has_telemedicine = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$wpdb->prefix}dior_telemedicine WHERE appointment_uid=%s AND is_deleted=0 LIMIT 1",
+            "SELECT id FROM {$wpdb->prefix}dior_telemedicine WHERE appointment_uid=%s LIMIT 1",
             $uid
         ));
         if ($has_encounter || $has_prescription || $has_telemedicine) {
