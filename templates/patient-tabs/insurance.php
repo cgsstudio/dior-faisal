@@ -24,7 +24,7 @@
                             </div>
                             <div class="action-buttons">
                                 <button type="button" aria-label="Delete selected items"
-                                    class="docs-icon-btn docs-btn-danger btn" title="Delete Selected">
+                                    class="docs-icon-btn docs-btn-danger btn" title="Delete Selected" onclick="diorBulkDeleteInsurance()">
                                     <i class="fas fa-trash"></i>
                                 </button>
                                 <button type="button" aria-label="Add new record"
