@@ -1544,14 +1544,14 @@ let diorBillCurrentPage = 1;
         const activeRows = diorGetBillActiveRows();
         activeRows.forEach(function(row) {
             let cols = row.querySelectorAll('td');
-            if(cols.length >= 7) {
-                let c0 = cols[0].innerText.trim();
-                let c1 = cols[1].innerText.trim();
-                let c2 = cols[2].innerText.trim();
-                let c3 = cols[3].innerText.trim();
-                let c4 = cols[4].innerText.trim();
-                let c5 = cols[5].innerText.trim();
-                let c6 = cols[6].innerText.trim();
+            if(cols.length >= 8) {
+                let c0 = cols[1].innerText.trim();
+                let c1 = cols[2].innerText.trim();
+                let c2 = cols[3].innerText.trim();
+                let c3 = cols[4].innerText.trim();
+                let c4 = cols[5].innerText.trim();
+                let c5 = cols[6].innerText.trim();
+                let c6 = cols[7].innerText.trim();
                 csvContent += `"${c0}","${c1}","${c2}","${c3}","${c4}","${c5}","${c6}"\n`;
             }
         });
