@@ -2361,15 +2361,25 @@ let diorNotifCurrentPage = 1;
             nonce: nonce
         });
 
+        if (!ajaxUrl || !nonce) {
+            if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+            if (window.Swal) Swal.fire({ icon: 'error', title: 'Unable to refresh notifications', text: 'Please refresh the page and try again.' });
+            return;
+        }
+
         fetch(ajaxUrl, {
             method: 'POST',
+            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
             body: body.toString()
         })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Notification request failed.');
+            return res.json();
+        })
         .then(data => {
             if (refreshIcon) refreshIcon.classList.remove('fa-spin');
-            if (data && data.success && data.data && data.data.full_html && tbody) {
+            if (data && data.success && data.data && typeof data.data.full_html === 'string' && tbody) {
                 tbody.innerHTML = data.data.full_html;
                 diorNotifCurrentPage = 1;
                 diorRenderNotifPagination();
@@ -2377,13 +2387,15 @@ let diorNotifCurrentPage = 1;
                 if (window.Swal) {
                     Swal.fire({ position: 'top-end', icon: 'success', title: 'Notifications Refreshed', showConfirmButton: false, timer: 1000 });
                 }
-            } else {
-                window.location.reload();
+                return;
             }
+            throw new Error((data && data.data && data.data.message) || 'Unable to refresh notifications.');
         })
-        .catch(() => {
+        .catch(error => {
             if (refreshIcon) refreshIcon.classList.remove('fa-spin');
-            window.location.reload();
+            if (window.Swal) {
+                Swal.fire({ icon: 'error', title: 'Notification refresh failed', text: error.message || 'Please try again.' });
+            }
         });
     }
     window.diorRefreshNotifications = diorRefreshNotifications;
@@ -4045,37 +4057,49 @@ document.addEventListener('click', function (event) {
         const uid = (button.getAttribute('data-appt-uid') || '').trim();
         if (!uid) return;
 
-        const confirm = window.Swal
-            ? Swal.fire({
+        // The bundled Bootstrap dialog shim does not implement SweetAlert's
+        // text-input options. Use its supported confirmation controls only.
+        const confirmPromise = window.Swal
+            ? window.Swal.fire({
                 icon: 'warning',
                 title: 'Cancel Appointment?',
-                text: 'Are you sure you want to cancel this appointment?',
-                input: 'text',
-                inputLabel: 'Cancellation reason (optional)',
-                inputPlaceholder: 'Enter a reason',
+                text: 'Are you sure you want to cancel this appointment? This will update its status to Cancelled.',
                 showCancelButton: true,
                 confirmButtonText: 'Yes, Cancel Appointment',
                 cancelButtonText: 'Keep Appointment',
                 confirmButtonColor: '#DC2626'
             })
-            : Promise.resolve({ isConfirmed: window.confirm('Cancel this appointment?'), value: '' });
+            : Promise.resolve({ isConfirmed: window.confirm('Cancel this appointment?') });
 
-        confirm.then(function (result) {
-            if (!result.isConfirmed) return;
+        confirmPromise.then(function (result) {
+            if (!result || !result.isConfirmed) return;
+
             button.disabled = true;
             return sendAppointmentAction('dior_patient_cancel_appointment', {
                 appt_id: uid,
-                reason: (result.value || 'Cancelled by patient')
+                reason: 'Cancelled by patient'
             }).then(function (response) {
                 if (!response || !response.success) {
-                    throw new Error(response && response.data && response.data.message ? response.data.message : 'Unable to cancel this appointment.');
+                    const message = response && response.data && response.data.message
+                        ? response.data.message
+                        : 'Unable to cancel this appointment.';
+                    throw new Error(message);
                 }
-                return showAppointmentMessage('success', 'Appointment Cancelled', response.data.message || 'Your appointment has been cancelled.')
-                    .then(function () { window.location.reload(); });
+
+                return showAppointmentMessage(
+                    'success',
+                    'Appointment Cancelled',
+                    response.data.message || 'Your appointment has been cancelled.'
+                ).then(function () {
+                    window.location.reload();
+                });
             }).catch(function (error) {
                 button.disabled = false;
                 showAppointmentMessage('error', 'Cancellation Failed', error.message || 'Please try again.');
             });
+        }).catch(function (error) {
+            button.disabled = false;
+            showAppointmentMessage('error', 'Cancellation Failed', error.message || 'Please try again.');
         });
     }
 
@@ -4103,6 +4127,17 @@ document.addEventListener('click', function (event) {
             cancelTodayAppointment(cancelButton);
         }
     });
+
+    // Expose the reschedule handler used by the calendar's inline action buttons.
+    // Keep it routed through the same validated AJAX flow as the appointment tables.
+    window.diorOpenRescheduleModal = function (appointmentId, appointmentDate, appointmentTime) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('data-appt-uid', String(appointmentId || ''));
+        button.setAttribute('data-appt-date', String(appointmentDate || ''));
+        button.setAttribute('data-appt-time', String(appointmentTime || ''));
+        rescheduleTodayAppointment(button);
+    };
 })();
 
 

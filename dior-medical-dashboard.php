@@ -5091,6 +5091,9 @@ class Dior_Medical_Auth
      */
     public static function ajax_get_live_notifications()
     {
+        // Require a valid portal nonce before returning patient notification data.
+        Dior_Auth_Service::verify_ajax_nonce(['dior_portal_nonce', 'dior_auth_nonce']);
+
         $user_id = get_current_user_id();
         if (!$user_id) {
             wp_send_json_error(['message' => 'Unauthorized'], 401);

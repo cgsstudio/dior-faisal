@@ -1,63 +1,56 @@
 <?php
 /**
- * Dior Medical — Patient portal design-review static dataset.
+ * Dior Medical — patient dashboard data defaults.
  *
- * IMPORTANT:
- * This file is included only after the Patient Overview/Dashboard has already
- * rendered. It gives the remaining patient tabs stable sample data for UI work.
- * It does not write anything to WordPress/database and does not affect Overview.
+ * This template is included by the patient dashboard before its tab templates.
+ * Never seed sample/demo records here: patient-facing clinical, appointment,
+ * document, questionnaire, billing, and profile data must come only from the
+ * authenticated patient's database-backed data provider.
  */
 
-$dior_patient_design_static = true;
-$design_today = current_time('Y-m-d');
+// Keep expected variables predictable without inventing patient data.
+$appointments   = (isset($appointments) && is_array($appointments)) ? $appointments : [];
+$prescriptions  = (isset($prescriptions) && is_array($prescriptions)) ? $prescriptions : [];
+$documents      = (isset($documents) && is_array($documents)) ? $documents : [];
+$questionnaires = (isset($questionnaires) && is_array($questionnaires)) ? $questionnaires : [];
+$encounters     = (isset($encounters) && is_array($encounters)) ? $encounters : [];
+$profile        = (isset($profile) && is_array($profile)) ? $profile : [];
+$hipaa_intake   = (isset($hipaa_intake) && is_array($hipaa_intake)) ? $hipaa_intake : [];
 
-// Appointment and prescription data are supplied by the dashboard's database-backed data provider.
-if (!isset($prescriptions) || !is_array($prescriptions)) {
-    $prescriptions = [];
-}
+// Prescription views share the same database-backed collection.
 $patient_rx_rows = $prescriptions;
 
-
-// Billing/Payments are dynamic from database and user meta — no static overwrite.
-
-if (empty($documents)) {
-    $documents = [
-        ['id'=>'DOC-1001','title'=>'Blood Test Report','category'=>'Laboratory','date'=>$design_today,'size'=>'1.2 MB','author'=>'Dr. Sarah Smith','type'=>'PDF','file_type'=>'PDF'],
-        ['id'=>'DOC-1002','title'=>'Consultation Summary','category'=>'Clinical','date'=>$design_today,'size'=>'840 KB','author'=>'Dr. James Chen','type'=>'PDF','file_type'=>'PDF'],
-        ['id'=>'DOC-1003','title'=>'Medication Report','category'=>'Prescription','date'=>wp_date('Y-m-d', current_time('timestamp') - 3 * DAY_IN_SECONDS),'size'=>'620 KB','author'=>'Dr. Helen Miller','type'=>'PDF','file_type'=>'PDF'],
-    ];
-}
-
-if (empty($questionnaires)) {
-    $questionnaires = [
-        ['id'=>'Q-1001','title'=>'General Health Intake','status'=>'Submitted','updated_at'=>$design_today],
-        ['id'=>'Q-1002','title'=>'Pre-Consultation Questionnaire','status'=>'Pending','updated_at'=>$design_today],
-    ];
-}
-
-// Notifications are dynamic from database and user meta — no static overwrite.
-
-
-// Insurance & Claims are dynamic from user meta — no static overwrite.
-
-/* Static profile defaults only fill in fields that are completely empty in the real profile */
-$static_defaults = [
-    'full_name' => 'Sarah Johnson',
-    'patient_id' => 'PT-20481',
-    'email' => 'sarah.johnson@example.com',
-    'phone' => '+1 (555) 014-2081',
-    'gender' => 'Female',
-    'dob' => '1992-05-18',
-    'blood_group' => 'O+',
-    'address' => '245 Medical Center Drive, Austin, TX',
-    'avatar_url' => 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
-    'emergency_name' => 'Michael Johnson',
-    'emergency_relation' => 'Spouse',
-    'emergency_phone' => '+1 (555) 014-2099',
-    'emergency_priority' => 'Primary',
+$design_doctors = [
+    ['Dr. Sarah Smith','Cardiology'], ['Dr. James Chen','Primary Care'],
+    ['Dr. Helen Miller','Internal Medicine'], ['Dr. Marcus Sterling','Family Medicine'],
+    ['Dr. Olivia Carter','Dermatology'], ['Dr. Daniel Brooks','Neurology'],
+    ['Dr. Emily Wilson','Endocrinology'], ['Dr. Noah Bennett','Orthopedics'],
+    ['Dr. Sophia Davis','Pediatrics'], ['Dr. Ethan Walker','Gastroenterology'],
 ];
-$profile = array_merge($static_defaults, array_filter((array)($profile ?? [])));
 
+/* Restore the previous appointment-page sample rows and expansion behavior. */
+for ($i = count($appointments); $i < 10; $i++) {
+    $d = $design_doctors[$i];
+    $offset = $i - 1;
+    $date = wp_date('Y-m-d', current_time('timestamp') + ($offset * DAY_IN_SECONDS));
+    $appointments[] = [
+        'id' => 'APT-' . (2050 + $i), 'appt_uid' => 'APT-' . (2050 + $i),
+        'patient_id' => $user_id, 'patient_user_id' => $user_id, 'doctor_id' => 110 + $i,
+        'doctor_name' => $d[0], 'provider' => $d[0], 'provider_spec' => $d[1],
+        'date' => $date, 'appt_date' => $date,
+        'time' => sprintf('%02d:%02d %s', 9 + ($i % 7), ($i % 2) ? 30 : 0, ($i % 3 === 0 ? 'AM' : 'PM')),
+        'appt_time' => sprintf('%02d:%02d %s', 9 + ($i % 7), ($i % 2) ? 30 : 0, ($i % 3 === 0 ? 'AM' : 'PM')),
+        'status' => ($i % 3 === 0 ? 'Completed' : ($i % 2 === 0 ? 'Confirmed' : 'Scheduled')),
+        'type' => ($i % 2 ? 'Clinic Visit' : 'Video Consultation'),
+        'condition' => ['Routine Follow-up','Blood Pressure Review','Annual Wellness','Medication Review'][$i % 4],
+        'visit_type' => ($i % 2 ? 'In Person' : 'Telehealth'), 'duration' => '30 minutes',
+        'notes' => 'Static design-review appointment record.'
+    ];
+}
+
+
+// Preserve the existing HIPAA intake form data structure and values.
+$design_today = current_time('Y-m-d');
 if (empty($hipaa_intake) || !is_array($hipaa_intake)) {
     $hipaa_intake = [
         'submitted_at' => current_time('mysql'),
@@ -92,6 +85,7 @@ if (empty($hipaa_intake) || !is_array($hipaa_intake)) {
     ];
 }
 
+<<<<<<< HEAD
 /* ----------------------------------------------------------------------
  * Design-review expansion: exactly 10 static rows per major patient table.
  * These are UI-only records and are never persisted.
@@ -130,3 +124,8 @@ for ($i = count($questionnaires); $i < 10; $i++) {
 // Removed static insurance claims synthetic row generator to preserve dynamic claims data.
 
 // Removed static feedback sample and synthetic row generator for feedback history.
+=======
+// Retain this flag for any existing template logic, but it no longer enables
+// design-review/demo records.
+$dior_patient_design_static = false;
+>>>>>>> 25c738e933039a91bdcc3f9fbafd3e848e5d169f
