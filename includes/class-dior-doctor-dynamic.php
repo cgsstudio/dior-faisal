@@ -374,20 +374,132 @@ class Dior_Doctor_Dynamic {
 
     public static function ajax_patient_status(){ self::auth(); global $wpdb; $pid=(int)($_POST['patient_id']??0); self::ensure_patient_row($pid); if(!self::patient_belongs_to_doctor($pid,self::doctor_id())) wp_send_json_error(['message'=>'Access denied.'],403); self::ensure_patient_row($pid); $status=sanitize_key($_POST['status']??'active'); if(!in_array($status,['active','inactive','blocked'],true)) wp_send_json_error(['message'=>'Invalid status.']); $wpdb->update(self::table('patients'),['status'=>$status,'updated_at'=>current_time('mysql')],['user_id'=>$pid]); update_user_meta($pid,'dior_patient_status',$status); wp_send_json_success(['message'=>'Patient status updated.']); }
     /**
-     * Patient deletion is disabled from the Doctor Dashboard.
-     * Doctors may view and update patient details, but cannot delete patients.
+     * Confirm that the current doctor has a real appointment or prescription
+     * relationship with this patient. Patient accounts are never hard-deleted here.
      */
-    public static function ajax_patient_delete(){
-        self::auth();
-        wp_send_json_error(['message' => 'Patient deletion is not permitted from the Doctor Dashboard. Please contact an administrator.'], 403);
+    private static function patient_is_in_doctor_scope($patient_id) {
+        if (current_user_can('manage_options')) return true;
+
+        global $wpdb;
+        $patient = self::patient($patient_id);
+        if (!$patient) return false;
+
+        $doctor_ids = self::doctor_scope_ids();
+        $linked_post_ids = $wpdb->get_col($wpdb->prepare(
+            "SELECT post_id FROM {$wpdb->postmeta}
+             WHERE meta_key = '_wpddb_doctor_user_id' AND meta_value = %s",
+            (string) self::doctor_id()
+        ));
+        $doctor_ids = array_values(array_unique(array_filter(array_map(
+            'intval',
+            array_merge($doctor_ids, (array) $linked_post_ids)
+        ))));
+        if (!$doctor_ids) return false;
+
+        $patient_ids = array_values(array_unique(array_filter([
+            (int) $patient_id,
+            (int) ($patient['id'] ?? 0)
+        ])));
+        if (!$patient_ids) return false;
+
+        $patient_placeholders = implode(',', array_fill(0, count($patient_ids), '%d'));
+        $doctor_placeholders = implode(',', array_fill(0, count($doctor_ids), '%d'));
+        $args = array_merge($patient_ids, $doctor_ids);
+
+        $appointments_table = self::table('appointments');
+        $appointment_match = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$appointments_table}
+             WHERE patient_id IN ({$patient_placeholders})
+               AND doctor_id IN ({$doctor_placeholders})
+             LIMIT 1",
+            ...$args
+        ));
+        if ($appointment_match) return true;
+
+        $prescriptions_table = self::table('prescriptions');
+        $prescription_match = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$prescriptions_table}
+             WHERE patient_id IN ({$patient_placeholders})
+               AND doctor_id IN ({$doctor_placeholders})
+             LIMIT 1",
+            ...$args
+        ));
+
+        return (bool) $prescription_match;
     }
 
     /**
-     * Bulk patient deletion is also disabled for Doctor Dashboard users.
+     * Archive a patient from active lists while retaining the WordPress account
+     * and clinical history for medical-record integrity.
      */
-    public static function ajax_patient_bulk_delete(){
+    public static function ajax_patient_delete() {
         self::auth();
-        wp_send_json_error(['message' => 'Bulk patient deletion is not permitted from the Doctor Dashboard. Please contact an administrator.'], 403);
+        global $wpdb;
+
+        $patient_id = absint($_POST['patient_id'] ?? 0);
+        if (!$patient_id || !self::patient_is_in_doctor_scope($patient_id)) {
+            wp_send_json_error(['message' => 'Patient not found or you do not have permission to archive this patient.'], 403);
+        }
+
+        $table = self::table('patients');
+        $updated = $wpdb->update(
+            $table,
+            ['status' => 'deleted'],
+            ['user_id' => $patient_id],
+            ['%s'],
+            ['%d']
+        );
+
+        if ($updated === false) {
+            wp_send_json_error(['message' => 'Patient record could not be archived: ' . $wpdb->last_error], 500);
+        }
+
+        update_user_meta($patient_id, 'dior_patient_status', 'deleted');
+        wp_send_json_success(['message' => 'Patient record removed from active lists. Clinical history has been retained.']);
+    }
+
+    /**
+     * Archive selected patients with the same per-patient ownership checks.
+     */
+    public static function ajax_patient_bulk_delete() {
+        self::auth();
+
+        $patient_ids = isset($_POST['patient_ids']) ? (array) $_POST['patient_ids'] : [];
+        $patient_ids = array_values(array_unique(array_filter(array_map('absint', $patient_ids))));
+        if (!$patient_ids) {
+            wp_send_json_error(['message' => 'Select at least one patient.'], 400);
+        }
+
+        $archived = [];
+        $failed = [];
+        foreach ($patient_ids as $patient_id) {
+            if (!self::patient_is_in_doctor_scope($patient_id)) {
+                $failed[] = $patient_id;
+                continue;
+            }
+
+            global $wpdb;
+            $updated = $wpdb->update(
+                self::table('patients'),
+                ['status' => 'deleted'],
+                ['user_id' => $patient_id],
+                ['%s'],
+                ['%d']
+            );
+
+            if ($updated !== false) {
+                update_user_meta($patient_id, 'dior_patient_status', 'deleted');
+                $archived[] = $patient_id;
+            } else {
+                $failed[] = $patient_id;
+            }
+        }
+
+        wp_send_json_success([
+            'message' => count($archived) . ' patient record(s) removed from active lists.',
+            'archived' => $archived,
+            'failed' => $failed
+        ]);
     }
 
     public static function ajax_patient_add() {
