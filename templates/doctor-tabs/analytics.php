@@ -251,7 +251,7 @@ $recent_reports = array_slice($cr_rows, 0, 20);
         <!-- Header -->
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
             <div>
-                <h4 class="fw-bold text-dark mb-1 fs-5">Recent Clinical Reports</h4>
+                <h4 class="fw-bold text-dark mb-1 fs-5">Recent Appointments</h4>
                 <div style="width: 48px; height: 3px; background: #1A528E; border-radius: 2px;"></div>
             </div>
 
@@ -259,7 +259,7 @@ $recent_reports = array_slice($cr_rows, 0, 20);
                 <!-- Search Box -->
                 <div class="input-group input-group-sm rounded-3 border overflow-hidden" style="width: 250px;">
                     <input type="text" id="dior-clinical-search-input" class="form-control border-0 shadow-none ps-2"
-                        placeholder="Search records...">
+                        placeholder="Search appointments...">
                 </div>
 
                 <!-- Action Buttons -->
@@ -286,7 +286,7 @@ $recent_reports = array_slice($cr_rows, 0, 20);
 
         <!-- Table Responsive Wrapper -->
         <div class="table-responsive mb-0">
-            <table class="dior-table table align-middle text-nowrap mb-0 dior-no-table-interactions" id="dior-clinical-reports-table">
+            <table class="dior-table table align-middle text-nowrap mb-0 dior-no-table-interactions dior-no-global-pagination" id="dior-clinical-reports-table">
                 <thead class="bg-light">
                     <tr class="text-secondary small text-uppercase">
                         <th style="width: 50px; text-align: center;">
@@ -294,7 +294,7 @@ $recent_reports = array_slice($cr_rows, 0, 20);
                         </th>
                         <th>PATIENT NAME <i class="fas fa-sort text-muted small ms-1"></i></th>
                         <th>DOCTOR <i class="fas fa-sort text-muted small ms-1"></i></th>
-                        <th>DIAGNOSIS <i class="fas fa-sort text-muted small ms-1"></i></th>
+                        <th>APPOINTMENT TYPE <i class="fas fa-sort text-muted small ms-1"></i></th>
                         <th>VISIT DATE <i class="fas fa-sort text-muted small ms-1"></i></th>
                         <th>STATUS <i class="fas fa-sort text-muted small ms-1"></i></th>
                         <th style="width: 100px; text-align: center;">ACTIONS</th>
@@ -305,14 +305,14 @@ $recent_reports = array_slice($cr_rows, 0, 20);
                         <tr>
                             <td colspan="7" class="text-center text-muted py-5">
                                 <i class="fas fa-file-medical fs-3 d-block mb-2 text-secondary opacity-50"></i>
-                                <span class="small fw-semibold">No clinical reports found.</span>
+                                <span class="small fw-semibold">No appointments found.</span>
                             </td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($recent_reports as $cr):
                             $p_name = trim((string) (($cr['first_name'] ?? '') . ' ' . ($cr['last_name'] ?? ''))) ?: ($cr['user_display_name'] ?? 'Patient');
                             $d_name = trim((string) ($cr['doctor_name'] ?? '')) ?: 'Attending Physician';
-                            $diag   = trim((string) ($cr['condition_name'] ?? $cr['condition'] ?? $cr['visit_type'] ?? 'Consultation'));
+                            $appt_type = trim((string) ($cr['visit_type'] ?? 'Appointment')) ?: 'Appointment';
                             $v_date = !empty($cr['appt_date']) ? wp_date('Y-m-d', strtotime($cr['appt_date'])) : '—';
                             $st_raw = trim((string) ($cr['status'] ?? 'Pending'));
                             $st_low = strtolower($st_raw);
@@ -338,7 +338,7 @@ $recent_reports = array_slice($cr_rows, 0, 20);
                                     </div>
                                 </td>
                                 <td class="text-secondary"><?php echo esc_html($d_name); ?></td>
-                                <td class="text-secondary"><?php echo esc_html($diag); ?></td>
+                                <td class="text-secondary"><?php echo esc_html($appt_type); ?></td>
                                 <td class="text-secondary"><?php echo esc_html($v_date); ?></td>
                                 <td>
                                     <span class="badge <?php echo esc_attr($st_cls); ?> border rounded-pill px-3 py-1 small fw-semibold">
@@ -364,7 +364,7 @@ $recent_reports = array_slice($cr_rows, 0, 20);
 
         <!-- Footer -->
         <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 mt-3 border-top gap-2 text-muted small">
-            <div id="dior-clinical-count-display">0 selected / <?php echo count($recent_reports); ?> total</div>
+            <div id="dior-clinical-count-display">Showing 0 to 0 of <?php echo count($recent_reports); ?> appointments</div>
             <nav aria-label="Page navigation">
                 <ul class="pagination pagination-sm mb-0" id="dior-clinical-pagination"></ul>
             </nav>
@@ -404,22 +404,22 @@ $recent_reports = array_slice($cr_rows, 0, 20);
             var row = edit.closest('tr');
             if (!uid || !row) { message('Report reference is missing.', 'error'); return; }
             var cells = row.querySelectorAll('td');
-            var diagnosis = cells[3] ? cells[3].textContent.trim() : '';
+            var appointmentType = cells[3] ? cells[3].textContent.trim() : '';
             var date = cells[4] ? cells[4].textContent.trim() : '';
             var status = cells[5] ? cells[5].textContent.trim() : 'Pending';
             if (!window.Swal) { message('Edit dialog is unavailable.', 'error'); return; }
             Swal.fire({
                 title:'Edit Clinical Report',
-                html:'<div class="text-start"><label class="form-label">Diagnosis</label><input id="dior-cr-diagnosis" class="form-control mb-3"><label class="form-label">Visit Date</label><input id="dior-cr-date" type="date" class="form-control mb-3"><label class="form-label">Status</label><select id="dior-cr-status" class="form-select"><option>Pending</option><option>Confirmed</option><option>In Progress</option><option>Completed</option><option>Cancelled</option><option>No Show</option></select></div>',
+                html:'<div class="text-start"><label class="form-label">Appointment Type</label><input id="dior-cr-type" class="form-control mb-3"><label class="form-label">Appointment Date</label><input id="dior-cr-date" type="date" class="form-control mb-3"><label class="form-label">Status</label><select id="dior-cr-status" class="form-select"><option>Pending</option><option>Confirmed</option><option>In Progress</option><option>Completed</option><option>Cancelled</option><option>No Show</option></select></div>',
                 didOpen:function(){
-                    document.getElementById('dior-cr-diagnosis').value=diagnosis;
+                    document.getElementById('dior-cr-type').value=appointmentType;
                     document.getElementById('dior-cr-date').value=/^\d{4}-\d{2}-\d{2}$/.test(date)?date:'';
                     document.getElementById('dior-cr-status').value=status;
                 },
                 showCancelButton:true, confirmButtonText:'Save Changes', confirmButtonColor:'#1A528E',
                 preConfirm:function(){return {
                     appt_uid:uid,
-                    condition_name:document.getElementById('dior-cr-diagnosis').value.trim(),
+                    visit_type:document.getElementById('dior-cr-type').value.trim(),
                     appt_date:document.getElementById('dior-cr-date').value,
                     status:document.getElementById('dior-cr-status').value
                 };}
