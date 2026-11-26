@@ -48,7 +48,7 @@ final class Dior_HIPAAtizer_Logs
     {
         if (ctype_digit($search)) {
             $user = get_userdata((int) $search);
-            return ($user && in_array('patient', (array) $user->roles, true)) ? $user : null;
+            return ($user && class_exists('Dior_Auth_Service') && Dior_Auth_Service::is_patient($user->ID)) ? $user : null;
         }
 
         if (is_email($search)) {
