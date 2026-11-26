@@ -68,6 +68,7 @@ if (!class_exists('Dior_Questionnaire_Service')) {
 require_once(DIOR_PORTAL_PATH . 'includes/class-dior-hipaatizer-logs.php');
 if (!class_exists('Dior_Doctor_Dynamic')) {
     require_once(DIOR_PORTAL_PATH . 'includes/class-dior-doctor-dynamic.php');
+    require_once(DIOR_PORTAL_PATH . 'includes/class-dior-doctor-accounts.php');
 }
 if (!class_exists('Dior_Google_Meet')) {
     require_once(DIOR_PORTAL_PATH . 'includes/class-dior-google-meet.php');
