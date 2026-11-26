@@ -247,7 +247,16 @@
 
                     if (typeof profile.height !== 'undefined') {
                         var hElem = document.getElementById('dior-patient-metric-height');
-                        if (hElem) hElem.textContent = profile.height ? (!isNaN(profile.height) ? profile.height + ' cm' : profile.height) : '—';
+                        if (hElem) {
+                            var heightValue = String(profile.height || '').trim();
+                            var heightNumber = Number(heightValue);
+                            if (heightValue && Number.isFinite(heightNumber)) {
+                                var totalInches = Math.round(heightNumber / 2.54);
+                                hElem.textContent = Math.floor(totalInches / 12) + ' ft ' + (totalInches % 12) + ' in';
+                            } else {
+                                hElem.textContent = heightValue || '—';
+                            }
+                        }
                         var goalH = document.getElementById('goal_height');
                         if (goalH) goalH.value = profile.height || '';
                     }
