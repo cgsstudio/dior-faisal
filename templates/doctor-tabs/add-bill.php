@@ -91,7 +91,7 @@
                 [amount,tax,discount].forEach(el=>el.addEventListener('input',calc));
                 form.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='Saving…';const fd=new FormData(form);fd.append('action','dior_doc_bill_save');fd.append('nonce',window.diorDocNonce||window.dior_doctor_vars?.nonce||window.dior_vars?.nonce||'');try{const res=await fetch(window.diorDocAjax||window.dior_doctor_vars?.ajax_url||window.dior_vars?.ajax_url||'/wp-admin/admin-ajax.php',{method:'POST',body:fd,credentials:'same-origin'});const json=await res.json();if(!json.success)throw new Error(json.data?.message||'Bill could not be saved.');msg.textContent=json.data.message+' Total: '+Number(json.data.total).toFixed(2);form.reset();calc();}catch(err){msg.textContent=err.message;}});
             })();
-            </script>     </form>
+            </script>
         </div>
     </div>
 </section>
