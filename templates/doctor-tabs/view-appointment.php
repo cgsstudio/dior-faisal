@@ -1210,123 +1210,132 @@ $status_badges = [
         }
 
         function setupBulkActions() {
-            // Bulk Delete
             var delBtn = document.getElementById('va-bulk-delete-btn');
-            if (delBtn) {
-                delBtn.addEventListener('click', function () {
-                    var checkedRows = Array.from(document.querySelectorAll('#va-appointments-tbody .va-row-check:checked')).map(function (cb) {
-                        return cb.closest('tr');
-                    }).filter(Boolean);
+            if (!delBtn) return;
 
-                    if (checkedRows.length === 0) {
-                        if (window.Swal) {
-                            Swal.fire({ icon: 'info', title: 'No Appointments Selected', text: 'Please select at least one appointment to delete.' });
-                        }
-                        return;
-                    }
+            delBtn.addEventListener('click', function () {
+                var checkedRows = Array.from(
+                    document.querySelectorAll('#va-appointments-tbody .va-row-check:checked')
+                ).map(function (cb) {
+                    return cb.closest('tr');
+                }).filter(Boolean);
 
-                    if (!window.Swal) {
-                        window.alert('Delete confirmation is unavailable. Please reload the page and try again.');
-                        return;
-                    }
-                    var missingIds = checkedRows.filter(function (row) {
-                        return !(row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid);
-                    });
-                    if (missingIds.length) {
-                        Swal.fire({ icon: 'error', title: 'Delete Failed', text: 'Some selected appointments are missing an ID. Refresh the page and try again.' });
-                        return;
-                    }
+                if (!checkedRows.length) {
+                    Swal.fire({ icon: 'info', title: 'No Appointments Selected', text: 'Please select at least one appointment to delete.' });
+                    return;
+                }
 
+                var invalidRows = checkedRows.filter(function (row) {
+                    return !(row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid);
+                });
+                if (invalidRows.length) {
+                    Swal.fire({ icon: 'error', title: 'Delete Failed', text: invalidRows.length + ' selected appointment(s) have no ID. No records were sent for deletion.' });
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Delete ' + checkedRows.length + ' Appointment(s)?',
+                    text: 'Are you sure you want to delete these appointments? This cannot be undone.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#EF4444',
+                    cancelButtonColor: '#64748B',
+                    confirmButtonText: 'Yes, delete all',
+                    cancelButtonText: 'Cancel'
+                }).then(async function (result) {
+                    if (!result.isConfirmed) return;
+
+                    var completed = 0;
+                    var deleted = 0;
+                    var failures = [];
+
+                    // Show visible progress instead of leaving the user with a closed dialog.
                     Swal.fire({
-                        title: 'Delete ' + checkedRows.length + ' Appointment(s)?',
-                        text: 'Are you sure you want to delete these appointments? This cannot be undone.',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#EF4444',
-                        cancelButtonColor: '#64748B',
-                        confirmButtonText: 'Yes, delete all',
-                        cancelButtonText: 'Cancel'
-                    }).then(function (result) {
-                        if (!result.isConfirmed) return;
+                        title: 'Deleting appointments...',
+                        html: 'Processed <b id="va-delete-progress">0</b> of <b>' + checkedRows.length + '</b>',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: function () { Swal.showLoading(); }
+                    });
 
-                        // Process deletions sequentially to avoid flooding admin-ajax.php with dozens of simultaneous requests.
-                        (async function () {
-                            var deletedCount = 0;
-                            var failures = [];
+                    async function deleteOne(row) {
+                        var uid = row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid || '';
+                        var data = new FormData();
+                        data.append('action', 'dior_doc_appointment_delete');
+                        data.append('nonce', nonce);
+                        data.append('appt_uid', uid);
+                        data.append('patient_user_id', row.dataset.patientUserId || '');
 
-                            for (var i = 0; i < checkedRows.length; i++) {
-                                var row = checkedRows[i];
-                                var uid = row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid || '';
-                                var data = new FormData();
-                                data.append('action', 'dior_doc_appointment_delete');
-                                data.append('nonce', nonce);
-                                data.append('appt_uid', uid);
-                                data.append('patient_user_id', row.dataset.patientUserId || '');
-
-                                try {
-                                    var response = await fetch(ajaxUrl, {
-                                        method: 'POST',
-                                        credentials: 'same-origin',
-                                        body: data
-                                    });
-                                    var responseText = await response.text();
-                                    var res;
-
-                                    try {
-                                        res = JSON.parse(responseText);
-                                    } catch (parseError) {
-                                        throw new Error('Server returned an invalid response (HTTP ' + response.status + ').');
-                                    }
-
-                                    if (response.ok && res && res.success) {
-                                        deletedCount++;
-                                        allRows = allRows.filter(function (item) { return item !== row; });
-                                        row.remove();
-                                    } else {
-                                        var message = res && res.data && res.data.message
-                                            ? res.data.message
-                                            : ('Request failed (HTTP ' + response.status + ').');
-                                        failures.push(uid + ': ' + message);
-                                    }
-                                } catch (error) {
-                                    failures.push(uid + ': ' + (error.message || 'Network error.'));
-                                }
+                        try {
+                            var response = await fetch(ajaxUrl, {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                body: data
+                            });
+                            var responseText = await response.text();
+                            var res;
+                            try {
+                                res = JSON.parse(responseText);
+                            } catch (parseError) {
+                                throw new Error('Invalid server response (HTTP ' + response.status + '): ' + responseText.substring(0, 180));
                             }
 
-                            var masterCb = document.getElementById('va-select-all');
-                            if (masterCb) masterCb.checked = false;
-                            updateBulkBar();
-                            updateKpiCounters();
-                            renderPage(currentPage);
-
-                            if (deletedCount > 0 && failures.length === 0) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Deleted',
-                                    text: deletedCount + ' appointment(s) permanently removed from the active list.',
-                                    toast: true,
-                                    position: 'top-end',
-                                    timer: 2500,
-                                    showConfirmButton: false
-                                });
-                            } else if (deletedCount > 0) {
-                                Swal.fire({
-                                    icon: 'warning',
-                                    title: 'Partially Deleted',
-                                    text: deletedCount + ' deleted; ' + failures.length + ' could not be deleted. First error: ' + failures[0],
-                                    confirmButtonText: 'OK'
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Delete Failed',
-                                    text: failures.length ? failures[0] : 'No appointments were deleted. Please try again.'
-                                });
+                            if (!response.ok || !res || !res.success) {
+                                throw new Error(res && res.data && res.data.message ? res.data.message : 'Request failed (HTTP ' + response.status + ').');
                             }
-                        })();
-                    }); // Close SweetAlert confirmation callback.
-                }); // Close the Delete button click listener.
-            } // End bulk Delete button guard.
+
+                            deleted++;
+                            allRows = allRows.filter(function (item) { return item !== row; });
+                            row.remove();
+                        } catch (error) {
+                            failures.push(uid + ': ' + (error.message || 'Network error.'));
+                        } finally {
+                            completed++;
+                            var progress = document.getElementById('va-delete-progress');
+                            if (progress) progress.textContent = completed;
+                            Swal.update({
+                                title: 'Deleting appointments...',
+                                html: 'Processed <b>' + completed + '</b> of <b>' + checkedRows.length + '</b> — <b>' + deleted + '</b> deleted'
+                            });
+                        }
+                    }
+
+                    // Limit concurrency to four requests to avoid overwhelming WordPress/PHP.
+                    var nextIndex = 0;
+                    var workers = Array.from({ length: Math.min(4, checkedRows.length) }, async function () {
+                        while (nextIndex < checkedRows.length) {
+                            var row = checkedRows[nextIndex++];
+                            await deleteOne(row);
+                        }
+                    });
+                    await Promise.all(workers);
+
+                    var master = document.getElementById('va-select-all');
+                    if (master) master.checked = false;
+                    document.querySelectorAll('#va-appointments-tbody .va-row-check').forEach(function (cb) {
+                        cb.checked = false;
+                    });
+                    updateKpiCounters();
+                    renderPage(currentPage);
+
+                    if (deleted === checkedRows.length) {
+                        Swal.fire({ icon: 'success', title: 'Deleted', text: deleted + ' appointment(s) successfully deleted.' });
+                    } else if (deleted > 0) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Partially Deleted',
+                            html: deleted + ' deleted, ' + failures.length + ' failed.<br><small>' + (failures[0] || '') + '</small>'
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Delete Failed',
+                            html: 'None of the selected appointments were deleted.<br><small>' + (failures[0] || 'Unknown server error') + '</small>'
+                        });
+                    }
+                });
+            });
         }
 
         // =========================================================================
