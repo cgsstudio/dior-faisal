@@ -788,10 +788,10 @@
                 exportStage = document.createElement('section');
                 exportStage.id = 'tab-doc-accounts-invoice';
                 exportStage.setAttribute('aria-hidden', 'true');
-                exportStage.style.cssText = 'position:fixed;inset:0 auto auto 0;width:794px;min-height:1123px;padding:0;margin:0;background:#ffffff;z-index:2147483647;overflow:visible;box-sizing:border-box;';
+                exportStage.style.cssText = 'position:fixed;inset:0 auto auto 0;width:730px;min-height:1035px;padding:0;margin:0;background:#ffffff;z-index:2147483647;overflow:visible;box-sizing:border-box;';
                 var exportContent = content.cloneNode(true);
                 exportContent.removeAttribute('style');
-                exportContent.style.cssText = 'display:block!important;width:740px!important;min-width:740px!important;max-width:740px!important;margin:0 auto!important;padding:28px!important;background:#fff!important;color:#172b4d!important;box-sizing:border-box!important;overflow:visible!important;font-family:Arial,Helvetica,sans-serif!important;';
+                exportContent.style.cssText = 'display:block!important;width:730px!important;min-width:730px!important;max-width:730px!important;margin:0 auto!important;padding:28px!important;background:#fff!important;color:#172b4d!important;box-sizing:border-box!important;overflow:visible!important;font-family:Arial,Helvetica,sans-serif!important;';
                 exportStage.appendChild(exportContent);
                 document.body.appendChild(exportStage);
 
@@ -845,7 +845,7 @@
                         allowTaint: false,
                         backgroundColor: '#ffffff',
                         logging: false,
-                        width: 794,
+                        width: 730,
                         height: exportHeight,
                         windowWidth: 794,
                         windowHeight: Math.max(1123, exportHeight),
@@ -854,7 +854,7 @@
                     },
                     pagebreak: {mode:['css','legacy'],avoid:['tr','.dior-standard-invoice__top','.dior-standard-invoice__parties','.dior-standard-invoice__bottom']},
                     jsPDF: {unit:'mm',format:'a4',orientation:'portrait',compress:true}
-                }).from(exportContent).save();
+                }).from(exportStage).save();
             } catch (error) {
                 console.error('Dior invoice PDF export failed:', error);
                 window.alert('PDF could not be generated. Please try again. Check the browser console if the problem continues.');
