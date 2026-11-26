@@ -110,6 +110,10 @@ foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
     $ir_chart_series[] = ['name' => $d_name, 'data' => array_map(static function ($v) { return round($v, 2); }, $d_vals)];
 }
 $ir_daily_series = [['name' => 'Collected Income', 'data' => array_map(static function ($v) { return round($v, 2); }, $ir_daily_values)]];
+// Weekly view uses the most recent seven days from the daily report data.
+$ir_weekly_categories = array_slice($ir_daily_categories, -7);
+$ir_weekly_values = array_slice($ir_daily_values, -7);
+$ir_weekly_series = [['name' => 'Collected Income', 'data' => array_map(static function ($v) { return round($v, 2); }, $ir_weekly_values)]];
 $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static function ($v) { return round($v, 2); }, array_values($ir_year_values))]];
 ?>
 <section class="dior-tab-panel" id="tab-doc-accounts-income-report" style="display: none;">
@@ -215,7 +219,8 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
                 <select id="dior-income-chart-filter" class="form-select form-select-sm rounded-3 py-1.5 fw-semibold" style="width: 210px; min-width: 210px; max-width: 100%;">
                     <option value="Monthly" selected>Monthly (Jan - Dec)</option>
                     <option value="Daily">Daily (Last 14 Days)</option>
-                    <option value="Yearly">Yearly (5 Years)</option>
+                    <option value="Weekly">Weekly (Last 7 Days)</option>
+                    <option value="Yearly">Yearly (2026 Onward)</option>
                 </select>
                 <button type="button" class="btn btn-outline-secondary btn-sm rounded-3 px-2.5 shadow-none" id="dior-income-chart-refresh" title="Reset Chart Zoom">
                     <i class="fas fa-rotate-right"></i>
@@ -556,6 +561,7 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
     var incomeChartData = {
         Monthly: { categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], series: <?php echo wp_json_encode($ir_chart_series); ?> },
         Daily: { categories: <?php echo wp_json_encode($ir_daily_categories); ?>, series: <?php echo wp_json_encode($ir_daily_series); ?> },
+        Weekly: { categories: <?php echo wp_json_encode($ir_weekly_categories); ?>, series: <?php echo wp_json_encode($ir_weekly_series); ?> },
         Yearly: { categories: <?php echo wp_json_encode($ir_year_categories); ?>, series: <?php echo wp_json_encode($ir_year_series); ?> }
     };
 
