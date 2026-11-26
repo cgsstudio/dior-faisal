@@ -1,16 +1,17 @@
 
 <div class="dior-wrap dior-doctor-wrap" id="dior-doctor-app">
 <style id="dior-doctor-sidebar-desktop-width">
-/* Set the expanded Doctor Dashboard sidebar to 280px and let content fill the remaining width. */
+/* Expanded desktop layout: wider sidebar and main content fills the remaining space. */
 @media (min-width: 1025px) {
-    #dior-doctor-app:not(.dior-sidebar-collapsed) .dior-app {
+    #dior-doctor-app .dior-app {
         display: flex !important;
         flex-direction: row !important;
-        align-items: stretch;
-        width: 100%;
+        align-items: stretch !important;
+        width: 100% !important;
+        min-width: 0 !important;
     }
 
-    #dior-doctor-app:not(.dior-sidebar-collapsed) #dior-doc-sidebar {
+    #dior-doctor-app .dior-app:not(.dior-sidebar-collapsed) > #dior-doc-sidebar {
         box-sizing: border-box !important;
         width: 280px !important;
         min-width: 280px !important;
@@ -18,9 +19,9 @@
         flex: 0 0 280px !important;
     }
 
-    #dior-doctor-app:not(.dior-sidebar-collapsed) .dior-main-content {
-        box-sizing: border-box;
-        width: calc(100% - 280px) !important;
+    #dior-doctor-app .dior-app:not(.dior-sidebar-collapsed) > .dior-main-content {
+        box-sizing: border-box !important;
+        width: auto !important;
         min-width: 0 !important;
         max-width: none !important;
         flex: 1 1 0 !important;
