@@ -5,8 +5,8 @@ if (!defined('ABSPATH')) {
 
 global $wpdb;
 $doctor_id = get_current_user_id();
-$is_admin  = current_user_can('administrator') || current_user_can('manage_options');
-$table_appts    = $wpdb->prefix . 'dior_appointments';
+$is_admin = current_user_can('administrator') || current_user_can('manage_options');
+$table_appts = $wpdb->prefix . 'dior_appointments';
 $table_patients = $wpdb->prefix . 'dior_patients';
 
 $cr_rows = [];
@@ -50,17 +50,17 @@ if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_appts)) === $tab
     }
 }
 
-$total_consultations  = count($cr_rows);
-$outpatient_visits    = 0;
+$total_consultations = count($cr_rows);
+$outpatient_visits = 0;
 $inpatient_admissions = 0;
-$completed_count      = 0;
-$monthly_opd          = array_fill(0, 12, 0);
-$monthly_ipd          = array_fill(0, 12, 0);
-$condition_counts     = [];
-$current_year         = (int) current_time('Y');
+$completed_count = 0;
+$monthly_opd = array_fill(0, 12, 0);
+$monthly_ipd = array_fill(0, 12, 0);
+$condition_counts = [];
+$current_year = (int) current_time('Y');
 
 foreach ($cr_rows as $r) {
-    $vtype  = strtolower((string) ($r['visit_type'] ?? $r['type'] ?? ''));
+    $vtype = strtolower((string) ($r['visit_type'] ?? $r['type'] ?? ''));
     $status = strtolower((string) ($r['status'] ?? ''));
     $is_ipd = (strpos($vtype, 'inpatient') !== false || strpos($vtype, 'ipd') !== false);
 
@@ -93,37 +93,41 @@ foreach ($cr_rows as $r) {
 
 arsort($condition_counts);
 $condition_counts = array_slice($condition_counts, 0, 5, true);
-$disease_labels   = array_keys($condition_counts);
-$disease_series   = array_values($condition_counts);
+$disease_labels = array_keys($condition_counts);
+$disease_series = array_values($condition_counts);
 
-$opd_pct       = $total_consultations > 0 ? (int) round(($outpatient_visits / $total_consultations) * 100) : 0;
-$ipd_pct       = $total_consultations > 0 ? (int) round(($inpatient_admissions / $total_consultations) * 100) : 0;
+$opd_pct = $total_consultations > 0 ? (int) round(($outpatient_visits / $total_consultations) * 100) : 0;
+$ipd_pct = $total_consultations > 0 ? (int) round(($inpatient_admissions / $total_consultations) * 100) : 0;
 $recovery_rate = $total_consultations > 0 ? round(($completed_count / $total_consultations) * 100, 1) . '%' : '0%';
 $recent_reports = array_slice($cr_rows, 0, 20);
 ?>
 <style id="dior-recent-appointments-border-cleanup">
-/* Remove internal grid lines while keeping a clean outer table frame. */
-#tab-doc-analytics #dior-clinical-reports-table {
-    border: 1px solid #e5ebf2 !important;
-    border-collapse: separate !important;
-    border-spacing: 0 !important;
-}
-#tab-doc-analytics #dior-clinical-reports-table thead th,
-#tab-doc-analytics #dior-clinical-reports-table tbody td {
-    border-left: 0 !important;
-    border-right: 0 !important;
-}
-#tab-doc-analytics #dior-clinical-reports-table thead th {
-    border-top: 0 !important;
-    border-bottom: 1px solid #e5ebf2 !important;
-}
-#tab-doc-analytics #dior-clinical-reports-table tbody td {
-    border-top: 0 !important;
-    border-bottom: 1px solid #edf1f6 !important;
-}
-#tab-doc-analytics #dior-clinical-reports-table tbody tr:last-child td {
-    border-bottom: 0 !important;
-}
+    /* Remove internal grid lines while keeping a clean outer table frame. */
+    #tab-doc-analytics #dior-clinical-reports-table {
+        border: 1px solid #e5ebf2 !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+    }
+
+    #tab-doc-analytics #dior-clinical-reports-table thead th,
+    #tab-doc-analytics #dior-clinical-reports-table tbody td {
+        border-left: 0 !important;
+        border-right: 0 !important;
+    }
+
+    #tab-doc-analytics #dior-clinical-reports-table thead th {
+        border-top: 0 !important;
+        border-bottom: 1px solid #e5ebf2 !important;
+    }
+
+    #tab-doc-analytics #dior-clinical-reports-table tbody td {
+        border-top: 0 !important;
+        border-bottom: 1px solid #edf1f6 !important;
+    }
+
+    #tab-doc-analytics #dior-clinical-reports-table tbody tr:last-child td {
+        border-bottom: 0 !important;
+    }
 </style>
 
 <section class="dior-tab-panel" id="tab-doc-analytics" style="display: none;">
@@ -147,11 +151,13 @@ $recent_reports = array_slice($cr_rows, 0, 20);
     <div class="row g-3 g-xl-4 mb-4">
         <!-- 1. Total Consultations -->
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
-            <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 h-100 bg-white d-flex flex-column justify-content-between">
+            <div
+                class="card border-0 shadow-sm rounded-4 p-3 p-md-4 h-100 bg-white d-flex flex-column justify-content-between">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <span class="text-muted small fw-bold text-uppercase d-block mb-1">Total Consultations</span>
-                        <h2 class="fw-bold mb-0" style="color:#1A528E;"><?php echo esc_html(number_format_i18n($total_consultations)); ?></h2>
+                        <h2 class="fw-bold mb-0" style="color:#1A528E;">
+                            <?php echo esc_html(number_format_i18n($total_consultations)); ?></h2>
                     </div>
                     <div class="rounded-3 d-flex align-items-center justify-content-center"
                         style="width: 48px; height: 48px; background: rgba(26, 82, 142, 0.10); color: #1A528E; font-size: 20px;">
@@ -170,11 +176,13 @@ $recent_reports = array_slice($cr_rows, 0, 20);
 
         <!-- 2. Outpatient Visits -->
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
-            <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 h-100 bg-white d-flex flex-column justify-content-between">
+            <div
+                class="card border-0 shadow-sm rounded-4 p-3 p-md-4 h-100 bg-white d-flex flex-column justify-content-between">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <span class="text-muted small fw-bold text-uppercase d-block mb-1">Outpatient Visits</span>
-                        <h2 class="fw-bold mb-0" style="color:#2C6CB1;"><?php echo esc_html(number_format_i18n($outpatient_visits)); ?></h2>
+                        <h2 class="fw-bold mb-0" style="color:#2C6CB1;">
+                            <?php echo esc_html(number_format_i18n($outpatient_visits)); ?></h2>
                     </div>
                     <div class="rounded-3 d-flex align-items-center justify-content-center"
                         style="width: 48px; height: 48px; background: rgba(44, 108, 177, 0.10); color: #2C6CB1; font-size: 20px;">
@@ -182,7 +190,8 @@ $recent_reports = array_slice($cr_rows, 0, 20);
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2 mt-3 pt-1">
-                    <span class="badge rounded-pill px-2 py-1 small fw-semibold" style="background:rgba(44,108,177,.12);color:#2C6CB1;border:1px solid rgba(44,108,177,.16);">
+                    <span class="badge rounded-pill px-2 py-1 small fw-semibold"
+                        style="background:rgba(44,108,177,.12);color:#2C6CB1;border:1px solid rgba(44,108,177,.16);">
                         <i class="fas fa-circle-check me-1"></i><?php echo esc_html($opd_pct); ?>% Total
                     </span>
                     <span class="text-muted small">OPD Volume</span>
@@ -192,11 +201,13 @@ $recent_reports = array_slice($cr_rows, 0, 20);
 
         <!-- 3. Inpatient Admissions -->
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
-            <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 h-100 bg-white d-flex flex-column justify-content-between">
+            <div
+                class="card border-0 shadow-sm rounded-4 p-3 p-md-4 h-100 bg-white d-flex flex-column justify-content-between">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <span class="text-muted small fw-bold text-uppercase d-block mb-1">Inpatient Admissions</span>
-                        <h2 class="fw-bold mb-0" style="color: #477EAB;"><?php echo esc_html(number_format_i18n($inpatient_admissions)); ?></h2>
+                        <h2 class="fw-bold mb-0" style="color: #477EAB;">
+                            <?php echo esc_html(number_format_i18n($inpatient_admissions)); ?></h2>
                     </div>
                     <div class="rounded-3 d-flex align-items-center justify-content-center"
                         style="width: 48px; height: 48px; background: rgba(71, 126, 171, 0.12); color: #477EAB; font-size: 20px;">
@@ -215,7 +226,8 @@ $recent_reports = array_slice($cr_rows, 0, 20);
 
         <!-- 4. Completion Rate -->
         <div class="col-xl-3 col-lg-6 col-md-6 col-12">
-            <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 h-100 bg-white d-flex flex-column justify-content-between">
+            <div
+                class="card border-0 shadow-sm rounded-4 p-3 p-md-4 h-100 bg-white d-flex flex-column justify-content-between">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <span class="text-muted small fw-bold text-uppercase d-block mb-1">Completion Rate</span>
@@ -227,7 +239,8 @@ $recent_reports = array_slice($cr_rows, 0, 20);
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2 mt-3 pt-1">
-                    <span class="badge rounded-pill px-2 py-1 small fw-semibold" style="background:rgba(113,152,188,.14);color:#477EAB;border:1px solid rgba(113,152,188,.2);">
+                    <span class="badge rounded-pill px-2 py-1 small fw-semibold"
+                        style="background:rgba(113,152,188,.14);color:#477EAB;border:1px solid rgba(113,152,188,.2);">
                         <i class="fas fa-star me-1"></i>High Efficacy
                     </span>
                     <span class="text-muted small">Clinical Benchmark</span>
@@ -311,7 +324,9 @@ $recent_reports = array_slice($cr_rows, 0, 20);
 
         <!-- Table Responsive Wrapper -->
         <div class="table-responsive mb-0">
-            <table class="dior-table table align-middle text-nowrap mb-0 dior-no-table-interactions dior-no-global-pagination" id="dior-clinical-reports-table">
+            <table
+                class="dior-table table align-middle text-nowrap mb-0 dior-no-table-interactions dior-no-global-pagination"
+                id="dior-clinical-reports-table">
                 <thead class="bg-light">
                     <tr class="text-secondary small text-uppercase">
                         <th style="width: 50px; text-align: center;">
@@ -350,15 +365,17 @@ $recent_reports = array_slice($cr_rows, 0, 20);
                                 $st_cls = 'bg-warning-subtle text-warning border-warning-subtle';
                             }
                             $avatar = !empty($cr['avatar_url']) ? $cr['avatar_url'] : ('https://ui-avatars.com/api/?name=' . urlencode($p_name) . '&background=1A528E&color=fff&size=80');
-                        ?>
+                            ?>
                             <tr>
                                 <td style="text-align: center;">
-                                    <input type="checkbox" class="form-check-input dior-clinical-row-check" value="<?php echo esc_attr($cr['appt_uid'] ?? ''); ?>">
+                                    <input type="checkbox" class="form-check-input dior-clinical-row-check"
+                                        value="<?php echo esc_attr($cr['appt_uid'] ?? ''); ?>">
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <img src="<?php echo esc_url($avatar); ?>"
-                                            class="rounded-circle object-fit-cover shadow-sm" style="width: 36px; height: 36px;" alt="<?php echo esc_attr($p_name); ?>">
+                                            class="rounded-circle object-fit-cover shadow-sm" style="width: 36px; height: 36px;"
+                                            alt="<?php echo esc_attr($p_name); ?>">
                                         <span class="fw-semibold text-dark"><?php echo esc_html($p_name); ?></span>
                                     </div>
                                 </td>
@@ -366,16 +383,22 @@ $recent_reports = array_slice($cr_rows, 0, 20);
                                 <td class="text-secondary"><?php echo esc_html($appt_type); ?></td>
                                 <td class="text-secondary"><?php echo esc_html($v_date); ?></td>
                                 <td>
-                                    <span class="badge <?php echo esc_attr($st_cls); ?> border rounded-pill px-3 py-1 small fw-semibold">
+                                    <span
+                                        class="badge <?php echo esc_attr($st_cls); ?> border rounded-pill px-3 py-1 small fw-semibold">
                                         <?php echo esc_html($st_raw); ?>
                                     </span>
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center justify-content-center gap-2">
-                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-2 p-1 px-2 dior-action-edit" data-appt-uid="<?php echo esc_attr($cr['appt_uid'] ?? ''); ?>" title="Edit record">
+                                        <button type="button"
+                                            class="btn btn-sm btn-outline-primary rounded-2 p-1 px-2 dior-action-edit"
+                                            data-appt-uid="<?php echo esc_attr($cr['appt_uid'] ?? ''); ?>" title="Edit record">
                                             <i class="fas fa-pen small"></i>
                                         </button>
-                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-2 p-1 px-2 dior-action-del" data-appt-uid="<?php echo esc_attr($cr['appt_uid'] ?? ''); ?>" title="Delete record">
+                                        <button type="button"
+                                            class="btn btn-sm btn-outline-danger rounded-2 p-1 px-2 dior-action-del"
+                                            data-appt-uid="<?php echo esc_attr($cr['appt_uid'] ?? ''); ?>"
+                                            title="Delete record">
                                             <i class="far fa-trash-can small"></i>
                                         </button>
                                     </div>
@@ -387,530 +410,589 @@ $recent_reports = array_slice($cr_rows, 0, 20);
             </table>
         </div>
 
-        <!-- Footer: single pagination and record count -->
-        <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 mt-3 gap-2 text-muted small">
-            <div id="dior-clinical-count-display">Showing 0 to 0 of <?php echo count($recent_reports); ?> appointments</div>
-            <nav aria-label="Page navigation">
-                <ul class="pagination pagination-sm mb-0" id="dior-clinical-pagination"></ul>
-            </nav>
-        </div>
+
     </div>
 </section>
 <script>
-(function () {
-    'use strict';
-    var root = document.getElementById('tab-doc-analytics');
-    if (!root || root.dataset.clinicalActionsReady === '1') return;
-    root.dataset.clinicalActionsReady = '1';
+    (function () {
+        'use strict';
+        var root = document.getElementById('tab-doc-analytics');
+        if (!root || root.dataset.clinicalActionsReady === '1') return;
+        root.dataset.clinicalActionsReady = '1';
 
-    // Remove the generic dashboard pagination for this table; the dedicated 10-row pager below owns it.
-    root.querySelectorAll('.dior-table-pagination').forEach(function (pager) {
-        pager.remove();
-    });
-    var reportTable = root.querySelector('#dior-clinical-reports-table');
-    if (reportTable && reportTable.parentElement) {
-        reportTable.parentElement.querySelectorAll('.dior-table-pagination').forEach(function (pager) {
+        // Remove the generic dashboard pagination for this table; the dedicated 10-row pager below owns it.
+        root.querySelectorAll('.dior-table-pagination').forEach(function (pager) {
             pager.remove();
         });
-    }
-
-    var vars = window.dior_doctor_vars || {};
-    var ajaxUrl = vars.ajax_url || window.ajaxurl || '/wp-admin/admin-ajax.php';
-    var nonce = vars.nonce || '';
-
-    function request(action, data) {
-        var params = new URLSearchParams(Object.assign({action:action, nonce:nonce}, data || {}));
-        return fetch(ajaxUrl, {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'}, body:params.toString()}).then(function(r){return r.json();});
-    }
-    function message(text, icon) {
-        if (window.Swal) return Swal.fire({icon:icon || 'info', text:text, confirmButtonColor:'#1A528E'});
-        window.alert(text); return Promise.resolve();
-    }
-    function reload() { window.location.reload(); }
-    function selected() { return Array.from(root.querySelectorAll('.dior-clinical-row-check:checked')).map(function(el){return el.value;}).filter(Boolean); }
-
-    root.addEventListener('click', function(event) {
-        var edit = event.target.closest('.dior-action-edit');
-        var del = event.target.closest('.dior-action-del');
-        var refresh = event.target.closest('#dior-clinical-refresh-btn');
-        var bulk = event.target.closest('#dior-clinical-bulk-delete');
-        if (refresh) { reload(); return; }
-
-        if (edit) {
-            var uid = edit.getAttribute('data-appt-uid');
-            var row = edit.closest('tr');
-            if (!uid || !row) { message('Report reference is missing.', 'error'); return; }
-            var cells = row.querySelectorAll('td');
-            var appointmentType = cells[3] ? cells[3].textContent.trim() : '';
-            var date = cells[4] ? cells[4].textContent.trim() : '';
-            var status = cells[5] ? cells[5].textContent.trim() : 'Pending';
-            if (!window.Swal) { message('Edit dialog is unavailable.', 'error'); return; }
-            Swal.fire({
-                title:'Edit Clinical Report',
-                html:'<div class="text-start"><label class="form-label">Appointment Type</label><input id="dior-cr-type" class="form-control mb-3"><label class="form-label">Appointment Date</label><input id="dior-cr-date" type="date" class="form-control mb-3"><label class="form-label">Status</label><select id="dior-cr-status" class="form-select"><option>Pending</option><option>Confirmed</option><option>In Progress</option><option>Completed</option><option>Cancelled</option><option>No Show</option></select></div>',
-                didOpen:function(){
-                    document.getElementById('dior-cr-type').value=appointmentType;
-                    document.getElementById('dior-cr-date').value=/^\d{4}-\d{2}-\d{2}$/.test(date)?date:'';
-                    document.getElementById('dior-cr-status').value=status;
-                },
-                showCancelButton:true, confirmButtonText:'Save Changes', confirmButtonColor:'#1A528E',
-                preConfirm:function(){return {
-                    appt_uid:uid,
-                    visit_type:document.getElementById('dior-cr-type').value.trim(),
-                    appt_date:document.getElementById('dior-cr-date').value,
-                    status:document.getElementById('dior-cr-status').value
-                };}
-            }).then(function(result){
-                if(!result.isConfirmed) return;
-                request('dior_doc_clinical_report_update',result.value).then(function(res){
-                    if(res.success) message(res.data.message || 'Report updated.','success').then(reload);
-                    else message((res.data && res.data.message) || 'Unable to update report.','error');
-                }).catch(function(){message('Network error while updating report.','error');});
-            });
-            return;
-        }
-
-        if (del) {
-            var deleteUid = del.getAttribute('data-appt-uid');
-            if (!deleteUid) { message('Report reference is missing.','error'); return; }
-            var confirmDelete = window.Swal ? Swal.fire({icon:'warning',title:'Delete clinical report?',text:'This report will be removed from the active list.',showCancelButton:true,confirmButtonText:'Delete',confirmButtonColor:'#dc3545'}) : Promise.resolve({isConfirmed:window.confirm('Delete this report?')});
-            confirmDelete.then(function(result){
-                if(!result.isConfirmed) return;
-                request('dior_doc_clinical_report_delete',{appt_uid:deleteUid}).then(function(res){
-                    if(res.success) message(res.data.message || 'Report deleted.','success').then(reload);
-                    else message((res.data && res.data.message) || 'Unable to delete report.','error');
-                }).catch(function(){message('Network error while deleting report.','error');});
-            });
-            return;
-        }
-
-        if (bulk) {
-            var ids=selected();
-            if(!ids.length){message('Select at least one report first.','warning');return;}
-            var confirmBulk=window.Swal?Swal.fire({icon:'warning',title:'Delete selected reports?',text:ids.length+' report(s) will be removed from the active list.',showCancelButton:true,confirmButtonText:'Delete Selected',confirmButtonColor:'#dc3545'}):Promise.resolve({isConfirmed:window.confirm('Delete selected reports?')});
-            confirmBulk.then(function(result){
-                if(!result.isConfirmed)return;
-                request('dior_doc_clinical_report_bulk_delete',{appt_uids:ids}).then(function(res){
-                    if(res.success)message(res.data.message || 'Selected reports deleted.','success').then(reload);
-                    else message((res.data && res.data.message)||'Unable to delete selected reports.','error');
-                }).catch(function(){message('Network error while deleting reports.','error');});
+        var reportTable = root.querySelector('#dior-clinical-reports-table');
+        if (reportTable && reportTable.parentElement) {
+            reportTable.parentElement.querySelectorAll('.dior-table-pagination').forEach(function (pager) {
+                pager.remove();
             });
         }
-    });
 
-    function updateSelectionState(){
-        var boxes=Array.from(root.querySelectorAll('.dior-clinical-row-check'));
-        var count=boxes.filter(function(box){return box.checked;}).length;
-        var master=root.querySelector('#dior-clinical-check-all');
-        if(master){master.checked=boxes.length>0 && count===boxes.length;master.indeterminate=count>0 && count<boxes.length;}
-        var bulkBtn=root.querySelector('#dior-clinical-bulk-delete');
-        if(bulkBtn)bulkBtn.style.display=count?'':'none';
-    }
-    root.addEventListener('change',function(event){
-        if(event.target.id==='dior-clinical-check-all'){
-            root.querySelectorAll('.dior-clinical-row-check').forEach(function(box){box.checked=event.target.checked;});
-            updateSelectionState();
-        } else if(event.target.classList.contains('dior-clinical-row-check')){
-            updateSelectionState();
+        var vars = window.dior_doctor_vars || {};
+        var ajaxUrl = vars.ajax_url || window.ajaxurl || '/wp-admin/admin-ajax.php';
+        var nonce = vars.nonce || '';
+
+        function request(action, data) {
+            var params = new URLSearchParams(Object.assign({ action: action, nonce: nonce }, data || {}));
+            return fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: params.toString() }).then(function (r) { return r.json(); });
         }
-    });
+        function message(text, icon) {
+            if (window.Swal) return Swal.fire({ icon: icon || 'info', text: text, confirmButtonColor: '#1A528E' });
+            window.alert(text); return Promise.resolve();
+        }
+        function reload() { window.location.reload(); }
+        function selected() { return Array.from(root.querySelectorAll('.dior-clinical-row-check:checked')).map(function (el) { return el.value; }).filter(Boolean); }
 
-    var search=root.querySelector('#dior-clinical-search-input');
-    var currentPage=1;
-    var pageSize=10;
-    function filteredRows(){
-        var query=search?search.value.trim().toLowerCase():'';
-        return Array.from(root.querySelectorAll('#dior-clinical-reports-tbody > tr')).filter(function(row){
-            return row.querySelectorAll('td').length && row.innerText.toLowerCase().indexOf(query)!==-1;
-        });
-    }
-    function renderTablePage(){
-        var rows=Array.from(root.querySelectorAll('#dior-clinical-reports-tbody > tr')).filter(function(row){return row.querySelectorAll('td').length;});
-        var visible=filteredRows();
-        var pages=Math.max(1,Math.ceil(visible.length/pageSize));
-        currentPage=Math.min(currentPage,pages);
-        rows.forEach(function(row){row.style.display='none';});
-        visible.forEach(function(row,index){
-            if(index >= (currentPage-1)*pageSize && index < currentPage*pageSize) row.style.display='';
-        });
-        var pagination=root.querySelector('#dior-clinical-pagination');
-        if(pagination){
-            pagination.innerHTML='';
-            function addPage(label,page,disabled,active){
-                var li=document.createElement('li');li.className='page-item'+(disabled?' disabled':'')+(active?' active':'');
-                var button=document.createElement('button');button.type='button';button.className='page-link rounded-2 me-1';button.textContent=label;
-                button.disabled=!!disabled;button.addEventListener('click',function(){currentPage=page;renderTablePage();});
-                li.appendChild(button);pagination.appendChild(li);
+        root.addEventListener('click', function (event) {
+            var edit = event.target.closest('.dior-action-edit');
+            var del = event.target.closest('.dior-action-del');
+            var refresh = event.target.closest('#dior-clinical-refresh-btn');
+            var bulk = event.target.closest('#dior-clinical-bulk-delete');
+            if (refresh) { reload(); return; }
+
+            if (edit) {
+                var uid = edit.getAttribute('data-appt-uid');
+                var row = edit.closest('tr');
+                if (!uid || !row) { message('Report reference is missing.', 'error'); return; }
+                var cells = row.querySelectorAll('td');
+                var appointmentType = cells[3] ? cells[3].textContent.trim() : '';
+                var date = cells[4] ? cells[4].textContent.trim() : '';
+                var status = cells[5] ? cells[5].textContent.trim() : 'Pending';
+                if (!window.Swal) { message('Edit dialog is unavailable.', 'error'); return; }
+                Swal.fire({
+                    title: 'Edit Clinical Report',
+                    html: '<div class="text-start"><label class="form-label">Appointment Type</label><input id="dior-cr-type" class="form-control mb-3"><label class="form-label">Appointment Date</label><input id="dior-cr-date" type="date" class="form-control mb-3"><label class="form-label">Status</label><select id="dior-cr-status" class="form-select"><option>Pending</option><option>Confirmed</option><option>In Progress</option><option>Completed</option><option>Cancelled</option><option>No Show</option></select></div>',
+                    didOpen: function () {
+                        document.getElementById('dior-cr-type').value = appointmentType;
+                        document.getElementById('dior-cr-date').value = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '';
+                        document.getElementById('dior-cr-status').value = status;
+                    },
+                    showCancelButton: true, confirmButtonText: 'Save Changes', confirmButtonColor: '#1A528E',
+                    preConfirm: function () {
+                        return {
+                            appt_uid: uid,
+                            visit_type: document.getElementById('dior-cr-type').value.trim(),
+                            appt_date: document.getElementById('dior-cr-date').value,
+                            status: document.getElementById('dior-cr-status').value
+                        };
+                    }
+                }).then(function (result) {
+                    if (!result.isConfirmed) return;
+                    request('dior_doc_clinical_report_update', result.value).then(function (res) {
+                        if (res.success) message(res.data.message || 'Report updated.', 'success').then(reload);
+                        else message((res.data && res.data.message) || 'Unable to update report.', 'error');
+                    }).catch(function () { message('Network error while updating report.', 'error'); });
+                });
+                return;
             }
-            addPage('‹',Math.max(1,currentPage-1),currentPage===1,false);
-            for(var page=1;page<=pages;page++)addPage(String(page),page,false,page===currentPage);
-            addPage('›',Math.min(pages,currentPage+1),currentPage===pages,false);
-        }
-        var count=root.querySelector('#dior-clinical-count-display');
-        if(count)count.textContent='Showing '+(visible.length?((currentPage-1)*pageSize+1):0)+' to '+Math.min(currentPage*pageSize,visible.length)+' of '+visible.length+' entries';
-    }
-    if(search)search.addEventListener('input',function(){currentPage=1;renderTablePage();});
-    renderTablePage();
 
-    var exportBtn=root.querySelector('#dior-clinical-export-btn');
-    if(exportBtn)exportBtn.addEventListener('click',function(){
-        var rows=Array.from(root.querySelectorAll('#dior-clinical-reports-table tr')).filter(function(row){return row.offsetParent!==null;});
-        var csv=rows.map(function(row){return Array.from(row.querySelectorAll('th,td')).slice(1,-1).map(function(cell){return '"'+cell.innerText.replace(/"/g,'""').trim()+'"';}).join(',');}).join('\r\n');
-        var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}), url=URL.createObjectURL(blob), a=document.createElement('a');
-        a.href=url;a.download='clinical-reports.csv';a.click();URL.revokeObjectURL(url);
-    });
-})();
+            if (del) {
+                var deleteUid = del.getAttribute('data-appt-uid');
+                if (!deleteUid) { message('Report reference is missing.', 'error'); return; }
+                var confirmDelete = window.Swal ? Swal.fire({ icon: 'warning', title: 'Delete clinical report?', text: 'This report will be removed from the active list.', showCancelButton: true, confirmButtonText: 'Delete', confirmButtonColor: '#dc3545' }) : Promise.resolve({ isConfirmed: window.confirm('Delete this report?') });
+                confirmDelete.then(function (result) {
+                    if (!result.isConfirmed) return;
+                    request('dior_doc_clinical_report_delete', { appt_uid: deleteUid }).then(function (res) {
+                        if (res.success) message(res.data.message || 'Report deleted.', 'success').then(reload);
+                        else message((res.data && res.data.message) || 'Unable to delete report.', 'error');
+                    }).catch(function () { message('Network error while deleting report.', 'error'); });
+                });
+                return;
+            }
+
+            if (bulk) {
+                var ids = selected();
+                if (!ids.length) { message('Select at least one report first.', 'warning'); return; }
+                var confirmBulk = window.Swal ? Swal.fire({ icon: 'warning', title: 'Delete selected reports?', text: ids.length + ' report(s) will be removed from the active list.', showCancelButton: true, confirmButtonText: 'Delete Selected', confirmButtonColor: '#dc3545' }) : Promise.resolve({ isConfirmed: window.confirm('Delete selected reports?') });
+                confirmBulk.then(function (result) {
+                    if (!result.isConfirmed) return;
+                    request('dior_doc_clinical_report_bulk_delete', { appt_uids: ids }).then(function (res) {
+                        if (res.success) message(res.data.message || 'Selected reports deleted.', 'success').then(reload);
+                        else message((res.data && res.data.message) || 'Unable to delete selected reports.', 'error');
+                    }).catch(function () { message('Network error while deleting reports.', 'error'); });
+                });
+            }
+        });
+
+        function updateSelectionState() {
+            var boxes = Array.from(root.querySelectorAll('.dior-clinical-row-check'));
+            var count = boxes.filter(function (box) { return box.checked; }).length;
+            var master = root.querySelector('#dior-clinical-check-all');
+            if (master) { master.checked = boxes.length > 0 && count === boxes.length; master.indeterminate = count > 0 && count < boxes.length; }
+            var bulkBtn = root.querySelector('#dior-clinical-bulk-delete');
+            if (bulkBtn) bulkBtn.style.display = count ? '' : 'none';
+        }
+        root.addEventListener('change', function (event) {
+            if (event.target.id === 'dior-clinical-check-all') {
+                root.querySelectorAll('.dior-clinical-row-check').forEach(function (box) { box.checked = event.target.checked; });
+                updateSelectionState();
+            } else if (event.target.classList.contains('dior-clinical-row-check')) {
+                updateSelectionState();
+            }
+        });
+
+        var search = root.querySelector('#dior-clinical-search-input');
+        var currentPage = 1;
+        var pageSize = 10;
+        function filteredRows() {
+            var query = search ? search.value.trim().toLowerCase() : '';
+            return Array.from(root.querySelectorAll('#dior-clinical-reports-tbody > tr')).filter(function (row) {
+                return row.querySelectorAll('td').length && row.innerText.toLowerCase().indexOf(query) !== -1;
+            });
+        }
+        function renderTablePage() {
+            var rows = Array.from(root.querySelectorAll('#dior-clinical-reports-tbody > tr')).filter(function (row) { return row.querySelectorAll('td').length; });
+            var visible = filteredRows();
+            var pages = Math.max(1, Math.ceil(visible.length / pageSize));
+            currentPage = Math.min(currentPage, pages);
+            rows.forEach(function (row) { row.style.display = 'none'; });
+            visible.forEach(function (row, index) {
+                if (index >= (currentPage - 1) * pageSize && index < currentPage * pageSize) row.style.display = '';
+            });
+            var pagination = root.querySelector('#dior-clinical-pagination');
+            if (pagination) {
+                pagination.innerHTML = '';
+                function addPage(label, page, disabled, active) {
+                    var li = document.createElement('li'); li.className = 'page-item' + (disabled ? ' disabled' : '') + (active ? ' active' : '');
+                    var button = document.createElement('button'); button.type = 'button'; button.className = 'page-link rounded-2 me-1'; button.textContent = label;
+                    button.disabled = !!disabled; button.addEventListener('click', function () { currentPage = page; renderTablePage(); });
+                    li.appendChild(button); pagination.appendChild(li);
+                }
+                addPage('‹', Math.max(1, currentPage - 1), currentPage === 1, false);
+                for (var page = 1; page <= pages; page++)addPage(String(page), page, false, page === currentPage);
+                addPage('›', Math.min(pages, currentPage + 1), currentPage === pages, false);
+            }
+            var count = root.querySelector('#dior-clinical-count-display');
+            if (count) count.textContent = 'Showing ' + (visible.length ? ((currentPage - 1) * pageSize + 1) : 0) + ' to ' + Math.min(currentPage * pageSize, visible.length) + ' of ' + visible.length + ' entries';
+        }
+        if (search) search.addEventListener('input', function () { currentPage = 1; renderTablePage(); });
+        renderTablePage();
+
+        var exportBtn = root.querySelector('#dior-clinical-export-btn');
+        if (exportBtn) exportBtn.addEventListener('click', function () {
+            var rows = Array.from(root.querySelectorAll('#dior-clinical-reports-table tr')).filter(function (row) { return row.offsetParent !== null; });
+            var csv = rows.map(function (row) { return Array.from(row.querySelectorAll('th,td')).slice(1, -1).map(function (cell) { return '"' + cell.innerText.replace(/"/g, '""').trim() + '"'; }).join(','); }).join('\r\n');
+            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+            a.href = url; a.download = 'clinical-reports.csv'; a.click(); URL.revokeObjectURL(url);
+        });
+    })();
 </script>
 
 
 
 <style id="dior-clinical-reports-mobile-cards">
-/* Clinical Reports responsive layout — desktop table remains unchanged. */
-@media (max-width: 767.98px) {
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics {
-        width:100%!important;
-        max-width:100%!important;
-        min-width:0!important;
-        padding-left:0!important;
-        padding-right:0!important;
-        box-sizing:border-box!important;
+    /* Clinical Reports responsive layout — desktop table remains unchanged. */
+    @media (max-width: 767.98px) {
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics>.card {
+            width: 100% !important;
+            max-width: none !important;
+            min-width: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            padding: 12px !important;
+            border-radius: 14px !important;
+            box-sizing: border-box !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics>.card>.d-flex:first-child {
+            align-items: flex-start !important;
+            gap: 12px !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics .input-group {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: 1 1 100% !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics .input-group input {
+            min-height: 40px !important;
+            padding-left: 12px !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics .table-responsive {
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+            border: 0 !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table,
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table tbody {
+            display: block !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            border: 0 !important;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            table-layout: auto !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table thead {
+            display: none !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr {
+            position: relative !important;
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 0 12px !important;
+            padding: 12px 13px !important;
+            overflow: hidden !important;
+            background: #fff !important;
+            border: 1px solid #dce5ef !important;
+            border-radius: 14px !important;
+            box-shadow: 0 2px 8px rgba(15, 43, 76, .045) !important;
+            box-sizing: border-box !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 12px !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            min-height: 34px !important;
+            padding: 7px 0 !important;
+            border: 0 !important;
+            border-bottom: 1px solid #edf1f6 !important;
+            background: transparent !important;
+            text-align: right !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+            box-sizing: border-box !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:first-child {
+            position: absolute !important;
+            top: 14px !important;
+            right: 13px !important;
+            z-index: 2 !important;
+            display: flex !important;
+            justify-content: flex-end !important;
+            width: auto !important;
+            min-height: 22px !important;
+            padding: 0 !important;
+            border: 0 !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:nth-child(2) {
+            justify-content: flex-start !important;
+            min-height: 48px !important;
+            padding: 0 36px 9px 0 !important;
+            text-align: left !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:nth-child(2)>div {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            min-width: 0 !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:nth-child(2) img {
+            flex: 0 0 38px !important;
+            width: 38px !important;
+            height: 38px !important;
+            object-fit: cover !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:nth-child(2) span {
+            font-weight: 700 !important;
+            color: #12345a !important;
+            text-align: left !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:nth-child(3)::before {
+            content: "Doctor";
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:nth-child(4)::before {
+            content: "Diagnosis";
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:nth-child(5)::before {
+            content: "Visit Date";
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:nth-child(6)::before {
+            content: "Status";
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:nth-child(n+3):nth-child(-n+6)::before {
+            flex: 0 0 82px !important;
+            color: #8493a7 !important;
+            font-size: 10px !important;
+            font-weight: 700 !important;
+            letter-spacing: .035em !important;
+            text-align: left !important;
+            text-transform: uppercase !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:nth-child(7) {
+            justify-content: flex-end !important;
+            padding: 10px 0 0 !important;
+            border: 0 !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr>td:nth-child(7)>div {
+            display: flex !important;
+            justify-content: flex-end !important;
+            gap: 8px !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody>tr:not(:has(td)) {
+            display: block !important;
+        }
+
+        #dior-doctor-app #dior-doc-content #tab-doc-analytics>.card>.d-flex.flex-wrap.align-items-center.justify-content-between.pt-3 {
+            align-items: flex-start !important;
+        }
     }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics > .card {
-        width:100%!important;
-        max-width:none!important;
-        min-width:0!important;
-        margin-left:0!important;
-        margin-right:0!important;
-        padding:12px!important;
-        border-radius:14px!important;
-        box-sizing:border-box!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics > .card > .d-flex:first-child {
-        align-items:flex-start!important;
-        gap:12px!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics .input-group {
-        width:100%!important;
-        max-width:100%!important;
-        flex:1 1 100%!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics .input-group input {
-        min-height:40px!important;
-        padding-left:12px!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics .table-responsive {
-        width:100%!important;
-        max-width:100%!important;
-        overflow:visible!important;
-        border:0!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table,
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table tbody {
-        display:block!important;
-        width:100%!important;
-        min-width:0!important;
-        margin:0!important;
-        border:0!important;
-        border-collapse:separate!important;
-        border-spacing:0!important;
-        table-layout:auto!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table thead {
-        display:none!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr {
-        position:relative!important;
-        display:flex!important;
-        flex-direction:column!important;
-        width:100%!important;
-        min-width:0!important;
-        margin:0 0 12px!important;
-        padding:12px 13px!important;
-        overflow:hidden!important;
-        background:#fff!important;
-        border:1px solid #dce5ef!important;
-        border-radius:14px!important;
-        box-shadow:0 2px 8px rgba(15,43,76,.045)!important;
-        box-sizing:border-box!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td {
-        display:flex!important;
-        align-items:center!important;
-        justify-content:space-between!important;
-        gap:12px!important;
-        width:100%!important;
-        min-width:0!important;
-        min-height:34px!important;
-        padding:7px 0!important;
-        border:0!important;
-        border-bottom:1px solid #edf1f6!important;
-        background:transparent!important;
-        text-align:right!important;
-        white-space:normal!important;
-        overflow-wrap:anywhere!important;
-        box-sizing:border-box!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:first-child {
-        position:absolute!important;
-        top:14px!important;
-        right:13px!important;
-        z-index:2!important;
-        display:flex!important;
-        justify-content:flex-end!important;
-        width:auto!important;
-        min-height:22px!important;
-        padding:0!important;
-        border:0!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:nth-child(2) {
-        justify-content:flex-start!important;
-        min-height:48px!important;
-        padding:0 36px 9px 0!important;
-        text-align:left!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:nth-child(2) > div {
-        display:flex!important;
-        align-items:center!important;
-        gap:10px!important;
-        min-width:0!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:nth-child(2) img {
-        flex:0 0 38px!important;
-        width:38px!important;
-        height:38px!important;
-        object-fit:cover!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:nth-child(2) span {
-        font-weight:700!important;
-        color:#12345a!important;
-        text-align:left!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:nth-child(3)::before { content:"Doctor"; }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:nth-child(4)::before { content:"Diagnosis"; }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:nth-child(5)::before { content:"Visit Date"; }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:nth-child(6)::before { content:"Status"; }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:nth-child(n+3):nth-child(-n+6)::before {
-        flex:0 0 82px!important;
-        color:#8493a7!important;
-        font-size:10px!important;
-        font-weight:700!important;
-        letter-spacing:.035em!important;
-        text-align:left!important;
-        text-transform:uppercase!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:nth-child(7) {
-        justify-content:flex-end!important;
-        padding:10px 0 0!important;
-        border:0!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr > td:nth-child(7) > div {
-        display:flex!important;
-        justify-content:flex-end!important;
-        gap:8px!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-tbody > tr:not(:has(td)) {
-        display:block!important;
-    }
-    #dior-doctor-app #dior-doc-content #tab-doc-analytics > .card > .d-flex.flex-wrap.align-items-center.justify-content-between.pt-3 {
-        align-items:flex-start!important;
-    }
-}
 </style>
 
 
 <style id="dior-clinical-reports-global-table">
-/* Clinical reports use the shared Dior table class and stable action-button states. */
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table {
-    width:100%; border-collapse:separate; border-spacing:0; border:1px solid #dce5ef;
-    border-radius:10px; overflow:hidden;
-}
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table thead th {
-    background:#f5f8fc; color:#52657b; font-size:12px; font-weight:700;
-    letter-spacing:.035em; padding:13px 14px; border-bottom:1px solid #dce5ef; white-space:nowrap;
-}
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table tbody td {
-    padding:12px 14px; border-bottom:1px solid #edf1f6; vertical-align:middle;
-}
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table tbody tr:last-child td { border-bottom:0; }
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-edit:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-edit:focus,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-edit:active {
-    color:#1a528e!important; background:#fff!important; border-color:#1a528e!important; box-shadow:none!important;
-}
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-del:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-del:focus,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-del:active {
-    color:#dc3545!important; background:#fff!important; border-color:#dc3545!important; box-shadow:none!important;
-}
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-primary:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-success:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-info:hover {
-    background:#1a528e!important; border-color:#1a528e!important; color:#fff!important;
-}
+    /* Clinical reports use the shared Dior table class and stable action-button states. */
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 1px solid #dce5ef;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table thead th {
+        background: #f5f8fc;
+        color: #52657b;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .035em;
+        padding: 13px 14px;
+        border-bottom: 1px solid #dce5ef;
+        white-space: nowrap;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table tbody td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #edf1f6;
+        vertical-align: middle;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table tbody tr:last-child td {
+        border-bottom: 0;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-edit:hover,
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-edit:focus,
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-edit:active {
+        color: #1a528e !important;
+        background: #fff !important;
+        border-color: #1a528e !important;
+        box-shadow: none !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-del:hover,
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-del:focus,
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-del:active {
+        color: #dc3545 !important;
+        background: #fff !important;
+        border-color: #dc3545 !important;
+        box-shadow: none !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-primary:hover,
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-success:hover,
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-info:hover {
+        background: #1a528e !important;
+        border-color: #1a528e !important;
+        color: #fff !important;
+    }
 </style>
 
 <style id="dior-clinical-reports-brand-colors">
-/* Keep Clinical Reports aligned with the Dior Medical navy/blue interface. */
-#dior-doctor-app #dior-doc-content #tab-doc-analytics {
-    --dior-brand-primary:#1A528E;
-    --dior-brand-secondary:#2C6CB1;
-    --dior-brand-mid:#477EAB;
-    --dior-brand-soft:#7198BC;
-}
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .text-primary,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .text-primary i {
-    color:#1A528E!important;
-}
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-primary,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-info,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-success {
-    color:#fff!important;
-    background-color:#1A528E!important;
-    border-color:#1A528E!important;
-}
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-primary:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-info:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-success:hover {
-    background-color:#1A528E!important;
-    border-color:#1A528E!important;
-}
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .card {
-    border-color:#DFE8F1!important;
-}
+    /* Keep Clinical Reports aligned with the Dior Medical navy/blue interface. */
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics {
+        --dior-brand-primary: #1A528E;
+        --dior-brand-secondary: #2C6CB1;
+        --dior-brand-mid: #477EAB;
+        --dior-brand-soft: #7198BC;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .text-primary,
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .text-primary i {
+        color: #1A528E !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-primary,
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-info,
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-success {
+        color: #fff !important;
+        background-color: #1A528E !important;
+        border-color: #1A528E !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-primary:hover,
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-info:hover,
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-success:hover {
+        background-color: #1A528E !important;
+        border-color: #1A528E !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-analytics .card {
+        border-color: #DFE8F1 !important;
+    }
 </style>
 
 
 <script>
-(function() {
-    var trendsChart = null;
-    var donutChart = null;
+    (function () {
+        var trendsChart = null;
+        var donutChart = null;
 
-    function initClinicalReports() {
-        var panel = document.getElementById('tab-doc-analytics');
-        if (!panel) return;
+        function initClinicalReports() {
+            var panel = document.getElementById('tab-doc-analytics');
+            if (!panel) return;
 
-        // 1. Initialize ApexCharts when visible
-        function renderCharts() {
-            if (typeof ApexCharts === 'undefined') {
-                setTimeout(renderCharts, 100);
-                return;
-            }
+            // 1. Initialize ApexCharts when visible
+            function renderCharts() {
+                if (typeof ApexCharts === 'undefined') {
+                    setTimeout(renderCharts, 100);
+                    return;
+                }
 
-            // Only render when tab is displayed
-            if (window.getComputedStyle(panel).display === 'none') {
-                return;
-            }
+                // Only render when tab is displayed
+                if (window.getComputedStyle(panel).display === 'none') {
+                    return;
+                }
 
-            var trendsEl = document.getElementById('dior-clinical-visit-trends-chart');
-            if (trendsEl && !trendsChart) {
-                var trendsOptions = {
-                    series: [
-                        { name: 'Outpatients', data: <?php echo wp_json_encode($monthly_opd); ?> },
-                        { name: 'Inpatients', data: <?php echo wp_json_encode($monthly_ipd); ?> }
-                    ],
-                    chart: {
-                        type: 'area',
-                        height: 310,
-                        toolbar: { show: false },
-                        fontFamily: 'inherit'
-                    },
-                    colors: ['#1A528E', '#5B8DB8'],
-                    dataLabels: { enabled: false },
-                    stroke: { curve: 'smooth', width: 3 },
-                    fill: {
-                        type: 'gradient',
-                        gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops: [0, 90, 100] }
-                    },
-                    xaxis: {
-                        categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                        labels: { style: { colors: '#64748b', fontSize: '12px' } }
-                    },
-                    yaxis: {
-                        labels: { style: { colors: '#64748b', fontSize: '11px' } }
-                    },
-                    grid: {
-                        borderColor: 'rgba(226, 232, 240, 0.6)',
-                        strokeDashArray: 4
-                    },
-                    legend: {
-                        position: 'top',
-                        horizontalAlign: 'right',
-                        fontSize: '12px',
-                        labels: { colors: '#475569' }
-                    }
-                };
-                trendsChart = new ApexCharts(trendsEl, trendsOptions);
-                trendsChart.render();
-            }
-
-            var donutEl = document.getElementById('dior-clinical-disease-distribution-chart');
-            var diseaseSeries = <?php echo wp_json_encode($disease_series); ?>;
-            var diseaseLabels = <?php echo wp_json_encode($disease_labels); ?>;
-            if (donutEl && !donutChart) {
-                if (!diseaseSeries.length) {
-                    donutEl.innerHTML = '<div class="text-center text-muted small py-5">No clinical distribution data yet.</div>';
-                } else {
-                var donutOptions = {
-                    series: diseaseSeries,
-                    labels: diseaseLabels,
-                    chart: {
-                        type: 'donut',
-                        height: 310,
-                        fontFamily: 'inherit'
-                    },
-                    colors: ['#1A528E', '#2C6CB1', '#477EAB', '#7198BC', '#A3BED4'],
-                    legend: {
-                        position: 'bottom',
-                        fontSize: '12px',
-                        labels: { colors: '#475569' },
-                        markers: { width: 10, height: 10 }
-                    },
-                    plotOptions: {
-                        pie: {
-                            donut: {
-                                size: '65%'
-                            }
+                var trendsEl = document.getElementById('dior-clinical-visit-trends-chart');
+                if (trendsEl && !trendsChart) {
+                    var trendsOptions = {
+                        series: [
+                            { name: 'Outpatients', data: <?php echo wp_json_encode($monthly_opd); ?> },
+                            { name: 'Inpatients', data: <?php echo wp_json_encode($monthly_ipd); ?> }
+                        ],
+                        chart: {
+                            type: 'area',
+                            height: 310,
+                            toolbar: { show: false },
+                            fontFamily: 'inherit'
+                        },
+                        colors: ['#1A528E', '#5B8DB8'],
+                        dataLabels: { enabled: false },
+                        stroke: { curve: 'smooth', width: 3 },
+                        fill: {
+                            type: 'gradient',
+                            gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops: [0, 90, 100] }
+                        },
+                        xaxis: {
+                            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                            labels: { style: { colors: '#64748b', fontSize: '12px' } }
+                        },
+                        yaxis: {
+                            labels: { style: { colors: '#64748b', fontSize: '11px' } }
+                        },
+                        grid: {
+                            borderColor: 'rgba(226, 232, 240, 0.6)',
+                            strokeDashArray: 4
+                        },
+                        legend: {
+                            position: 'top',
+                            horizontalAlign: 'right',
+                            fontSize: '12px',
+                            labels: { colors: '#475569' }
                         }
-                    },
-                    dataLabels: {
-                        enabled: true,
-                        formatter: function(val) {
-                            return val.toFixed(1) + "%";
-                        },
-                        style: {
-                            fontSize: '11px',
-                            fontWeight: '600'
-                        },
-                        dropShadow: { enabled: true, blur: 2, opacity: 0.6 }
+                    };
+                    trendsChart = new ApexCharts(trendsEl, trendsOptions);
+                    trendsChart.render();
+                }
+
+                var donutEl = document.getElementById('dior-clinical-disease-distribution-chart');
+                var diseaseSeries = <?php echo wp_json_encode($disease_series); ?>;
+                var diseaseLabels = <?php echo wp_json_encode($disease_labels); ?>;
+                if (donutEl && !donutChart) {
+                    if (!diseaseSeries.length) {
+                        donutEl.innerHTML = '<div class="text-center text-muted small py-5">No clinical distribution data yet.</div>';
+                    } else {
+                        var donutOptions = {
+                            series: diseaseSeries,
+                            labels: diseaseLabels,
+                            chart: {
+                                type: 'donut',
+                                height: 310,
+                                fontFamily: 'inherit'
+                            },
+                            colors: ['#1A528E', '#2C6CB1', '#477EAB', '#7198BC', '#A3BED4'],
+                            legend: {
+                                position: 'bottom',
+                                fontSize: '12px',
+                                labels: { colors: '#475569' },
+                                markers: { width: 10, height: 10 }
+                            },
+                            plotOptions: {
+                                pie: {
+                                    donut: {
+                                        size: '65%'
+                                    }
+                                }
+                            },
+                            dataLabels: {
+                                enabled: true,
+                                formatter: function (val) {
+                                    return val.toFixed(1) + "%";
+                                },
+                                style: {
+                                    fontSize: '11px',
+                                    fontWeight: '600'
+                                },
+                                dropShadow: { enabled: true, blur: 2, opacity: 0.6 }
+                            }
+                        };
+                        donutChart = new ApexCharts(donutEl, donutOptions);
+                        donutChart.render();
                     }
-                };
-                donutChart = new ApexCharts(donutEl, donutOptions);
-                donutChart.render();
                 }
             }
+
+            // Render charts immediately if panel is visible
+            renderCharts();
+
+            // Listen for visibility changes on tab-doc-analytics
+            var observer = new MutationObserver(function (mutations) {
+                mutations.forEach(function (mutation) {
+                    if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
+                        setTimeout(renderCharts, 50);
+                    }
+                });
+            });
+            observer.observe(panel, { attributes: true });
+
+            // Clinical Reports table actions are handled by the server-backed handler above.
+
         }
 
-        // Render charts immediately if panel is visible
-        renderCharts();
-
-        // Listen for visibility changes on tab-doc-analytics
-        var observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
-                    setTimeout(renderCharts, 50);
-                }
-            });
-        });
-        observer.observe(panel, { attributes: true });
-
-        // Clinical Reports table actions are handled by the server-backed handler above.
-
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initClinicalReports);
-    } else {
-        initClinicalReports();
-    }
-})();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initClinicalReports);
+        } else {
+            initClinicalReports();
+        }
+    })();
 </script>
