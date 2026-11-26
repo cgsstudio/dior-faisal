@@ -973,7 +973,6 @@ $status_badges = [
             setupReschedBtns();
             setupRescheduleForm();
             setupEditBtns();
-            setupDeleteBtns();
             setupViewPatientBtns();
             setupRefreshBtn();
             setupExportCsvBtn();
@@ -1322,10 +1321,9 @@ $status_badges = [
                                 });
                             }
                         })();
-
-                });
-            }
-
+                    }); // Close SweetAlert confirmation callback.
+                }); // Close the Delete button click listener.
+            } // End bulk Delete button guard.
         }
 
         // =========================================================================
@@ -2287,72 +2285,8 @@ $status_badges = [
             });
         }
 
-        function setupDeleteBtns() {
-            var tbody = document.getElementById('va-appointments-tbody');
-            if (!tbody) return;
-
-            tbody.addEventListener('click', function (e) {
-                var btn = e.target.closest('.va-delete-appt-btn');
-                if (!btn) return;
-                var row = btn.closest('tr');
-                var patientName = btn.dataset.name || 'this patient';
-                var uid = btn.dataset.uid || (row ? (row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid) : '') || '';
-                if (!uid) {
-                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: 'Appointment ID is missing. Please refresh the page and try again.' });
-                    return;
-                }
-                if (!window.Swal) {
-                    window.alert('Delete confirmation is unavailable. Please reload the page and try again.');
-                    return;
-                }
-
-                Swal.fire({
-                    title: 'Delete Appointment?',
-                    text: 'Are you sure you want to delete appointment for "' + patientName + '"? This cannot be undone.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#EF4444',
-                    cancelButtonColor: '#64748B',
-                    confirmButtonText: 'Yes, delete',
-                    cancelButtonText: 'Cancel'
-                }).then(function (result) {
-                    if (!result.isConfirmed) return;
-                    var data = new FormData();
-                    data.append('action', 'dior_doc_appointment_delete');
-                    data.append('nonce', nonce);
-                    data.append('appt_uid', uid);
-                    fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: data })
-                        .then(function (r) { return r.json(); })
-                        .then(function (res) {
-                            if (res.success) {
-                                var row = btn.closest('tr');
-                                allRows = allRows.filter(function (r) { return r !== row; });
-                                row.remove();
-                                updateKpiCounters();
-                                renderPage(currentPage);
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Deleted',
-                                    text: 'Appointment deleted successfully.',
-                                    toast: true,
-                                    position: 'top-end',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Delete Failed',
-                                    text: res.data && res.data.message ? res.data.message : 'Failed to delete appointment.'
-                                });
-                            }
-                        })
-                        .catch(function () {
-                            Swal.fire({ icon: 'error', title: 'Error', text: 'Network error.' });
-                        });
-                });
-            });
-        }
+        // Individual row trash buttons were intentionally removed.
+        // Deletion is performed through the registry toolbar after selecting rows.
 
         function setupViewPatientBtns() {
             var tbody = document.getElementById('va-appointments-tbody');
