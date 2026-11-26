@@ -68,7 +68,7 @@ class Dior_Encounter_Service
         $existing = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE encounter_uid = %s AND is_deleted = 0", $encounter_uid));
 
         if ($existing) {
-            $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($current_user_id) : [$current_user_id];
+            $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($current_user_id) : [$current_user_id];
             if (!in_array((int) $existing->doctor_id, array_map('intval', (array) $scope_ids), true)) {
                 Dior_Audit_Service::log('soap_update', 'encounter', $encounter_uid, $patient_id, 'denied');
                 return new WP_Error('unauthorized', 'This clinical record belongs to another doctor.');
@@ -160,7 +160,7 @@ class Dior_Encounter_Service
 
         $current_user_id = get_current_user_id();
         if ($current_user_id && Dior_Auth_Service::is_doctor($current_user_id)) {
-            $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($current_user_id) : [$current_user_id];
+            $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($current_user_id) : [$current_user_id];
             $scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $scope_ids))));
             if (!$scope_ids || !Dior_Auth_Service::can_access_patient($patient_id, $current_user_id)) return [];
             $placeholders = implode(',', array_fill(0, count($scope_ids), '%d'));
@@ -205,7 +205,7 @@ class Dior_Encounter_Service
             Dior_Audit_Service::log('soap_delete', 'encounter', $encounter_uid, $patient_id, 'denied');
             return new WP_Error('unauthorized', 'Unauthorized to delete clinical record.');
         }
-        $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($current_user_id) : [$current_user_id];
+        $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($current_user_id) : [$current_user_id];
         $scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $scope_ids))));
         if (!$scope_ids) return new WP_Error('unauthorized', 'Doctor access scope is unavailable.');
         $placeholders = implode(',', array_fill(0, count($scope_ids), '%d'));
