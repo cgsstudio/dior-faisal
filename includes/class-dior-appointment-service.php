@@ -24,8 +24,11 @@ class Dior_Appointment_Service
         $doctor_ids = class_exists('Dior_Doctor_Resolver')
             ? Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id)
             : [$user_id];
+        if (class_exists('Dior_Doctor_Resolver') && $user_id === (int) Dior_Doctor_Resolver::get_default_doctor_id()) {
+            $doctor_ids = array_merge($doctor_ids, [0, 1]);
+        }
         $appointment_doctor_id = (int) ($appointment['doctor_id'] ?? 0);
-        if (in_array($appointment_doctor_id, $doctor_ids, true)) return true;
+        if (in_array($appointment_doctor_id, array_map('intval', $doctor_ids), true)) return true;
 
         if (class_exists('Dior_Doctor_Resolver') && $appointment_doctor_id) {
             return (int) Dior_Doctor_Resolver::resolve_doctor_user_id($appointment_doctor_id) === $user_id;
