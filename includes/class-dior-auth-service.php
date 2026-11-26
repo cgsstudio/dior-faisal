@@ -40,7 +40,8 @@ class Dior_Auth_Service
     {
         $user_id = $user_id ? (int)$user_id : get_current_user_id();
         if (!$user_id) return false;
-        if (self::is_admin($user_id)) return true;
+        // Admins are a separate role and must never inherit Doctor Dashboard access.
+        if (self::is_admin($user_id)) return false;
         return user_can($user_id, 'doctor');
     }
 
@@ -69,13 +70,41 @@ class Dior_Auth_Service
             return false;
         }
 
-        // Administrators and authorized Doctors have clinic-level access
-        if (self::is_admin($user_id) || self::is_doctor($user_id)) {
+        // Patients may only access their own portal data.
+        if (self::is_patient($user_id)) {
+            return $user_id === $patient_id;
+        }
+
+        // Admin access is handled by admin-specific screens/endpoints, not the Doctor Dashboard.
+        if (self::is_admin($user_id)) {
             return true;
         }
 
-        // Patients can strictly only access their own records
-        return $user_id === $patient_id;
+        // Doctors may access a patient only when that patient has an appointment
+        // assigned to this doctor's own account or explicitly linked DocBooker IDs.
+        if (!self::is_doctor($user_id)) {
+            return false;
+        }
+
+        global $wpdb;
+        $appointment_table = $wpdb->prefix . 'dior_appointments';
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $appointment_table)) !== $appointment_table) {
+            return false;
+        }
+
+        $doctor_ids = class_exists('Dior_Doctor_Resolver')
+            ? Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id)
+            : [$user_id];
+        $doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_ids))));
+        if (!$doctor_ids) return false;
+
+        $placeholders = implode(',', array_fill(0, count($doctor_ids), '%d'));
+        $args = array_merge([$patient_id], $doctor_ids);
+        $sql = $wpdb->prepare(
+            "SELECT id FROM {$appointment_table} WHERE patient_id = %d AND doctor_id IN ($placeholders) AND is_deleted = 0 LIMIT 1",
+            ...$args
+        );
+        return (bool) $wpdb->get_var($sql);
     }
 
     /**
@@ -85,7 +114,7 @@ class Dior_Auth_Service
     {
         $user_id = $user_id ? (int)$user_id : get_current_user_id();
         if (!$user_id) return false;
-        return self::is_doctor($user_id) || self::is_admin($user_id);
+        return self::is_doctor($user_id);
     }
 
     /**
@@ -96,11 +125,8 @@ class Dior_Auth_Service
         $user_id = $user_id ? (int)$user_id : get_current_user_id();
         if (!$user_id) return false;
 
-        // Admin can manage all
-        if (self::is_admin($user_id)) return true;
-
-        // Doctor can manage if they are a doctor
-        if (self::is_doctor($user_id)) return true;
+        // Doctors can manage documents only for patients assigned to them.
+        if (self::is_doctor($user_id) && self::can_access_patient($patient_id, $user_id)) return true;
 
         // Patient can only manage their own if they were the author (e.g. self-uploaded intake)
         if ($author_id && $user_id === (int)$author_id && $user_id === (int)$patient_id) {
