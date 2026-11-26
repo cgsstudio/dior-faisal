@@ -5676,17 +5676,35 @@ class Dior_Medical_Auth
         if (empty($data))
             return;
 
-        // Unpack HIPAAtizer payloads: direct fields, {data:{...}}, or [{type, formId, data:{...}}].
+        // Preserve the exact incoming request before normalizing any wrappers.
         $raw_data = $data;
-        if (isset($data[0]) && is_array($data[0]) && isset($data[0]['data']) && is_array($data[0]['data'])) {
-            $data = $data[0];
-        }
-        if (isset($data['data']) && is_array($data['data'])) {
-            $data = $data['data'];
-        }
-        if (isset($data['fields']) && is_array($data['fields'])) {
-            $data = $data['fields'];
-        }
+
+        // HIPAAtizer may send fields directly, inside data/fields wrappers, or
+        // inside a list of form objects. Flatten all nested answer containers
+        // so every submitted field remains available to the mapper.
+        $flattened = [];
+        $flatten_payload = static function ($node) use (&$flatten_payload, &$flattened) {
+            if (!is_array($node)) {
+                return;
+            }
+
+            foreach ($node as $key => $value) {
+                if (is_array($value)) {
+                    $flatten_payload($value);
+                    continue;
+                }
+
+                if (is_string($key) && $value !== null && $value !== '') {
+                    // Later/deeper answer values take precedence over wrapper metadata.
+                    $flattened[$key] = $value;
+                }
+            }
+        };
+        $flatten_payload($raw_data);
+
+        // Keep top-level values where a nested value with the same key is absent.
+        $data = array_merge($data, $flattened);
+        unset($data['data'], $data['fields']);
         $data['raw_data'] = $raw_data;
 
         // Try to find user by user_id first
@@ -5746,9 +5764,28 @@ class Dior_Medical_Auth
                     if (is_array($value)) {
                         return implode(', ', array_map('sanitize_text_field', $value));
                     }
-                    return (string) $value;
+                    return is_scalar($value) ? (string) $value : $default;
                 }
             }
+
+            // HIPAAtizer variable labels can differ by capitalization,
+            // spaces, underscores, or punctuation between webhook/API versions.
+            $normalize_key = static function ($value) {
+                return strtolower(preg_replace('/[^a-z0-9]/i', '', (string) $value));
+            };
+            $normalized_source = [];
+            foreach ($source as $source_key => $source_value) {
+                if (is_scalar($source_value) && $source_value !== '') {
+                    $normalized_source[$normalize_key($source_key)] = (string) $source_value;
+                }
+            }
+            foreach ($keys as $key) {
+                $normalized_key = $normalize_key($key);
+                if (isset($normalized_source[$normalized_key])) {
+                    return $normalized_source[$normalized_key];
+                }
+            }
+
             return $default;
         };
 
@@ -5881,7 +5918,7 @@ class Dior_Medical_Auth
             'medications' => sanitize_text_field($data['medications_list'] ?? $data['medications'] ?? $data['current_medications'] ?? $data['Medications'] ?? ''),
             'medical_history' => sanitize_textarea_field($data['other_conditions'] ?? $data['medical_history'] ?? $data['Medical History'] ?? ''),
 
-            'raw_data' => $data, // keep full payload
+            'raw_data' => $raw_data, // preserve the complete original HIPAAtizer request
         ];
 
         if ($user_id) {
