@@ -925,6 +925,7 @@ class Dior_Doctor_Dashboard
             }
 
             $existing_scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
+            if (class_exists('Dior_Doctor_Resolver') && get_current_user_id() === (int) Dior_Doctor_Resolver::get_default_doctor_id()) $existing_scope = array_merge($existing_scope, [0, 1]);
             if (!in_array((int) $appt['doctor_id'], array_map('intval', (array) $existing_scope), true)) {
                 wp_send_json_error(["message" => "You are not authorized to edit this appointment."], 403);
             }
@@ -1135,6 +1136,7 @@ class Dior_Doctor_Dashboard
             wp_send_json_error(["message" => "Patient ID or Appointment UID is required."]);
         }
         $doctor_scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
+        if (class_exists('Dior_Doctor_Resolver') && get_current_user_id() === (int) Dior_Doctor_Resolver::get_default_doctor_id()) $doctor_scope = array_merge($doctor_scope, [0, 1]);
         $doctor_scope = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope))));
         if (!$doctor_scope || !Dior_Auth_Service::can_access_patient($patient_id, get_current_user_id())) {
             wp_send_json_error(["message" => "You are not authorized to access this patient's records."], 403);
@@ -2353,6 +2355,7 @@ class Dior_Doctor_Dashboard
             $prescription_scope = class_exists('Dior_Doctor_Resolver')
                 ? Dior_Doctor_Resolver::get_accessible_doctor_ids($current_user_id)
                 : [$current_user_id];
+            if (class_exists('Dior_Doctor_Resolver') && $current_user_id === (int) Dior_Doctor_Resolver::get_default_doctor_id()) $prescription_scope = array_merge($prescription_scope, [0, 1]);
             if (!in_array((int) $appointment['doctor_id'], array_map('intval', (array) $prescription_scope), true)) {
                 wp_send_json_error(["message" => "You are not authorized to prescribe for this appointment."], 403);
             }
