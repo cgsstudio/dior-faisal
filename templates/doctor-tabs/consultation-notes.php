@@ -10,7 +10,7 @@ $ajax_url = admin_url('admin-ajax.php');
 $doctor_id = get_current_user_id();
 $doc_name = wp_get_current_user()->display_name;
 
-$doctor_scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
+$doctor_scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($doctor_id) : [$doctor_id];
 $doctor_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope_ids))));
 $doctor_scope_in = $doctor_scope_ids ? implode(',', array_fill(0, count($doctor_scope_ids), '%d')) : '';
 
