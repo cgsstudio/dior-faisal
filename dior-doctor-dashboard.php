@@ -2694,7 +2694,7 @@ class Dior_Doctor_Resolver
         if (!$central_id) return 0;
 
         if (empty($doctor_ref)) {
-            return $central_id;
+            return 0;
         }
 
         if (is_numeric($doctor_ref)) {
@@ -2708,9 +2708,9 @@ class Dior_Doctor_Resolver
             }
             $user = get_userdata($reference_id);
             if ($user && in_array('administrator', (array) $user->roles, true) && !in_array('doctor', (array) $user->roles, true)) {
-                return (int) $user->ID;
+                return 0;
             }
-            if ($user && in_array('doctor', (array) $user->roles, true)) return $central_id;
+            if ($user && in_array('doctor', (array) $user->roles, true)) return (int) $user->ID;
         }
 
         if (is_string($doctor_ref)) {
@@ -2731,39 +2731,59 @@ class Dior_Doctor_Resolver
             $clean_name = trim(preg_replace('/,\s*(MD|DO|MBBS|PhD)$/i', '', $clean_name));
             $user = get_user_by('login', sanitize_user(strtolower(str_replace(' ', '', $clean_name))));
             if ($user) {
-                if (get_user_meta($user->ID, '_dior_merged_into_doctor_id', true) || in_array('doctor', (array) $user->roles, true)) {
-                    return $central_id;
+                if (get_user_meta($user->ID, '_dior_merged_into_doctor_id', true)) {
+                    return (int) get_user_meta($user->ID, '_dior_merged_into_doctor_id', true);
+                }
+                if (in_array('doctor', (array) $user->roles, true)) {
+                    return (int) $user->ID;
                 }
                 if (in_array('administrator', (array) $user->roles, true)) return (int) $user->ID;
             }
         }
 
-        return $central_id;
+        return 0;
     }
 
     /**
-     * Auto-sync or provision a WP Doctor User for a DocBooker CPT post
+     * Resolve a DocBooker profile to its linked doctor account without merging
+     * independently linked doctor accounts into the clinic's default account.
      */
     public static function sync_docbooker_doctor_to_wp_user($post_id)
     {
         $post = get_post($post_id);
-        if (!$post || $post->post_type !== 'wpddb_doctor') {
-            return self::get_default_doctor_id();
-        }
+        if (!$post || $post->post_type !== 'wpddb_doctor') return 0;
 
         $central_id = self::get_default_doctor_id();
-        if (!$central_id) return 0;
-
         $linked_user_id = (int) get_post_meta($post_id, '_wpddb_doctor_user_id', true);
-        if ($linked_user_id && $linked_user_id !== $central_id && !get_post_meta($post_id, '_dior_original_doctor_user_id', true)) {
-            update_post_meta($post_id, '_dior_original_doctor_user_id', $linked_user_id);
+        $original_user_id = (int) get_post_meta($post_id, '_dior_original_doctor_user_id', true);
+
+        // Preserve an independently linked doctor account. Only accounts already
+        // consolidated by the legacy migration continue to resolve to the central account.
+        foreach ([$linked_user_id, $original_user_id] as $candidate_id) {
+            if (!$candidate_id) continue;
+            $merged_into = (int) get_user_meta($candidate_id, '_dior_merged_into_doctor_id', true);
+            if ($merged_into) {
+                update_post_meta($post_id, '_wpddb_doctor_user_id', $merged_into);
+                return $merged_into;
+            }
+            $candidate = get_userdata($candidate_id);
+            if ($candidate && in_array('doctor', (array) $candidate->roles, true)) {
+                update_post_meta($post_id, '_wpddb_doctor_user_id', $candidate_id);
+                update_user_meta($candidate_id, '_docbooker_doctor_id', (int) $post_id);
+                return $candidate_id;
+            }
         }
-        update_post_meta($post_id, '_wpddb_doctor_user_id', $central_id);
-        $post_ids = get_user_meta($central_id, '_dior_merged_docbooker_post_ids', true);
-        $post_ids = is_array($post_ids) ? $post_ids : [];
-        $post_ids[] = (int) $post_id;
-        update_user_meta($central_id, '_dior_merged_docbooker_post_ids', array_values(array_unique(array_map('intval', $post_ids))));
-        update_user_meta($central_id, '_docbooker_doctor_id', (int) $post_id);
+
+        // Keep existing legacy/unassigned DocBooker profiles on the current
+        // single-doctor account. New multi-doctor profiles must be explicitly linked.
+        if ($central_id) {
+            update_post_meta($post_id, '_wpddb_doctor_user_id', $central_id);
+            $post_ids = get_user_meta($central_id, '_dior_merged_docbooker_post_ids', true);
+            $post_ids = is_array($post_ids) ? $post_ids : [];
+            $post_ids[] = (int) $post_id;
+            update_user_meta($central_id, '_dior_merged_docbooker_post_ids', array_values(array_unique(array_map('intval', $post_ids))));
+            update_user_meta($central_id, '_docbooker_doctor_id', (int) $post_id);
+        }
         return $central_id;
     }
 }
