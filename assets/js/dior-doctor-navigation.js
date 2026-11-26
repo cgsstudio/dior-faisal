@@ -160,107 +160,120 @@
         }
     });
 
-    // Main tab switcher
+    // Single canonical tab controller. The Doctor Dashboard script adds optional widgets only.
     window.diorDocSwitchTab = function (tabId, updateUrl) {
-        var app = document.getElementById('dior-doctor-app');
         if (!tabId) return false;
-        var normalizedId = normalizeTabId(tabId);
-
-        // Find matching section panel
-        var activePanel = document.getElementById('tab-' + normalizedId);
-        if (!activePanel && app) {
-            // Check if standard tab without prefix exists
-            activePanel = document.getElementById(normalizedId);
-        }
-        if (!activePanel) {
-            console.warn('[Dior Navigation] Panel not found for tab:', tabId, '(normalized: ' + normalizedId + ')');
+    
+        // Normalize legacy tab aliases before touching the URL or hiding any panel.
+        const aliases = {
+            feedback: 'doc-patient-review',
+            'doc-feedback': 'doc-patient-review',
+            'patient-review': 'doc-patient-review',
+            reviews: 'doc-patient-review',
+            notifications: 'doc-notifications-system',
+            'doc-notifications': 'doc-notifications-system',
+            documents: 'doc-documents-upload',
+            'doc-documents': 'doc-documents-upload',
+            patients: 'doc-patients-all',
+            'doc-patients': 'doc-patients-all',
+            appointments: 'doc-appointments',
+            settings: 'doc-settings'
+        };
+        tabId = aliases[String(tabId)] || String(tabId);
+    
+        const content = document.getElementById('dior-doc-content');
+        const activePanel = document.getElementById('tab-' + tabId);
+    
+        // Never hide the current tab if a stale or invalid menu target is clicked.
+        if (!content || !activePanel || !content.contains(activePanel)) {
+            console.warn('[Dior Doctor] Unknown dashboard tab:', tabId);
             return false;
         }
-
-        // Close notification dropdown if open
-        var notifDropdown = document.getElementById('dior-doc-notif-dd');
+    
+        if (updateUrl !== false) {
+            try {
+                history.replaceState(null, '', '#tab=' + encodeURIComponent(tabId));
+            } catch (e) { }
+        }
+    
+        const notifDropdown = document.getElementById('dior-doc-notif-dd');
         if (notifDropdown) {
             notifDropdown.classList.remove('open', 'active');
         }
-
-        // Update nav buttons
-        var buttons = document.querySelectorAll('#dior-doc-sidebar .dior-nav-btn');
-        buttons.forEach(function (b) {
-            b.classList.remove('active');
+    
+        // Update sidebar active state and expand the selected submenu.
+        const btns = document.querySelectorAll('#dior-doc-sidebar .dior-nav-btn[data-tab]');
+        btns.forEach(function (button) {
+            button.classList.toggle('active', button.getAttribute('data-tab') === tabId);
         });
-
-        var activeBtn = document.querySelector('#dior-doc-sidebar .dior-nav-btn[data-tab="' + normalizedId + '"]');
+    
+        const activeBtn = document.querySelector('#dior-doc-sidebar .dior-nav-btn[data-tab="' + tabId + '"]');
         if (activeBtn) {
-            activeBtn.classList.add('active');
-
-            // Strict Accordion: Expand parent submenu if inside one, close all others
-            var parentSubmenu = activeBtn.closest('.dior-nav-item.has-submenu');
-            document.querySelectorAll('#dior-doc-sidebar .dior-nav-item.has-submenu').forEach(function(sub) {
-                if (parentSubmenu && sub === parentSubmenu) {
-                    sub.classList.add('active', 'open');
-                    var subIcon = sub.querySelector('.submenu-icon');
-                    if (subIcon) {
-                        subIcon.classList.remove('fa-plus');
-                        subIcon.classList.add('fa-minus');
-                    }
-                } else {
-                    sub.classList.remove('active', 'open');
-                    var subIcon = sub.querySelector('.submenu-icon');
-                    if (subIcon) {
-                        subIcon.classList.remove('fa-minus');
-                        subIcon.classList.add('fa-plus');
-                    }
+            const parentSubmenu = activeBtn.closest('.dior-nav-item.has-submenu');
+            document.querySelectorAll('#dior-doc-sidebar .dior-nav-item.has-submenu').forEach(function (submenu) {
+                const isParent = Boolean(parentSubmenu && submenu === parentSubmenu);
+                submenu.classList.toggle('active', isParent);
+                submenu.classList.toggle('open', isParent);
+                const icon = submenu.querySelector('.submenu-icon');
+                if (icon) {
+                    icon.classList.toggle('fa-minus', isParent);
+                    icon.classList.toggle('fa-plus', !isParent);
                 }
             });
-
-            // Dismiss badge with transition if present
-            var badge = activeBtn.querySelector('.nav-count-badge');
-            if (badge) {
-                badge.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
-                badge.style.opacity = '0';
-                badge.style.transform = 'scale(0.5)';
-                setTimeout(function () {
-                    badge.style.display = 'none';
-                }, 250);
-            }
         }
-
-        // Update tab panels
-        var panels = document.querySelectorAll('#dior-doc-content > .dior-tab-panel');
-        panels.forEach(function (panel) {
-            if (panel === activePanel) {
-                panel.classList.add('active');
+    
+        // Keep the in-panel navigation pills synchronized.
+        document.querySelectorAll('.dior-subtab-pill[data-doc-tab]').forEach(function (pill) {
+            pill.classList.toggle('active', pill.getAttribute('data-doc-tab') === tabId);
+        });
+    
+        // Switch only direct tab panels belonging to this dashboard.
+        content.querySelectorAll(':scope > .dior-tab-panel').forEach(function (panel) {
+            const isActive = panel === activePanel;
+            panel.classList.toggle('active', isActive);
+            if (isActive) {
                 panel.removeAttribute('hidden');
-                panel.style.removeProperty('display');
-                panel.style.display = 'block';
+                panel.style.setProperty('display', 'block', 'important');
+                panel.style.setProperty('visibility', 'visible', 'important');
+                panel.style.setProperty('opacity', '1', 'important');
             } else {
-                panel.classList.remove('active');
                 panel.setAttribute('hidden', 'hidden');
-                panel.style.display = 'none';
+                panel.style.setProperty('display', 'none', 'important');
             }
         });
-
-        // Update URL hash
-        if (updateUrl !== false && window.history && window.history.replaceState) {
-            try {
-                window.history.replaceState(null, '', '#tab=' + encodeURIComponent(normalizedId));
-            } catch (e) { }
-        }
-
-        // Refresh table pagination if table exists in active panel
-        if (window.diorDoctorInitTablePagination) {
-            activePanel.querySelectorAll('.dior-doc-table, .dior-table, .dior-clean-table').forEach(function (table) {
-                if (table._diorRenderPage) {
+    
+        // Re-render existing table pagination when a tab becomes visible.
+        if (typeof window.diorDoctorInitTablePagination === 'function') {
+            activePanel.querySelectorAll('.dior-doc-table, .dior-table:not(.dior-no-global-pagination), .dior-clean-table').forEach(function (table) {
+                if (typeof table._diorRenderPage === 'function') {
                     table._diorRenderPage(1);
                 } else {
                     window.diorDoctorInitTablePagination(table, 5);
                 }
             });
         }
-
-        // Close mobile drawer on selection
-        window.diorDocCloseMobile();
-
+    
+        // Refresh the Income Report chart only when its existing tab is opened.
+        if (tabId === 'doc-accounts-income-report' && typeof window.diorRenderIncomeChart === 'function') {
+            window.setTimeout(window.diorRenderIncomeChart, 50);
+        }
+    
+        // Preserve the existing notification read behavior using the real tab ID.
+        if (tabId === 'doc-notifications-system') {
+            document.querySelectorAll('.doc-unread-badge, .dior-notif-indicator').forEach(function (badge) {
+                badge.style.display = 'none';
+            });
+            if (window.diorDocAjax && window.diorDocNonce) {
+                const data = new FormData();
+                data.append('action', 'dior_doctor_mark_all_notif_read');
+                data.append('nonce', window.diorDocNonce);
+                fetch(window.diorDocAjax, { method: 'POST', body: data }).catch(function () {});
+            }
+        }
+    
+        if (typeof window.diorDocCloseMobile === 'function') {
+            window.diorDocCloseMobile();
+        }
         return true;
     };
 
