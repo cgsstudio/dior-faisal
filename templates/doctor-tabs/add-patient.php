@@ -268,12 +268,12 @@ $max_dob = date('Y-m-d', strtotime('-18 years'));
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
                             <label for="ap-password" class="form-label small fw-semibold text-dark">Temporary Password</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control rounded-start-3 font-monospace" id="ap-password" name="password" placeholder="Temporary password" required>
-                                <button class="btn btn-outline-secondary" type="button" id="ap-gen-pass-btn" title="Generate New Secure Password">
+                            <div class="input-group gap-2">
+                                <input type="text" class="form-control rounded-3 font-monospace" id="ap-password" name="password" placeholder="Temporary password" required>
+                                <button class="btn btn-outline-secondary rounded-3" type="button" id="ap-gen-pass-btn" title="Generate New Secure Password">
                                     <i class="fas fa-arrows-rotate me-1"></i> Generate
                                 </button>
-                                <button class="btn btn-outline-secondary" type="button" id="ap-copy-pass-btn" title="Copy Password">
+                                <button class="btn btn-outline-secondary rounded-3" type="button" id="ap-copy-pass-btn" title="Copy Password">
                                     <i class="fas fa-copy"></i>
                                 </button>
                             </div>
