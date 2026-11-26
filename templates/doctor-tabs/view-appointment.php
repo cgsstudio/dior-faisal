@@ -361,16 +361,7 @@ $status_badges = [
 
             <!-- Bulk Selection & Single-Line Action Toolbar -->
             <div class="va-actions-wrapper d-flex align-items-center justify-content-lg-end gap-2 ms-lg-auto" style="display:flex; flex-wrap:nowrap; min-width:410px;">
-                <!-- Bulk Selection Toolbar (reveals when items checked) -->
-                <div id="va-bulk-bar" class="d-none align-items-center gap-2 flex-shrink-0">
-                    <span class="badge bg-primary text-white rounded-pill px-2 py-1 small fw-semibold text-nowrap"
-                        id="va-selected-count">0 Selected</span>
-                    <button type="button"
-                        class="btn btn-outline-success btn-sm rounded-3 px-2 py-1 shadow-none fw-semibold text-nowrap"
-                        id="va-bulk-complete-btn" title="Mark as Completed">
-                        <i class="fas fa-check me-1"></i>Complete
-                    </button>
-                </div>
+                <!-- Selection is handled by row checkboxes and the registry Delete action. -->
 
                 <!-- Search & Actions in Single Line -->
                 <div class="input-group input-group-sm dior-bs-search-group flex-shrink-1" style="width:220px; min-width:180px; max-width:220px;">
@@ -1182,21 +1173,7 @@ $status_badges = [
             if (dateF) dateF.addEventListener('change', applyFilters);
         }
 
-        function updateBulkBar() {
-            var checked = document.querySelectorAll('#va-appointments-tbody .va-row-check:checked');
-            var bulkBar = document.getElementById('va-bulk-bar');
-            var countEl = document.getElementById('va-selected-count');
-            if (!bulkBar) return;
-
-            if (checked.length > 0) {
-                bulkBar.classList.remove('d-none');
-                bulkBar.classList.add('d-flex');
-                if (countEl) countEl.textContent = checked.length + ' Selected';
-            } else {
-                bulkBar.classList.remove('d-flex');
-                bulkBar.classList.add('d-none');
-            }
-        }
+        // No selection toolbar: selected rows are deleted using the registry trash action.
 
         function setupSelectAll() {
             var selectAll = document.getElementById('va-select-all');
