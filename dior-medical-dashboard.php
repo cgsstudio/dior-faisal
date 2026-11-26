@@ -293,7 +293,12 @@ class Dior_Patient_Portal_Data
         $email = $pick('email', 'Email Address', 'Email', 'user_email');
         $phone = $pick('phone', 'phone_number', 'Mobile Phone Number', 'Cell Phone', 'Phone');
 
-        $street = $pick('Street Address', 'address', 'address_line1', 'Mailing Address');
+        // New patient profile measurements from the updated HIPAAtizer form.
+        $height = $pick('height', 'Height');
+        $weight = $pick('weight', 'Weight');
+        $blood_group = $pick('blood_group', 'Blood Group');
+
+        $street = $pick('Street Address', 'street_address', 'address', 'address_line1', 'Mailing Address');
         $city = $pick('City', 'city');
         $state = $pick('State', 'state', 'State (Labels)');
         $zip = $pick('ZIP / PIN Code', 'zip', 'zip_code', 'Zip Code', 'postal_code');
@@ -334,6 +339,9 @@ class Dior_Patient_Portal_Data
             'gender' => $gender,
             'email' => $email,
             'phone' => $phone,
+            'height' => $height,
+            'weight' => $weight,
+            'blood_group' => $blood_group,
             'street' => $street,
             'address' => $street,
             'city' => $city,
@@ -397,6 +405,12 @@ class Dior_Patient_Portal_Data
         }
 
         $gender = get_user_meta($user_id, 'gender', true) ?: '';
+
+        // Prefer saved profile meta; use HIPAAtizer intake as fallback below.
+        $height = get_user_meta($user_id, 'height', true) ?: '';
+        $weight = get_user_meta($user_id, 'weight', true) ?: '';
+        $blood_group = get_user_meta($user_id, 'blood_group', true) ?: '';
+
         $address = get_user_meta($user_id, 'address', true);
         if (empty($address)) {
             $address = get_user_meta($user_id, 'billing_address_1', true) ?: '';
@@ -415,6 +429,15 @@ class Dior_Patient_Portal_Data
         // Extract normalized HIPAAtizer intake data as fallback
         $hipaa_intake = self::get_normalized_hipaa_intake($user_id);
         if (!empty($hipaa_intake)) {
+            if (empty($height) && !empty($hipaa_intake['height'])) {
+                $height = $hipaa_intake['height'];
+            }
+            if (empty($weight) && !empty($hipaa_intake['weight'])) {
+                $weight = $hipaa_intake['weight'];
+            }
+            if (empty($blood_group) && !empty($hipaa_intake['blood_group'])) {
+                $blood_group = $hipaa_intake['blood_group'];
+            }
             if (empty($first_name) && !empty($hipaa_intake['first_name'])) {
                 $first_name = $hipaa_intake['first_name'];
             }
@@ -479,9 +502,9 @@ class Dior_Patient_Portal_Data
             'phone' => $phone ?: '',
             'dob' => $dob ?: '',
             'gender' => $gender ?: '',
-            'blood_group' => get_user_meta($user_id, 'blood_group', true) ?: '',
-            'height' => get_user_meta($user_id, 'height', true) ?: '',
-            'weight' => get_user_meta($user_id, 'weight', true) ?: '',
+            'blood_group' => $blood_group,
+            'height' => $height,
+            'weight' => $weight,
             'city' => get_user_meta($user_id, 'city', true) ?: (get_user_meta($user_id, 'billing_city', true) ?: ''),
             'state' => get_user_meta($user_id, 'state', true) ?: (get_user_meta($user_id, 'billing_state', true) ?: ''),
             'zip' => get_user_meta($user_id, 'zip', true) ?: (get_user_meta($user_id, 'zip_code', true) ?: (get_user_meta($user_id, 'billing_postcode', true) ?: '')),
