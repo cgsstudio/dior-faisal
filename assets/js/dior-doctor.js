@@ -68,7 +68,7 @@ function initDoctorDashboard() {
     }
 
     // Initialize Pagination for all Doctor Dashboard Tables (5 rows max per page)
-    document.querySelectorAll('.dior-doc-table, .dior-table:not(.dior-no-global-pagination), .dior-clean-table').forEach(table => {
+    document.querySelectorAll('.dior-doc-table:not(.dior-no-global-pagination), .dior-table:not(.dior-no-global-pagination), .dior-clean-table:not(.dior-no-global-pagination)').forEach(table => {
         diorDoctorInitTablePagination(table, 5);
     });
 
