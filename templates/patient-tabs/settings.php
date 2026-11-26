@@ -458,9 +458,17 @@
                                     </div>
                                     <div class="dior-form-group">
                                         <label class="form-label" for="patient-settings-height">Height</label>
+                                        <?php
+                                        // Display legacy centimeter values in feet and inches.
+                                        $patient_height = trim((string) ($settings_patient_profile['height'] ?? ''));
+                                        if ($patient_height !== '' && is_numeric($patient_height)) {
+                                            $total_inches = (int) round(((float) $patient_height) / 2.54);
+                                            $patient_height = (int) floor($total_inches / 12) . "'" . ($total_inches % 12) . '"';
+                                        }
+                                        ?>
                                         <input id="patient-settings-height" class="form-control" type="text"
-                                            name="height" placeholder="e.g. 175 cm or 5'9&quot;"
-                                            value="<?php echo esc_attr($settings_patient_profile['height'] ?? ''); ?>">
+                                            name="height" placeholder="e.g. 5'9&quot; (feet and inches)"
+                                            value="<?php echo esc_attr($patient_height); ?>">
                                     </div>
                                     <div class="dior-form-group">
                                         <label class="form-label" for="patient-settings-weight">Weight</label>
@@ -510,20 +518,13 @@
 
                                 <h6 style="margin: 24px 0 16px; color: #2b70b8; font-size: 14px; font-weight: 700;">
                                     Emergency Contact</h6>
-                                <div class="dior-form-row-3">
+                                <div class="dior-form-row-2">
                                     <div class="dior-form-group">
                                         <label class="form-label" for="patient-settings-emergency-name">Contact
                                             name</label>
                                         <input id="patient-settings-emergency-name" class="form-control" type="text"
                                             name="emergency_name"
                                             value="<?php echo esc_attr($settings_patient_profile['emergency_name'] ?? ''); ?>">
-                                    </div>
-                                    <div class="dior-form-group">
-                                        <label class="form-label"
-                                            for="patient-settings-emergency-relation">Relationship</label>
-                                        <input id="patient-settings-emergency-relation" class="form-control" type="text"
-                                            name="emergency_relation"
-                                            value="<?php echo esc_attr($settings_patient_profile['emergency_relation'] ?? ''); ?>">
                                     </div>
                                     <div class="dior-form-group">
                                         <label class="form-label" for="patient-settings-emergency-phone">Phone
