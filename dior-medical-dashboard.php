@@ -5536,7 +5536,13 @@ class Dior_Medical_Auth
 
         $cur_height = get_user_meta($user_id, 'height', true) ?: '';
         $cur_weight = get_user_meta($user_id, 'weight', true) ?: '';
-        $h_display = $cur_height === '' ? '—' : ((is_numeric($cur_height)) ? $cur_height . ' cm' : $cur_height);
+        // Convert legacy numeric centimeter values to feet and inches for display.
+        if ($cur_height !== '' && is_numeric($cur_height)) {
+            $total_inches = (int) round(((float) $cur_height) / 2.54);
+            $h_display = (int) floor($total_inches / 12) . "'" . ($total_inches % 12) . '"';
+        } else {
+            $h_display = $cur_height === '' ? '—' : $cur_height;
+        }
         $w_display = $cur_weight === '' ? '—' : ((is_numeric($cur_weight)) ? $cur_weight . ' kg' : $cur_weight);
 
         wp_send_json_success([
