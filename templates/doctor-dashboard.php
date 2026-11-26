@@ -27,6 +27,26 @@
         flex: 1 1 0 !important;
     }
 }
+
+/* Consistent horizontal spacing for every Doctor Dashboard tab/page. */
+#dior-doctor-app .dior-tab-content {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+}
+@media (max-width: 1024px) {
+    #dior-doctor-app .dior-tab-content {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+}
+@media (max-width: 600px) {
+    #dior-doctor-app .dior-tab-content {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+}
 </style>
 
 
