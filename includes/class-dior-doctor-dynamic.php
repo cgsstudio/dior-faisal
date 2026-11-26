@@ -229,15 +229,28 @@ class Dior_Doctor_Dynamic {
             wp_send_json_error(['message' => 'Report not found or access denied.'], 403);
         }
 
-        $deleted = $wpdb->update(self::table('appointments'), [
-            'is_deleted' => 1,
-            'updated_at' => current_time('mysql'),
-        ], ['appt_uid' => $uid]);
+        $table = self::table('appointments');
+        // Use a conditional SQL update and verify the persisted database state.
+        $updated = $wpdb->query($wpdb->prepare(
+            "UPDATE {$table} SET is_deleted = 1, updated_at = %s WHERE appt_uid = %s AND is_deleted = 0",
+            current_time('mysql'),
+            $uid
+        ));
 
-        if ($deleted === false) {
-            wp_send_json_error(['message' => 'The clinical report could not be deleted.'], 500);
+        if ($updated === false) {
+            wp_send_json_error(['message' => 'Database error: the appointment could not be deleted.'], 500);
         }
-        wp_send_json_success(['message' => 'Clinical report deleted successfully.']);
+
+        $is_deleted = $wpdb->get_var($wpdb->prepare(
+            "SELECT is_deleted FROM {$table} WHERE appt_uid = %s LIMIT 1",
+            $uid
+        ));
+
+        if ((string) $is_deleted !== '1') {
+            wp_send_json_error(['message' => 'Delete was not saved in the database. Please try again.'], 500);
+        }
+
+        wp_send_json_success(['message' => 'Appointment permanently hidden from active lists.']);
     }
 
     /**
@@ -257,11 +270,19 @@ class Dior_Doctor_Dynamic {
         foreach ($uids as $uid) {
             $appointment = Dior_Appointment_Service::get_appointment($uid);
             if (!$appointment || !self::doctor_can_manage_appointment($appointment)) continue;
-            $result = $wpdb->update(self::table('appointments'), [
-                'is_deleted' => 1,
-                'updated_at' => current_time('mysql'),
-            ], ['appt_uid' => $uid]);
-            if ($result !== false) $deleted++;
+            $table = self::table('appointments');
+            $result = $wpdb->query($wpdb->prepare(
+                "UPDATE {$table} SET is_deleted = 1, updated_at = %s WHERE appt_uid = %s AND is_deleted = 0",
+                current_time('mysql'),
+                $uid
+            ));
+            if ($result !== false) {
+                $persisted = $wpdb->get_var($wpdb->prepare(
+                    "SELECT is_deleted FROM {$table} WHERE appt_uid = %s LIMIT 1",
+                    $uid
+                ));
+                if ((string) $persisted === '1') $deleted++;
+            }
         }
 
         if (!$deleted) {
