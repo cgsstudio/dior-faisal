@@ -43,7 +43,13 @@ class Dior_Doctor_Dynamic {
     private static function ensure_patient_row($pid) {
         global $wpdb; $t=self::table('patients'); $p=self::patient($pid); if(!$p) return; $exists=$wpdb->get_var($wpdb->prepare("SELECT id FROM $t WHERE user_id=%d",(int)$pid)); if(!$exists){$wpdb->insert($t,['user_id'=>(int)$pid,'patient_uid'=>$p['patient_uid'],'first_name'=>$p['first_name']??'','last_name'=>$p['last_name']??'','email'=>$p['email']??'','phone'=>$p['phone']??'','status'=>$p['status']??'active','avatar_url'=>$p['avatar_url']??'','created_at'=>current_time('mysql'),'updated_at'=>current_time('mysql')]);} }
     private static function doctor_can_manage_appointment($a) {
-        if(current_user_can('manage_options')) return true; if((int)($a['doctor_id']??0)===self::doctor_id()) return true; $docs=get_users(['role'=>'doctor','number'=>2,'fields'=>'ID']); return count($docs)===1 && (int)$docs[0]===self::doctor_id();
+        $doctor_id = self::doctor_id();
+        if (!$doctor_id || !user_can($doctor_id, 'doctor') || user_can($doctor_id, 'administrator') || user_can($doctor_id, 'manage_options')) return false;
+        $scope = self::doctor_scope_ids();
+        $owner = (int) ($a['doctor_id'] ?? 0);
+        if (in_array($owner, $scope, true)) return true;
+        return $owner > 0 && class_exists('Dior_Doctor_Resolver')
+            && (int) Dior_Doctor_Resolver::resolve_doctor_user_id($owner) === $doctor_id;
     }
     private static function table($name) { global $wpdb; return $wpdb->prefix . 'dior_' . $name; }
 
@@ -139,9 +145,18 @@ class Dior_Doctor_Dynamic {
     public static function patients($doctor_id=0) {
         global $wpdb;
         $doctor_id = $doctor_id ?: self::doctor_id();
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' ORDER BY created_at DESC"), ARRAY_A);
+        $appointments = Dior_Appointment_Service::get_doctor_appointments($doctor_id);
+        $assigned_ids = array_values(array_unique(array_filter(array_map(static function ($appointment) {
+            return absint($appointment['patient_id'] ?? 0);
+        }, (array) $appointments))));
+        if (!$assigned_ids) return [];
+        $placeholders = implode(',', array_fill(0, count($assigned_ids), '%d'));
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' AND user_id IN ($placeholders) ORDER BY created_at DESC",
+            ...$assigned_ids
+        ), ARRAY_A);
         if (!$rows) {
-            $users = get_users(['role__in'=>['patient','subscriber','customer'],'number'=>500]);
+            $users = get_users(['include'=>$assigned_ids,'role__in'=>['patient','subscriber','customer'],'number'=>count($assigned_ids)]);
             foreach ($users as $u) {
                 $pid = get_user_meta($u->ID,'patient_id',true) ?: 'DM-' . (10000+$u->ID);
                 $rows[] = ['id'=>0,'user_id'=>$u->ID,'patient_uid'=>$pid,'first_name'=>$u->first_name,'last_name'=>$u->last_name,'email'=>$u->user_email,'phone'=>get_user_meta($u->ID,'phone',true),'status'=>'active','avatar_url'=>get_user_meta($u->ID,'dior_profile_image',true)];
@@ -159,13 +174,14 @@ class Dior_Doctor_Dynamic {
     }
     public static function patient_name($pid) { $p=self::patient($pid); return $p ? trim($p['first_name'].' '.$p['last_name']) : 'Patient'; }
     public static function patient_belongs_to_doctor($pid,$did) {
-        if (current_user_can('manage_options')) return true;
-        $user = get_userdata($did);
-        if ($user && array_intersect(['doctor', 'dior_doctor', 'administrator'], (array)$user->roles)) return true;
-        if (user_can($did, 'doctor') || user_can($did, 'administrator')) return true;
-        if (class_exists('Dior_Auth_Service') && Dior_Auth_Service::can_access_patient($pid, $did)) return true;
-        foreach (Dior_Appointment_Service::get_doctor_appointments($did) as $a) if ((int)($a['patient_id']??0)===(int)$pid) return true;
-        return false;
+        $pid = absint($pid);
+        $did = absint($did);
+        if (!$pid || !$did || !user_can($did, 'doctor') || user_can($did, 'administrator') || user_can($did, 'manage_options')) {
+            return false;
+        }
+        return class_exists('Dior_Auth_Service')
+            ? Dior_Auth_Service::can_access_patient($pid, $did)
+            : false;
     }
 
     public static function ajax_appointment_delete() {
