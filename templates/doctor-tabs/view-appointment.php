@@ -137,6 +137,10 @@ if (empty($appointments)) {
             if (!is_array($list))
                 continue;
             foreach ($list as $a) {
+                $legacy_doctor_id = absint($a['doctor_id'] ?? $a['doctor_user_id'] ?? 0);
+                if (!in_array($legacy_doctor_id, array_map('absint', (array) $va_allowed_ids), true)) {
+                    continue;
+                }
                 // Legacy usermeta often predates meeting links. Pull the canonical
                 // join_url back in so video rows keep their "Join Meeting" action.
                 $va_uid = '';
