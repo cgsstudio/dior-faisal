@@ -871,14 +871,18 @@ class Dior_Doctor_Dashboard
         $table_patients = $wpdb->prefix . 'dior_patients';
 
         if (empty($appt_uid) || $appt_uid === 'new' || $appt_uid === 'undefined') {
-            if (!$patient_id) {
-                wp_send_json_error(["message" => "Please select a valid patient to schedule or update an appointment."]);
+            if (!$patient_id || !Dior_Auth_Service::is_doctor(get_current_user_id())) {
+                wp_send_json_error(["message" => "Please select a valid patient to schedule or update an appointment."], 403);
+            }
+            $patient_user = get_userdata($patient_id);
+            if (!$patient_user || !array_intersect(['patient', 'subscriber', 'customer'], (array) $patient_user->roles)) {
+                wp_send_json_error(["message" => "Selected account is not a valid patient."], 403);
             }
             $appt_uid = 'APT-' . strtoupper(wp_generate_password(8, false));
             $wpdb->insert($table_appts, [
                 'appt_uid'       => $appt_uid,
                 'patient_id'     => $patient_id,
-                'doctor_id'      => (int)($_POST['doctor_id'] ?? get_current_user_id()),
+                'doctor_id'      => get_current_user_id(),
                 'appt_date'      => sanitize_text_field($_POST['appt_date'] ?? ($_POST['date'] ?? current_time('Y-m-d'))),
                 'appt_time'      => sanitize_text_field($_POST['appt_time'] ?? ($_POST['time'] ?? '10:00 AM')),
                 'status'         => sanitize_text_field($_POST['status'] ?? 'Confirmed'),
@@ -911,6 +915,10 @@ class Dior_Doctor_Dashboard
                 wp_send_json_error(["message" => "Appointment not found."]);
             }
 
+            $existing_scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
+            if (!in_array((int) $appt['doctor_id'], array_map('intval', (array) $existing_scope), true)) {
+                wp_send_json_error(["message" => "You are not authorized to edit this appointment."], 403);
+            }
             // Always use the canonical UID for subsequent updates and notifications.
             $appt_uid = (string) $appt['appt_uid'];
         }
@@ -932,7 +940,7 @@ class Dior_Doctor_Dashboard
         $new_join_url    = esc_url_raw($_POST['join_url'] ?? $appt['join_url']);
         $new_payment     = sanitize_text_field($_POST['payment_status'] ?? $appt['payment_status']);
         $new_notes       = sanitize_textarea_field($_POST['notes'] ?? $appt['notes']);
-        $new_doctor_id   = (int)($_POST['doctor_id'] ?? $appt['doctor_id']);
+        $new_doctor_id   = get_current_user_id();
 
         $allowed_statuses = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled', 'No Show'];
         if (!in_array($new_status, $allowed_statuses, true)) {
@@ -1117,6 +1125,14 @@ class Dior_Doctor_Dashboard
         if (!$patient_id) {
             wp_send_json_error(["message" => "Patient ID or Appointment UID is required."]);
         }
+        $doctor_scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
+        $doctor_scope = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope))));
+        if (!$doctor_scope || !Dior_Auth_Service::can_access_patient($patient_id, get_current_user_id())) {
+            wp_send_json_error(["message" => "You are not authorized to access this patient's records."], 403);
+        }
+        if ($target_appt && !in_array((int) $target_appt['doctor_id'], $doctor_scope, true)) {
+            wp_send_json_error(["message" => "This appointment belongs to another doctor."], 403);
+        }
 
         // 1. Fetch patient profile
         $patient = $wpdb->get_row($wpdb->prepare(
@@ -1132,9 +1148,11 @@ class Dior_Doctor_Dashboard
         }
 
         // 2. Fetch all appointments for this patient
+        $doctor_placeholders = implode(',', array_fill(0, count($doctor_scope), '%d'));
+        $appointment_args = array_merge([$patient_id], $doctor_scope);
         $appointments = $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM $table_appts WHERE patient_id = %d AND is_deleted = 0 ORDER BY appt_date DESC, appt_time DESC",
-            $patient_id
+            "SELECT * FROM $table_appts WHERE patient_id = %d AND doctor_id IN ($doctor_placeholders) AND is_deleted = 0 ORDER BY appt_date DESC, appt_time DESC",
+            ...$appointment_args
         ), ARRAY_A);
 
         $patient_data = [
@@ -1178,8 +1196,8 @@ class Dior_Doctor_Dashboard
         $meds_json = stripslashes($_POST["medications"] ?? "[]");
         $meds = json_decode($meds_json, true);
         
-        if (!$pid || empty($meds)) {
-            wp_send_json_error(["message" => "Missing patient or medications"]);
+        if (!$pid || empty($meds) || !Dior_Auth_Service::can_access_patient($pid, get_current_user_id())) {
+            wp_send_json_error(["message" => "You are not authorized to prescribe for this patient."], 403);
         }
         
         $rxs = get_user_meta($pid, "dior_prescriptions", true);
@@ -2175,8 +2193,9 @@ class Dior_Doctor_Dashboard
         global $wpdb;
         $table_tele = $wpdb->prefix . 'dior_telemedicine';
         $rec = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_tele WHERE tele_uid = %s LIMIT 1", $tele_uid));
-        if ($rec) {
-            $wpdb->delete($table_tele, ['tele_uid' => $tele_uid], ['%s']);
+        $tele_scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
+        if ($rec && in_array((int) $rec->doctor_id, array_map('intval', (array) $tele_scope), true)) {
+            $wpdb->delete($table_tele, ['tele_uid' => $tele_uid, 'doctor_id' => (int) $rec->doctor_id], ['%s', '%d']);
             if (!empty($rec->appointment_uid)) {
                 $wpdb->update(
                     $wpdb->prefix . 'dior_appointments',
