@@ -278,11 +278,11 @@
                             <td style="text-align:center;"><input type="checkbox" class="va-checkbox form-check-input" value="<?php echo esc_attr($br['invoice_uid'] ?? ''); ?>"></td>
                             <td>
                                 <strong><?php echo esc_html($br['invoice_uid'] ?? ('INV-' . ($br['id'] ?? ''))); ?></strong>
-                                <?php if (!empty($br['description'])): ?><small class="d-block text-muted"><?php echo esc_html($br['description']); ?></small><?php endif; ?>
+                                
                             </td>
                             <td>
                                 <div class="va-user-profile">
-                                    <span class="va-user-avatar va-user-initials" aria-hidden="true"><?php echo esc_html($init); ?></span>
+                                    
                                     <span class="va-user-name"><?php echo esc_html($p_name); ?></span>
                                 </div>
                             </td>
@@ -300,7 +300,7 @@
                             <td>
                                 <div class="va-row-actions" style="justify-content:center;">
                                     <button type="button" class="va-action-btn-sm va-btn-edit btn" title="View payment details"
-                                        onclick="alert(<?php echo wp_json_encode('Payment: ' . $method . ($transaction ? ' | Transaction: ' . $transaction : '') . ' | Status: ' . $st_raw); ?>);">
+                                        onclick="alert(<?php echo wp_json_encode('Payment: ' . $method . ' | Status: ' . $st_raw); ?>);">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
