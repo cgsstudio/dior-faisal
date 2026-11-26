@@ -5,7 +5,9 @@ if (!defined('ABSPATH')) {
 global $wpdb;
 $inv_table = $wpdb->prefix . 'dior_invoices';
 $ir_rows = [];
-$ir_year = (int) current_time('Y');
+$current_report_year = (int) current_time('Y');
+$ir_year = isset($_GET['income_year']) ? absint($_GET['income_year']) : $current_report_year;
+if ($ir_year < $current_report_year - 4 || $ir_year > $current_report_year) $ir_year = $current_report_year;
 $report_doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
 $report_doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $report_doctor_ids))));
 if ($report_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
@@ -78,15 +80,15 @@ for ($i = 4; $i >= 0; $i--) {
 }
 foreach ($ir_rows as $row) {
     $amt = (float) ($row['total_amount'] ?? $row['amount'] ?? 0);
-    $ir_total_revenue += $amt;
     $dept = trim((string) ($row['department'] ?? $row['service_type'] ?? 'General'));
     if ($dept === '') $dept = 'General';
-    $ir_dept_totals[$dept] = ($ir_dept_totals[$dept] ?? 0.0) + $amt;
-    if (!isset($ir_dept_monthly[$dept])) $ir_dept_monthly[$dept] = array_fill(0, 12, 0.0);
     $ts = !empty($row['paid_at']) ? strtotime($row['paid_at']) : (!empty($row['created_at']) ? strtotime($row['created_at']) : false);
     if ($ts) {
         $row_year = (int) wp_date('Y', $ts);
         if ($row_year === $ir_year) {
+            $ir_total_revenue += $amt;
+            $ir_dept_totals[$dept] = ($ir_dept_totals[$dept] ?? 0.0) + $amt;
+            if (!isset($ir_dept_monthly[$dept])) $ir_dept_monthly[$dept] = array_fill(0, 12, 0.0);
             $month_index = (int) wp_date('n', $ts) - 1;
             $ir_monthly[$month_index] += $amt;
             $ir_dept_monthly[$dept][$month_index] += $amt;
@@ -252,11 +254,10 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
             </div>
             <div class="va-actions-wrapper">
                 <span class="text-secondary small fw-semibold d-none d-sm-inline">Fiscal Year:</span>
-                <select id="dior-income-table-year" class="form-select form-select-sm rounded-3 py-1.5 fw-semibold" style="width: auto;">
-                    <option value="2024" selected>2024</option>
-                    <option value="2023">2023</option>
-                    <option value="2022">2022</option>
-                    <option value="2021">2021</option>
+                <select id="dior-income-table-year" class="form-select form-select-sm rounded-3 py-1.5 fw-semibold" style="width: auto;" aria-label="Income report year">
+                    <?php for ($year_option = $current_report_year; $year_option >= $current_report_year - 4; $year_option--): ?>
+                    <option value="<?php echo esc_attr($year_option); ?>" <?php selected($ir_year, $year_option); ?>><?php echo esc_html($year_option); ?></option>
+                    <?php endfor; ?>
                 </select>
                 <div class="va-actions-group">
                     <button type="button" class="va-icon-btn va-btn-info btn" title="Refresh" onclick="window.location.reload()"><i class="fas fa-rotate-right"></i></button>
@@ -677,6 +678,12 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
     }
 
     window.diorRenderIncomeChart = renderIncomeChart;
+
+    document.getElementById('dior-income-table-year')?.addEventListener('change', function(){
+        var url = new URL(window.location.href);
+        url.searchParams.set('income_year', this.value);
+        window.location.href = url.toString();
+    });
 
     document.addEventListener('change', function(e) {
         if (e.target && e.target.id === 'dior-income-chart-filter') {
