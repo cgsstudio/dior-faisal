@@ -48,13 +48,13 @@
                 <div class="input-group input-group-sm dior-bs-search-group" style="width: 240px;">
 
                     <input type="text" class="va-search-input form-control border-start-0 ps-0"
-                        placeholder="Search records...">
+                        id="dior-income-search" placeholder="Search records...">
                 </div>
 
-                <button class="va-action-btn va-btn-primary btn" aria-label="Add new record">
+                <button class="va-action-btn va-btn-primary btn" aria-label="Add new bill" onclick="diorDocSwitchTab(&quot;doc-accounts-add-bill&quot;)">
                     <i class="fas fa-plus"></i>
                 </button>
-                <button class="va-action-btn va-btn-success btn" aria-label="Export to Excel">
+                <button class="va-action-btn va-btn-success btn" id="dior-income-export" aria-label="Export income CSV">
                     <i class="fas fa-file-arrow-down"></i>
                 </button>
                 <button class="va-action-btn va-btn-info btn" aria-label="Refresh data">
@@ -195,6 +195,7 @@
 
     </div>
 </section>
+<script>(function(){const panel=document.getElementById("tab-doc-accounts-income");if(!panel||panel.dataset.tableToolsBound)return;panel.dataset.tableToolsBound='1';const table=panel.querySelector('.va-table');document.getElementById("dior-income-search")?.addEventListener('input',e=>{const q=e.target.value.toLowerCase();table?.querySelectorAll('tbody tr').forEach(row=>row.hidden=!row.textContent.toLowerCase().includes(q));});document.getElementById("dior-income-export")?.addEventListener('click',()=>{if(!table)return;const csv=[...table.querySelectorAll('tr')].filter(row=>!row.hidden).map(row=>[...row.children].map(cell=>'\"'+cell.innerText.replace(/\"/g,'\"\"').trim()+'\"').join(',')).join('\\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download="doctor-income.csv";a.click();URL.revokeObjectURL(a.href);});})();</script>
 <style id="dior-accounts-mobile-income">
 /* Accounts mobile responsive layout, aligned with Patient Records */
 
