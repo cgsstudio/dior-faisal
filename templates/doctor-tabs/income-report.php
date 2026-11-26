@@ -140,9 +140,6 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
         <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-accounts-income" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-income');">
             <i class="fas fa-arrow-trend-up"></i> Income
         </button>
-        <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-accounts-expenses" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-expenses');">
-            <i class="fas fa-arrow-trend-down"></i> Expenses
-        </button>
         <button type="button" class="dior-subtab-pill btn active" data-doc-tab="doc-accounts-income-report" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-income-report');">
             <i class="fas fa-chart-pie"></i> Income Report
         </button>
