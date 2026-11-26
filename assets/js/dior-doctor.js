@@ -44,12 +44,8 @@ function initDoctorDashboard() {
         diorDocSwitchTab(firstTabBtn.getAttribute('data-tab'), false);
     }
 
-    // Add click listeners to ALL nav buttons (must be inside DOMContentLoaded)
-    document.querySelectorAll('#dior-doc-sidebar .dior-nav-btn').forEach(btn => {
-        btn.addEventListener('click', function () {
-            diorDocSwitchTab(this.getAttribute('data-tab'));
-        });
-    });
+    // Sidebar tab clicks are owned by dior-doctor-navigation.js.
+    // Avoid registering a second handler here.
 
     // Close dropdowns when clicking outside
     document.addEventListener('click', function (e) {
