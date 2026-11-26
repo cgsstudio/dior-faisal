@@ -814,9 +814,48 @@
             var value = readCellValue(cell);
             var field = document.createElement('div');
             field.className = 'dior-static-edit-field mb-3';
-            field.innerHTML =
-                '<label class="form-label" style="font-size:13px;font-weight:600;color:#334155;margin-bottom:6px;">' + label + '</label>' +
-                '<input type="text" class="form-control" data-edit-index="' + index + '" value="' + value.replace(/"/g, '&quot;') + '">';
+
+            var fieldLabel = document.createElement('label');
+            fieldLabel.className = 'form-label';
+            fieldLabel.style.cssText = 'font-size:13px;font-weight:600;color:#334155;margin-bottom:6px;';
+            fieldLabel.textContent = label;
+            field.appendChild(fieldLabel);
+
+            var isPatientStatusField = table.id === 'ap-patients-table' && label.toLowerCase() === 'status';
+            var control;
+
+            if (isPatientStatusField) {
+                // Patient status must be selected from the supported account states.
+                control = document.createElement('select');
+                control.className = 'form-select';
+                var currentStatus = value.trim();
+                var statusOptions = ['Active', 'Inactive', 'Blocked'];
+
+                // Preserve an existing unexpected value rather than silently replacing it.
+                if (currentStatus && !statusOptions.some(function (status) {
+                    return status.toLowerCase() === currentStatus.toLowerCase();
+                })) {
+                    statusOptions.unshift(currentStatus);
+                }
+
+                statusOptions.forEach(function (status) {
+                    var option = document.createElement('option');
+                    option.value = status;
+                    option.textContent = status;
+                    control.appendChild(option);
+                });
+                control.value = statusOptions.find(function (status) {
+                    return status.toLowerCase() === currentStatus.toLowerCase();
+                }) || 'Active';
+            } else {
+                control = document.createElement('input');
+                control.type = 'text';
+                control.className = 'form-control';
+                control.value = value;
+            }
+
+            control.setAttribute('data-edit-index', index);
+            field.appendChild(control);
             fieldsWrap.appendChild(field);
         });
 
