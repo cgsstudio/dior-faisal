@@ -729,39 +729,87 @@
             try {
                 await ensureInvoicePdfLibrary();
 
-                // Build the PDF copy in the visible capture area. html2canvas cannot
-                // reliably capture off-screen nodes, which caused blank PDF downloads.
-                exportStage = document.createElement('section');
-                exportStage.id = 'tab-doc-accounts-invoice';
+                // Render the PDF in an isolated iframe so dashboard, DataTables,
+                // responsive and theme CSS cannot distort the invoice layout.
+                exportStage = document.createElement('iframe');
+                exportStage.setAttribute('title', 'Invoice PDF render');
                 exportStage.setAttribute('aria-hidden', 'true');
                 exportStage.setAttribute('data-dior-pdf-stage', '1');
-                exportStage.style.cssText = 'position:fixed;left:0;top:0;width:794px;min-height:1123px;padding:0;margin:0;background:#fff;z-index:2147483646;opacity:1;pointer-events:none;overflow:visible;box-sizing:border-box;';
-                var exportContent = content.cloneNode(true);
-                exportContent.style.cssText = 'display:block;width:778px;max-width:778px;min-width:778px;margin:0;padding:30px;background:#fff;color:#172b4d;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;overflow:visible;';
-                exportStage.appendChild(exportContent);
+                exportStage.style.cssText = 'position:fixed;left:0;top:0;width:794px;height:1123px;border:0;z-index:2147483646;opacity:0.01;pointer-events:none;background:#fff;';
                 document.body.appendChild(exportStage);
 
-                // Match the on-screen invoice layout and preserve all dynamic record values.
-                var top = exportContent.querySelector('.dior-standard-invoice__top');
-                if (top) Object.assign(top.style, {display:'flex',flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',gap:'24px'});
-                var parties = exportContent.querySelector('.dior-standard-invoice__parties');
-                if (parties) Object.assign(parties.style, {display:'grid',gridTemplateColumns:'1.1fr .9fr',gap:'28px'});
-                var bottom = exportContent.querySelector('.dior-standard-invoice__bottom');
-                if (bottom) Object.assign(bottom.style, {display:'grid',gridTemplateColumns:'1.15fr .85fr',gap:'28px'});
-                var details = exportContent.querySelector('.dior-standard-invoice__details');
-                if (details) Object.assign(details.style, {borderLeft:'1px solid #e4ebf2',paddingLeft:'20px'});
-                var logo = exportContent.querySelector('.dior-standard-invoice__brand img');
-                if (logo) Object.assign(logo.style, {display:'block',width:'150px',height:'105px',maxWidth:'150px',objectFit:'contain',objectPosition:'left center',padding:'0',background:'transparent',border:'0',borderRadius:'0',boxShadow:'none'});
-                var table = exportContent.querySelector('.dior-standard-invoice__table');
-                if (table) Object.assign(table.style, {display:'table',width:'100%',minWidth:'0',tableLayout:'fixed',borderCollapse:'collapse'});
-                exportContent.querySelectorAll('.dior-standard-invoice__table thead').forEach(function (node) { node.style.display='table-header-group'; });
-                exportContent.querySelectorAll('.dior-standard-invoice__table tbody').forEach(function (node) { node.style.display='table-row-group'; });
-                exportContent.querySelectorAll('.dior-standard-invoice__table tr').forEach(function (node) { node.style.display='table-row'; node.style.breakInside='avoid'; });
-                exportContent.querySelectorAll('.dior-standard-invoice__table th,.dior-standard-invoice__table td').forEach(function (node) {
-                    node.style.display='table-cell'; node.style.padding='10px 6px'; node.style.fontSize='9px'; node.style.whiteSpace='normal'; node.style.overflowWrap='anywhere';
+                var exportDocument = exportStage.contentDocument;
+                exportDocument.open();
+                exportDocument.write('<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=794, initial-scale=1"></head><body style="margin:0;padding:0;background:#fff;width:794px;"></body></html>');
+                exportDocument.close();
+
+                var templateStyles = document.getElementById('dior-standard-invoice-template');
+                var isolatedStyles = exportDocument.createElement('style');
+                isolatedStyles.textContent = (templateStyles ? templateStyles.textContent : '') + [
+                    'html,body{width:794px!important;min-width:794px!important;margin:0!important;padding:0!important;background:#fff!important;overflow:visible!important}',
+                    '.dior-standard-invoice{display:block!important;width:794px!important;min-width:794px!important;max-width:794px!important;margin:0!important;padding:34px 38px 28px!important;border:0!important;border-radius:0!important;box-sizing:border-box!important;background:#fff!important}',
+                    '.dior-standard-invoice__top{display:flex!important;flex-direction:row!important;justify-content:space-between!important;align-items:flex-start!important;gap:24px!important}',
+                    '.dior-standard-invoice__brand{display:flex!important;flex-direction:row!important;align-items:center!important;gap:18px!important}',
+                    '.dior-standard-invoice__brand img{display:block!important;width:150px!important;height:105px!important;max-width:150px!important;object-fit:contain!important}',
+                    '.dior-standard-invoice__heading{text-align:right!important;min-width:190px!important}',
+                    '.dior-standard-invoice__parties{display:grid!important;grid-template-columns:1.1fr .9fr!important;gap:28px!important}',
+                    '.dior-standard-invoice__details{border-left:1px solid #e4ebf2!important;padding-left:20px!important}',
+                    '.dior-standard-invoice__items{display:block!important;width:100%!important;overflow:visible!important;margin:0 0 28px!important}',
+                    '.dior-standard-invoice__table{display:table!important;width:100%!important;min-width:0!important;max-width:100%!important;table-layout:fixed!important;border-collapse:collapse!important}',
+                    '.dior-standard-invoice__table thead{display:table-header-group!important}',
+                    '.dior-standard-invoice__table tbody{display:table-row-group!important}',
+                    '.dior-standard-invoice__table tr{display:table-row!important}',
+                    '.dior-standard-invoice__table th,.dior-standard-invoice__table td{display:table-cell!important;padding:11px 7px!important;font-size:9px!important;white-space:normal!important;overflow-wrap:anywhere!important}',
+                    '.dior-standard-invoice__bottom{display:grid!important;grid-template-columns:1.15fr .85fr!important;gap:28px!important}',
+                    '.dior-standard-invoice__footer{display:flex!important;flex-direction:row!important;justify-content:space-between!important}'
+                ].join('');
+                exportDocument.head.appendChild(isolatedStyles);
+
+                var exportContent = content.cloneNode(true);
+                exportContent.removeAttribute('id');
+                exportContent.style.cssText = 'display:block;width:794px;min-width:794px;max-width:794px;margin:0;padding:0;background:#fff;color:#172b4d;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;overflow:visible;';
+
+                // Replace the live table with a clean, unpaginated table built from
+                // the selected invoice record (never clone DataTables' responsive DOM).
+                var selectedCurrency = (selected && selected.currency) || 'USD';
+                var selectedAmount = Number(selected && selected.amount || 0);
+                var selectedTax = Number(selected && selected.tax || 0);
+                var selectedDiscount = Number(selected && selected.discount || 0);
+                var selectedTotal = Number(selected && selected.total || 0);
+                var cleanTable = exportDocument.createElement('table');
+                cleanTable.className = 'dior-standard-invoice__table';
+                var head = cleanTable.createTHead();
+                var headRow = head.insertRow();
+                ['#','Description','Qty','Unit price','Tax / charges','Discount','Amount'].forEach(function(label){
+                    var th = exportDocument.createElement('th');
+                    th.textContent = label;
+                    headRow.appendChild(th);
                 });
-                exportContent.querySelectorAll('.dior-standard-invoice__top,.dior-standard-invoice__parties,.dior-standard-invoice__items,.dior-standard-invoice__bottom,.dior-standard-invoice__payment,.dior-standard-invoice__totals,.dior-standard-invoice__footer').forEach(function (node) {
-                    node.style.breakInside='avoid'; node.style.pageBreakInside='avoid';
+                var body = cleanTable.createTBody();
+                var itemRow = body.insertRow();
+                [
+                    '01',
+                    (selected && selected.description) || 'Medical Consultation',
+                    '1',
+                    money(selectedAmount, selectedCurrency),
+                    money(selectedTax, selectedCurrency),
+                    '-' + money(selectedDiscount, selectedCurrency),
+                    money(selectedTotal, selectedCurrency)
+                ].forEach(function(value, index){
+                    var td = exportDocument.createElement('td');
+                    td.textContent = String(value);
+                    if(index === 1) td.style.fontWeight = '700';
+                    if(index >= 2) td.style.textAlign = index === 2 ? 'center' : 'right';
+                    itemRow.appendChild(td);
+                });
+                var oldTable = exportContent.querySelector('.dior-standard-invoice__table');
+                if (oldTable) oldTable.parentNode.replaceChild(cleanTable, oldTable);
+                var exportBody = exportDocument.body;
+                exportBody.appendChild(exportContent);
+
+                // Remove any inherited pagination or responsive-control remnants.
+                exportContent.querySelectorAll('.dataTables_wrapper,.dataTables_paginate,.dataTables_info,.dataTables_length,.dataTables_filter,.dt-container,.dt-layout-row,.pagination').forEach(function(node){
+                    node.remove();
                 });
 
                 // Wait for invoice logo and web fonts before capturing the document.
