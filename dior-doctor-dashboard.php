@@ -804,10 +804,15 @@ class Dior_Doctor_Dashboard
 
         // Find the canonical appointment by stable UID or legacy numeric database ID.
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_appts)) === $table_appts) {
+            $table_patients = $wpdb->prefix . 'dior_patients';
             $row = $wpdb->get_row($wpdb->prepare(
-                "SELECT id, appt_uid, patient_id, doctor_id FROM $table_appts WHERE (appt_uid = %s OR id = %d) AND is_deleted = 0 LIMIT 1",
+                "SELECT a.id, a.appt_uid, a.patient_id, a.doctor_id, p.user_id AS patient_user_id
+                 FROM $table_appts a
+                 LEFT JOIN $table_patients p ON (p.id = a.patient_id OR p.user_id = a.patient_id)
+                 WHERE (a.appt_uid = %s OR a.id = %d) AND a.is_deleted = 0
+                 LIMIT 1",
                 $aid,
-                is_numeric($aid) ? (int) $aid : 0
+                ctype_digit($aid) ? (int) $aid : 0
             ), ARRAY_A);
 
             if ($row) {
@@ -852,11 +857,12 @@ class Dior_Doctor_Dashboard
 
         // Remove matching legacy usermeta entries as well, using both supplied ID and canonical UID.
         $target_patient_ids = [];
-        if (!empty($row['patient_id'])) {
-            $target_patient_ids[] = (int) $row['patient_id'];
-        } else {
-            $users = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'fields' => 'ID', 'number' => 200]);
-            $target_patient_ids = array_map('intval', $users);
+        if (!empty($row['patient_user_id'])) {
+            // The canonical appointment stores a patient table ID; usermeta is keyed by WP user ID.
+            $target_patient_ids[] = (int) $row['patient_user_id'];
+        } elseif (!empty($_POST['patient_user_id'])) {
+            // Legacy-only appointments are not present in dior_appointments, so use the row's WP user ID.
+            $target_patient_ids[] = absint(wp_unslash($_POST['patient_user_id']));
         }
 
         $identifiers = array_values(array_unique(array_filter([$aid, $canonical_uid], 'strlen')));
