@@ -810,9 +810,12 @@ class Dior_Doctor_Dynamic {
         if (empty($questionnaire['raw']) && !empty($intake['raw_data'])) {
             $questionnaire['raw'] = $intake['raw_data'];
         }
-        $prescriptions = $wpdb->get_results($wpdb->prepare(
-            "SELECT medication, instructions, status, created_at FROM {$wpdb->prefix}dior_prescriptions WHERE patient_id = %d ORDER BY created_at DESC LIMIT 50", $pid
-        ), ARRAY_A) ?: [];
+        $scope_ids = self::doctor_scope_ids();
+        $scope_in = implode(',', array_fill(0, count($scope_ids), '%d'));
+        $prescriptions = $scope_ids ? ($wpdb->get_results($wpdb->prepare(
+            "SELECT medication, instructions, status, created_at FROM {$wpdb->prefix}dior_prescriptions WHERE patient_id = %d AND doctor_id IN ($scope_in) ORDER BY created_at DESC LIMIT 50",
+            ...array_merge([$pid], $scope_ids)
+        ), ARRAY_A) ?: []) : [];
         $legacy_rx = get_user_meta($pid, 'dior_prescriptions', true);
         foreach ((array) $legacy_rx as $rx) {
             if (!is_array($rx)) continue;
@@ -823,17 +826,19 @@ class Dior_Doctor_Dynamic {
                 'created_at' => $rx['date'] ?? ($rx['date_prescribed'] ?? ''),
             ];
         }
-        $visits = $wpdb->get_results($wpdb->prepare(
-            "SELECT appt_date, doctor_id, condition_name, visit_type, status FROM {$wpdb->prefix}dior_appointments WHERE patient_id = %d AND is_deleted = 0 ORDER BY appt_date DESC LIMIT 50", $pid
-        ), ARRAY_A) ?: [];
+        $visits = $scope_ids ? ($wpdb->get_results($wpdb->prepare(
+            "SELECT appt_date, doctor_id, condition_name, visit_type, status FROM {$wpdb->prefix}dior_appointments WHERE patient_id = %d AND doctor_id IN ($scope_in) AND is_deleted = 0 ORDER BY appt_date DESC LIMIT 50",
+            ...array_merge([$pid], $scope_ids)
+        ), ARRAY_A) ?: []) : [];
         foreach ($visits as &$visit) {
             $doctor = get_userdata((int) $visit['doctor_id']);
             $visit['doctor_name'] = $doctor ? $doctor->display_name : '';
         }
         unset($visit);
-        $notes = $wpdb->get_results($wpdb->prepare(
-            "SELECT encounter_uid, subjective, diagnosis, assessment, plan, follow_up, created_at FROM {$wpdb->prefix}dior_encounters WHERE patient_id = %d AND is_deleted = 0 ORDER BY created_at DESC LIMIT 30", $pid
-        ), ARRAY_A) ?: [];
+        $notes = $scope_ids ? ($wpdb->get_results($wpdb->prepare(
+            "SELECT encounter_uid, subjective, diagnosis, assessment, plan, follow_up, created_at FROM {$wpdb->prefix}dior_encounters WHERE patient_id = %d AND doctor_id IN ($scope_in) AND is_deleted = 0 ORDER BY created_at DESC LIMIT 30",
+            ...array_merge([$pid], $scope_ids)
+        ), ARRAY_A) ?: []) : [];
         $documents = class_exists('Dior_Medical_Secure_Files') ? Dior_Medical_Secure_Files::get_patient_documents($pid) : [];
         $documents = array_map(static function ($doc) {
             return array_intersect_key($doc, array_flip(['id', 'title', 'category', 'date', 'author', 'file_type', 'size']));
