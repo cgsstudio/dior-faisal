@@ -2247,6 +2247,7 @@ class Dior_Doctor_Dashboard
         $profile  = Dior_Patient_Portal_Data::get_patient_profile($pid);
         $intake   = get_user_meta($pid, "dior_hipaa_intake", true);
         $doctor_scope = Dior_Doctor_Resolver::get_accessible_doctor_ids($current_doctor_id);
+        if ($current_doctor_id === (int) Dior_Doctor_Resolver::get_default_doctor_id()) $doctor_scope = array_merge($doctor_scope, [0, 1]);
         $apts = array_values(array_filter(Dior_Appointment_Service::get_patient_appointments($pid), static function ($appointment) use ($doctor_scope) {
             return in_array((int) ($appointment['doctor_id'] ?? 0), array_map('intval', (array) $doctor_scope), true);
         }));
