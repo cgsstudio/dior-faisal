@@ -327,34 +327,16 @@
         global $wpdb;
         $inv_table = $wpdb->prefix . 'dior_invoices';
         $latest_inv = null;
-        $invoice_doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
-        $invoice_doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $invoice_doctor_ids))));
-        if ($invoice_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
-            $invoice_in = implode(',', array_fill(0, count($invoice_doctor_ids), '%d'));
-            $latest_inv = $wpdb->get_row($wpdb->prepare(
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
+            $latest_inv = $wpdb->get_row(
                 "SELECT i.*, p.first_name, p.last_name, u.display_name AS patient_display
                  FROM $inv_table i
                  LEFT JOIN {$wpdb->prefix}dior_patients p ON (p.user_id = i.patient_id OR p.id = i.patient_id)
                  LEFT JOIN {$wpdb->users} u ON u.ID = i.patient_id
-                 WHERE i.doctor_id IN ($invoice_in)
-                 ORDER BY i.created_at DESC, i.id DESC LIMIT 1",
-                ...$invoice_doctor_ids
-            ), ARRAY_A);
-        }
-        $manual_invoice_table = $wpdb->prefix . 'dior_doctor_bills';
-        if ($invoice_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $manual_invoice_table)) === $manual_invoice_table) {
-            $invoice_in = implode(',', array_fill(0, count($invoice_doctor_ids), '%d'));
-            $manual_latest = $wpdb->get_row($wpdb->prepare(
-                "SELECT b.*, u.display_name AS patient_display FROM $manual_invoice_table b
-                 LEFT JOIN {$wpdb->users} u ON u.ID=b.patient_id
-                 WHERE b.doctor_id IN ($invoice_in) ORDER BY b.created_at DESC, b.id DESC LIMIT 1",
-                ...$invoice_doctor_ids
-            ), ARRAY_A);
-            if ($manual_latest && (!$latest_inv || strtotime($manual_latest['created_at']) > strtotime($latest_inv['created_at']))) {
-                $manual_latest['invoice_uid'] = $manual_latest['bill_uid'];
-                $manual_latest['description'] = $manual_latest['service_type'];
-                $latest_inv = $manual_latest;
-            }
+                 ORDER BY i.created_at DESC, i.id DESC
+                 LIMIT 1",
+                ARRAY_A
+            );
         }
         ?>
         <?php if (empty($latest_inv)): ?>
@@ -368,181 +350,6 @@
             $inv_patient = trim((string) (($latest_inv['first_name'] ?? '') . ' ' . ($latest_inv['last_name'] ?? ''))) ?: ($latest_inv['patient_display'] ?? 'Patient');
             $inv_date = !empty($latest_inv['created_at']) ? wp_date('M j, Y', strtotime($latest_inv['created_at'])) : '—';
             $inv_amt = (float) ($latest_inv['total_amount'] ?? $latest_inv['amount'] ?? 0);
-            $inv_currency = strtoupper((string) ($latest_inv['currency'] ?? 'USD'));
-            $inv_symbol = $inv_currency === 'USD' ? '
-        ?>
-        <div id="invoice-pdf-content" style="background: #ffffff; padding-bottom: 20px;">
-            <!-- Header -->
-            <div class="dior-invoice-header">
-                <h2>INVOICE #<?php echo esc_html($inv_uid); ?></h2>
-                <span class="dior-status-paid"><?php echo esc_html($inv_status); ?></span>
-            </div>
-            
-            <!-- Info Section -->
-            <div class="dior-invoice-info">
-                <div class="dior-company-info">
-                    <img src="https://diormedical.com/wp-content/uploads/2026/08/logo.png" alt="Dior Medical Logo">
-                    <h3>Dior Medical</h3>
-                    <p class="dior-address-text">HIPAA-Compliant Healthcare Platform</p>
-                </div>
-                <div class="dior-client-info">
-                    <h3 class="bill-to">BILL TO</h3>
-                    <h4><?php echo esc_html($inv_patient); ?></h4>
-                    <div class="dior-invoice-meta">
-                        <div class="meta-item"><span class="meta-label">Invoice Date:</span> <span class="meta-value"><?php echo esc_html($inv_date); ?></span></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Table Section -->
-            <div class="dior-invoice-table-section">
-                <div style="overflow-x: auto;">
-                    <table class="dior-invoice-table table table-hover">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Description</th>
-                                <th class="text-center">Quantity</th>
-                                <th class="text-center">Unit Price</th>
-                                <th class="text-center">Charges</th>
-                                <th class="text-center">Discount</th>
-                                <th class="text-end">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td style="font-weight: 500; color: #1e293b;"><?php echo esc_html($latest_inv['service_type'] ?? ($latest_inv['description'] ?? 'Medical Consultation')); ?></td>
-                                <td class="text-center">1</td>
-                                <td class="text-center"><?php echo esc_html($inv_symbol . number_format($inv_amt, 2)); ?></td>
-                                <td class="text-center">$<?php echo esc_html(number_format($inv_amt, 2)); ?></td>
-                                <td class="text-center">-</td>
-                                <td class="text-end" style="font-weight: 600;">$<?php echo esc_html(number_format($inv_amt, 2)); ?></td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="6" class="text-end"><strong style="color: #1e293b;">Subtotal</strong></td>
-                                <td class="text-end"><strong style="color: #1e293b;">$<?php echo esc_html(number_format($inv_amt, 2)); ?></strong></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Summary & Payment -->
-            <div class="dior-invoice-summary-section">
-                <div class="dior-payment-info">
-                    <h3 class="section-title">Payment Information</h3>
-                    <div class="dior-payment-details">
-                        <div class="detail-row">
-                            <span class="label">Payment Method:</span>
-                            <span class="value"><?php echo esc_html($latest_inv['payment_method'] ?? $latest_inv['method'] ?? '—'); ?></span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="dior-totals-box">
-                    <div class="dior-totals-row total">
-                        <span>Total:</span>
-                        <span>$<?php echo esc_html(number_format($inv_amt, 2)); ?></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
-        
-        <!-- Actions -->
-        <div class="dior-invoice-actions">
-            <button class="dior-btn dior-btn-primary btn" onclick="window.print()"><i class="fas fa-print me-1"></i> Print</button>
-            <button class="dior-btn dior-btn-info btn" id="download-invoice-pdf"><i class="fas fa-file-pdf me-1"></i> Download PDF</button>
-        </div>
-        
-    </div>
-
-</section>
-<style id="dior-accounts-mobile-invoice">
-/* Accounts mobile responsive layout, aligned with Patient Records */
-
-@media(max-width:767.98px){
-#dior-doctor-app #dior-doc-content #tab-doc-accounts-invoice{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:14px 0 24px!important;overflow-x:clip!important;box-sizing:border-box!important}
-#tab-doc-accounts-invoice>.mb-4:first-child{align-items:flex-start!important}
-#tab-doc-accounts-invoice>.mb-4:first-child .va-breadcrumb-list{display:none!important}
-#tab-doc-accounts-invoice .dior-subtab-nav-bar{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;padding:0!important;margin:0 0 16px!important}
-#tab-doc-accounts-invoice .dior-subtab-pill{width:100%!important;min-width:0!important;min-height:40px!important;margin:0!important;padding:8px 5px!important;font-size:12px!important;white-space:normal!important}
-#tab-doc-accounts-invoice .dior-invoice-card{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:12px!important;border-radius:14px!important;box-sizing:border-box!important;overflow:hidden!important}
-#tab-doc-accounts-invoice #invoice-pdf-content{width:100%!important;max-width:100%!important;padding:0 0 14px!important;box-sizing:border-box!important}
-#tab-doc-accounts-invoice .dior-invoice-header{flex-wrap:wrap!important;gap:8px!important}
-#tab-doc-accounts-invoice .dior-invoice-info{display:flex!important;flex-direction:column!important;gap:18px!important}
-#tab-doc-accounts-invoice .dior-client-info{text-align:left!important}
-#tab-doc-accounts-invoice .dior-invoice-meta .meta-label{width:auto!important;text-align:left!important}
-#tab-doc-accounts-invoice .dior-invoice-table-section>div{overflow:visible!important}
-#tab-doc-accounts-invoice .dior-invoice-table{display:block!important;width:100%!important;min-width:0!important;table-layout:fixed!important;margin:0!important}
-#tab-doc-accounts-invoice .dior-invoice-table thead{display:none!important}
-#tab-doc-accounts-invoice .dior-invoice-table tbody{display:grid!important;gap:10px!important;width:100%!important}
-#tab-doc-accounts-invoice .dior-invoice-table tbody tr{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px 12px!important;width:100%!important;min-width:0!important;margin:0!important;padding:12px!important;border:1px solid #E2E8F0!important;border-radius:12px!important;background:#fff!important;box-sizing:border-box!important}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:3px!important;min-width:0!important;padding:0!important;border:0!important;white-space:normal!important;overflow-wrap:anywhere!important;text-align:left!important;font-size:12px!important}
-/* Prevent inherited desktop table column widths from squeezing mobile cells. */
-#tab-doc-accounts-invoice .dior-invoice-table tbody tr{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td{width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td:first-child{display:none!important}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td:before{font-size:9px!important;font-weight:700!important;letter-spacing:.04em!important;text-transform:uppercase!important;color:#8493A7!important}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td:nth-child(1):before{content:"Item"}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td:nth-child(2){grid-column:1/-1!important;font-weight:700!important;color:#12345A!important}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td:nth-child(2):before{content:"Description"}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td:nth-child(3):before{content:"Quantity"}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td:nth-child(4):before{content:"Unit Price"}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td:nth-child(5):before{content:"Charges"}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td:nth-child(6):before{content:"Discount"}
-#tab-doc-accounts-invoice .dior-invoice-table tbody td:nth-child(7):before{content:"Total"}
-#tab-doc-accounts-invoice .dior-invoice-table tfoot{display:block!important;width:100%!important;margin-top:10px!important}
-#tab-doc-accounts-invoice .dior-invoice-table tfoot tr{display:grid!important;grid-template-columns:1fr auto!important;gap:8px!important;padding:12px!important;border:1px solid #E2E8F0!important;border-radius:12px!important;background:#F8FAFC!important}
-#tab-doc-accounts-invoice .dior-invoice-table tfoot td{display:block!important;padding:0!important;border:0!important;white-space:normal!important}
-#tab-doc-accounts-invoice .dior-invoice-summary-section{display:flex!important;flex-direction:column!important;gap:14px!important;margin:16px 0!important}
-#tab-doc-accounts-invoice .dior-payment-info{width:100%!important;min-width:0!important;padding:14px!important;box-sizing:border-box!important}
-#tab-doc-accounts-invoice .dior-payment-details .detail-row{justify-content:space-between!important;gap:10px!important;flex-wrap:wrap!important}
-#tab-doc-accounts-invoice .dior-payment-details .label{width:auto!important}
-#tab-doc-accounts-invoice .dior-totals-box{width:100%!important;flex:1 1 auto!important}
-#tab-doc-accounts-invoice .dior-invoice-actions{display:grid!important;grid-template-columns:1fr!important;gap:9px!important;padding-top:16px!important}
-#tab-doc-accounts-invoice .dior-invoice-actions .dior-btn{width:100%!important;justify-content:center!important}
-}
-
-</style>
-
-
-<!-- html2pdf.js library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const downloadBtn = document.getElementById('download-invoice-pdf');
-    if(downloadBtn) {
-        downloadBtn.addEventListener('click', function() {
-            const invoiceElement = document.getElementById('invoice-pdf-content');
-            if (!invoiceElement) return;
-            const invoiceHeading = invoiceElement.querySelector('.dior-invoice-header h2');
-            const invoiceName = invoiceHeading ? invoiceHeading.textContent.replace(/[^a-z0-9_-]+/gi, '_') : 'Invoice';
-            if (!invoiceElement) return;
-            const invoiceHeading = invoiceElement.querySelector('.dior-invoice-header h2');
-            const invoiceName = invoiceHeading ? invoiceHeading.textContent.replace(/[^a-z0-9_-]+/gi, '_') : 'Invoice';
-            if (!invoiceElement) return;
-            const invoiceHeading = invoiceElement.querySelector('.dior-invoice-header h2');
-            const invoiceName = invoiceHeading ? invoiceHeading.textContent.replace(/[^a-z0-9_-]+/gi, '_') : 'Invoice';
-            
-            // Generate PDF
-            const opt = {
-                margin:       [10, 10, 10, 10], // top, left, bottom, right
-                filename:     invoiceName + '.pdf',
-                image:        { type: 'jpeg', quality: 1.0 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            
-            html2pdf().set(opt).from(invoiceElement).save();
-        });
-    }
-});
-</script>
- : $inv_currency . ' ';
         ?>
         <div id="invoice-pdf-content" style="background: #ffffff; padding-bottom: 20px;">
             <!-- Header -->
@@ -696,7 +503,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Generate PDF
             const opt = {
                 margin:       [10, 10, 10, 10], // top, left, bottom, right
-                filename:     invoiceName + '.pdf',
+                filename:     'Invoice_345766.pdf',
                 image:        { type: 'jpeg', quality: 1.0 },
                 html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
