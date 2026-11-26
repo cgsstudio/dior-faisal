@@ -876,32 +876,31 @@ window.diorDocCloseMobile = function () {
 
 // Search patients with pagination reset
 window.diorDocFilterPatients = function (val) {
-    val = val.toLowerCase().trim();
-    const table = document.getElementById('dior-patients-table');
+    const table = document.getElementById('ap-patients-table') || document.getElementById('dior-patients-table');
     if (!table) return;
-    const rows = table.querySelectorAll('tbody tr.patient-row');
-    rows.forEach(row => {
-        const text = row.getAttribute('data-search') || '';
-        if (val === '' || text.includes(val)) {
-            row.removeAttribute('data-filter-hidden');
-        } else {
-            row.setAttribute('data-filter-hidden', 'true');
-        }
+
+    const search = String(val || '').toLowerCase().trim();
+    const rows = table.querySelectorAll('tbody tr[data-patient-id], tbody tr.patient-row');
+    rows.forEach(function (row) {
+        const rowText = (row.getAttribute('data-search') || row.textContent || '').toLowerCase();
+        row.style.display = !search || rowText.includes(search) ? '' : 'none';
     });
-    if (table._diorRenderPage) {
+
+    if (typeof table._diorRenderPage === 'function') {
         table._diorRenderPage(1);
     }
 };
 
 window.diorDocSearch = function (val) {
-    // If we're not on the patients tab, switch to it and search
-    diorDocSwitchTab('doc-patients');
+    // The actual Patients tab is doc-patients-all and uses the #ap-search input.
+    if (typeof window.diorDocSwitchTab === 'function') {
+        window.diorDocSwitchTab('doc-patients-all');
+    }
 
-    // Update the actual patient search input
-    const patientSearch = document.querySelector('#tab-doc-patients .dior-search-input');
+    const patientSearch = document.querySelector('#tab-doc-patients-all #ap-search');
     if (patientSearch) {
-        patientSearch.value = val;
-        diorDocFilterPatients(val);
+        patientSearch.value = String(val || '');
+        patientSearch.dispatchEvent(new Event('input', { bubbles: true }));
     }
 };
 
