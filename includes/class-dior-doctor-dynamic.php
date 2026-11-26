@@ -37,6 +37,19 @@ class Dior_Doctor_Dynamic {
             : [self::doctor_id()];
         return array_values(array_unique(array_filter(array_map('intval', (array) $ids))));
     }
+    private static function appointment_scope_ids() {
+        $doctor_id = self::doctor_id();
+        $ids = class_exists('Dior_Doctor_Resolver')
+            ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id)
+            : [$doctor_id];
+        if (class_exists('Dior_Doctor_Resolver') && $doctor_id === (int) Dior_Doctor_Resolver::get_default_doctor_id()) {
+            $ids = array_merge($ids, [0, 1]);
+        }
+        return array_values(array_unique(array_filter(array_map('absint', (array) $ids), static function ($id) {
+            return $id >= 0;
+        })));
+    }
+
     private static function doctor_scope_placeholders() {
         return implode(',', array_fill(0, count(self::doctor_scope_ids()), '%d'));
     }
@@ -45,10 +58,7 @@ class Dior_Doctor_Dynamic {
     private static function doctor_can_manage_appointment($a) {
         $doctor_id = self::doctor_id();
         if (!$doctor_id || !user_can($doctor_id, 'doctor') || user_can($doctor_id, 'administrator') || user_can($doctor_id, 'manage_options')) return false;
-        $scope = self::doctor_scope_ids();
-        if (class_exists('Dior_Doctor_Resolver') && $doctor_id === (int) Dior_Doctor_Resolver::get_default_doctor_id()) {
-            $scope = array_merge($scope, [0, 1]);
-        }
+        $scope = self::appointment_scope_ids();
         $owner = (int) ($a['doctor_id'] ?? 0);
         if (in_array($owner, $scope, true)) return true;
         return $owner > 0 && class_exists('Dior_Doctor_Resolver')
@@ -1071,7 +1081,7 @@ class Dior_Doctor_Dynamic {
 
     public static function ajax_settings_save(){self::auth();global $wpdb;$allowed=['clinic_name','timezone','consultation_duration','booking_buffer','email_new_booking','email_reminders','dashboard_alerts','sms_emergency'];foreach($allowed as $key){$val=isset($_POST[$key])?(is_array($_POST[$key])?wp_json_encode($_POST[$key]):sanitize_text_field($_POST[$key])):'';$wpdb->replace(self::table('doctor_settings'),['doctor_id'=>self::doctor_id(),'setting_key'=>$key,'setting_value'=>$val,'updated_at'=>current_time('mysql')],['%d','%s','%s','%s']);}wp_send_json_success(['message'=>'Settings saved successfully.']);}
 
-    public static function ajax_chat_send(){self::auth();global $wpdb;$uid=sanitize_text_field($_POST['appointment_uid']??'');$a=Dior_Appointment_Service::get_appointment($uid);if(!$a||!self::patient_belongs_to_doctor($a['patient_id'],self::doctor_id())||!in_array((int)$a['doctor_id'],self::doctor_scope_ids(),true))wp_send_json_error(['message'=>'This consultation is not assigned to you.'],403);$msg=sanitize_textarea_field($_POST['message']??'');if(!$msg)wp_send_json_error(['message'=>'Message required.']);$wpdb->insert(self::table('chat_messages'),['appointment_uid'=>$uid,'patient_id'=>$a['patient_id'],'doctor_id'=>self::doctor_id(),'sender_user_id'=>self::doctor_id(),'message'=>$msg,'created_at'=>current_time('mysql')]);wp_send_json_success(['message'=>'Message sent.']);}
+    public static function ajax_chat_send(){self::auth();global $wpdb;$uid=sanitize_text_field($_POST['appointment_uid']??'');$a=Dior_Appointment_Service::get_appointment($uid);if(!$a||!self::patient_belongs_to_doctor($a['patient_id'],self::doctor_id())||!in_array((int)$a['doctor_id'],self::appointment_scope_ids(),true))wp_send_json_error(['message'=>'This consultation is not assigned to you.'],403);$msg=sanitize_textarea_field($_POST['message']??'');if(!$msg)wp_send_json_error(['message'=>'Message required.']);$wpdb->insert(self::table('chat_messages'),['appointment_uid'=>$uid,'patient_id'=>$a['patient_id'],'doctor_id'=>self::doctor_id(),'sender_user_id'=>self::doctor_id(),'message'=>$msg,'created_at'=>current_time('mysql')]);wp_send_json_success(['message'=>'Message sent.']);}
     public static function ajax_chat_get(){self::auth();global $wpdb;$uid=sanitize_text_field($_POST['appointment_uid']??'');$a=Dior_Appointment_Service::get_appointment($uid);if(!$a||!self::patient_belongs_to_doctor($a['patient_id'],self::doctor_id())||!in_array((int)$a['doctor_id'],self::doctor_scope_ids(),true))wp_send_json_error(['message'=>'Consultation access denied.'],403);$rows=$wpdb->get_results($wpdb->prepare('SELECT * FROM '.self::table('chat_messages').' WHERE appointment_uid=%s ORDER BY id ASC',$uid),ARRAY_A);wp_send_json_success(['messages'=>$rows,'patient'=>self::patient($a['patient_id']),'appointment'=>$a]);}
 
     // ── Pharmacy inventory (Medicine List) ───────────────────────────────────
