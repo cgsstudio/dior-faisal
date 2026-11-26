@@ -66,13 +66,16 @@ $ir_monthly = array_fill(0, 12, 0.0);
 $ir_dept_totals = [];
 $ir_dept_monthly = [];
 $ir_daily_categories = [];
+$ir_daily_date_keys = [];
 $ir_daily_values = array_fill(0, 14, 0.0);
+$ir_dept_daily = [];
 $ir_year_categories = [];
 $ir_year_values = [];
 $today = current_time('timestamp');
 for ($i = 13; $i >= 0; $i--) {
     $day = strtotime('-' . $i . ' days', $today);
     $ir_daily_categories[] = wp_date('M j', $day);
+    $ir_daily_date_keys[] = wp_date('Y-m-d', $day);
 }
 for ($year = $minimum_report_year; $year <= $current_report_year; $year++) {
     $ir_year_categories[] = (string) $year;
@@ -89,10 +92,13 @@ foreach ($ir_rows as $row) {
             $ir_total_revenue += $amt;
             $ir_dept_totals[$dept] = ($ir_dept_totals[$dept] ?? 0.0) + $amt;
             if (!isset($ir_dept_monthly[$dept])) $ir_dept_monthly[$dept] = array_fill(0, 12, 0.0);
+            if (!isset($ir_dept_daily[$dept])) $ir_dept_daily[$dept] = array_fill(0, 14, 0.0);
             $month_index = (int) wp_date('n', $ts) - 1;
             $ir_monthly[$month_index] += $amt;
             $ir_dept_monthly[$dept][$month_index] += $amt;
             $day_key = wp_date('Y-m-d', $ts);
+            $daily_index = array_search($day_key, $ir_daily_date_keys, true);
+            if ($daily_index !== false) $ir_dept_daily[$dept][$daily_index] += $amt;
             for ($i = 13; $i >= 0; $i--) {
                 $target = wp_date('Y-m-d', strtotime('-' . $i . ' days', $today));
                 if ($target === $day_key) $ir_daily_values[13 - $i] += $amt;
@@ -240,6 +246,12 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
                 <div class="va-title-line"></div>
             </div>
             <div class="va-actions-wrapper">
+                <span class="text-secondary small fw-semibold d-none d-sm-inline">View:</span>
+                <select id="dior-income-table-period" class="form-select form-select-sm rounded-3 py-1.5 fw-semibold" style="width: 210px; min-width: 180px;" aria-label="Income table period">
+                    <option value="Monthly" selected>Monthly (Jan - Dec)</option>
+                    <option value="Daily">Daily (Last 14 Days)</option>
+                    <option value="Weekly">Weekly (Last 7 Days)</option>
+                </select>
                 <span class="text-secondary small fw-semibold d-none d-sm-inline">Fiscal Year:</span>
                 <select id="dior-income-table-year" class="form-select form-select-sm rounded-3 py-1.5 fw-semibold" style="width: auto;" aria-label="Income report year">
                     <?php for ($year_option = $current_report_year; $year_option >= $minimum_report_year; $year_option--): ?>
@@ -558,6 +570,13 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
 (function() {
     var incomeChartInstance = null;
 
+    var incomeTableData = {
+        dailyCategories: <?php echo wp_json_encode($ir_daily_categories); ?>,
+        dailySeries: <?php echo wp_json_encode($ir_dept_daily); ?>,
+        monthlyRows: <?php echo wp_json_encode($ir_dept_monthly); ?>,
+        monthlyTotals: <?php echo wp_json_encode($ir_monthly); ?>
+    };
+
     var incomeChartData = {
         Monthly: { categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], series: <?php echo wp_json_encode($ir_chart_series); ?> },
         Daily: { categories: <?php echo wp_json_encode($ir_daily_categories); ?>, series: <?php echo wp_json_encode($ir_daily_series); ?> },
@@ -672,6 +691,367 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
         incomeChartInstance = new ApexCharts(el, options);
         incomeChartInstance.render();
     }
+
+    function renderIncomeTablePeriod() {
+        var selector = document.getElementById('dior-income-table-period');
+        var table = document.getElementById('dior-income-report-table');
+        if (!selector || !table) return;
+        var period = selector.value;
+        var thead = table.querySelector('thead');
+        var tbody = table.querySelector('tbody');
+        var tfoot = table.querySelector('tfoot');
+        if (!thead || !tbody || !tfoot) return;
+
+        if (period === 'Monthly') {
+            var monthNames = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+            thead.innerHTML = '<tr><th class="ps-3">DEPARTMENT</th>' + monthNames.map(function(m){return '<th style="text-align:right;">'+m+'</th>';}).join('') + '<th style="text-align:right;" class="pe-3">YEARLY TOTAL</th></tr>';
+            var rows = incomeTableData.monthlyRows || {};
+            var totals = incomeTableData.monthlyTotals || [];
+            tbody.innerHTML = Object.keys(rows).map(function(name){
+                var vals = rows[name] || [];
+                var sum = vals.reduce(function(a,b){return a + Number(b || 0);},0);
+                return '<tr><td class="ps-3 fw-bold text-dark">'+escapeIncomeTableText(name)+'</td>'+vals.map(function(v){return '<td class="text-end">
+
+    document.getElementById('dior-income-table-year')?.addEventListener('change', function(){
+        var url = new URL(window.location.href);
+        url.searchParams.set('income_year', this.value);
+        window.location.href = url.toString();
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'dior-income-chart-filter') {
+            renderIncomeChart();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.closest('#dior-income-chart-refresh')) {
+            renderIncomeChart();
+        }
+    });
+
+    var panel = document.getElementById('tab-doc-accounts-income-report');
+    if (panel) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
+                    setTimeout(renderIncomeChart, 50);
+                }
+            });
+        });
+        observer.observe(panel, { attributes: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderIncomeChart);
+    } else {
+        renderIncomeChart();
+    }
+})();
+</script>
++Number(v||0).toFixed(2)+'</td>';}).join('')+'<td class="text-end pe-3 fw-bold">
+
+    document.getElementById('dior-income-table-year')?.addEventListener('change', function(){
+        var url = new URL(window.location.href);
+        url.searchParams.set('income_year', this.value);
+        window.location.href = url.toString();
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'dior-income-chart-filter') {
+            renderIncomeChart();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.closest('#dior-income-chart-refresh')) {
+            renderIncomeChart();
+        }
+    });
+
+    var panel = document.getElementById('tab-doc-accounts-income-report');
+    if (panel) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
+                    setTimeout(renderIncomeChart, 50);
+                }
+            });
+        });
+        observer.observe(panel, { attributes: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderIncomeChart);
+    } else {
+        renderIncomeChart();
+    }
+})();
+</script>
++sum.toFixed(2)+'</td></tr>';
+            }).join('') || '<tr><td colspan="14" class="text-center text-muted py-4">No departmental income data available yet.</td></tr>';
+            tfoot.innerHTML = '<tr class="fw-bold"><td class="ps-3 text-dark">Combined Clinic Revenue</td>'+totals.map(function(v){return '<td class="text-end text-primary">
+
+    document.getElementById('dior-income-table-year')?.addEventListener('change', function(){
+        var url = new URL(window.location.href);
+        url.searchParams.set('income_year', this.value);
+        window.location.href = url.toString();
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'dior-income-chart-filter') {
+            renderIncomeChart();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.closest('#dior-income-chart-refresh')) {
+            renderIncomeChart();
+        }
+    });
+
+    var panel = document.getElementById('tab-doc-accounts-income-report');
+    if (panel) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
+                    setTimeout(renderIncomeChart, 50);
+                }
+            });
+        });
+        observer.observe(panel, { attributes: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderIncomeChart);
+    } else {
+        renderIncomeChart();
+    }
+})();
+</script>
++Number(v||0).toFixed(2)+'</td>';}).join('')+'<td class="text-end pe-3 text-primary">
+
+    document.getElementById('dior-income-table-year')?.addEventListener('change', function(){
+        var url = new URL(window.location.href);
+        url.searchParams.set('income_year', this.value);
+        window.location.href = url.toString();
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'dior-income-chart-filter') {
+            renderIncomeChart();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.closest('#dior-income-chart-refresh')) {
+            renderIncomeChart();
+        }
+    });
+
+    var panel = document.getElementById('tab-doc-accounts-income-report');
+    if (panel) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
+                    setTimeout(renderIncomeChart, 50);
+                }
+            });
+        });
+        observer.observe(panel, { attributes: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderIncomeChart);
+    } else {
+        renderIncomeChart();
+    }
+})();
+</script>
++totals.reduce(function(a,b){return a+Number(b||0);},0).toFixed(2)+'</td></tr>';
+            return;
+        }
+
+        var labels = incomeTableData.dailyCategories || [];
+        var start = period === 'Weekly' ? Math.max(0, labels.length - 7) : 0;
+        var selectedLabels = labels.slice(start);
+        var departments = incomeTableData.dailySeries || {};
+        var totalsByDay = selectedLabels.map(function(_, i){return 0;});
+        var htmlHead = '<tr><th class="ps-3">DEPARTMENT</th>' + selectedLabels.map(function(d){return '<th style="text-align:right;">'+escapeIncomeTableText(d.toUpperCase())+'</th>';}).join('') + '<th style="text-align:right;" class="pe-3">'+(period === 'Weekly' ? '7-DAY TOTAL' : '14-DAY TOTAL')+'</th></tr>';
+        var htmlBody = Object.keys(departments).map(function(name){
+            var values = (departments[name] || []).slice(start);
+            values.forEach(function(v,i){totalsByDay[i] += Number(v||0);});
+            var sum = values.reduce(function(a,b){return a+Number(b||0);},0);
+            return '<tr><td class="ps-3 fw-bold text-dark">'+escapeIncomeTableText(name)+'</td>'+values.map(function(v){return '<td class="text-end">
+
+    document.getElementById('dior-income-table-year')?.addEventListener('change', function(){
+        var url = new URL(window.location.href);
+        url.searchParams.set('income_year', this.value);
+        window.location.href = url.toString();
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'dior-income-chart-filter') {
+            renderIncomeChart();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.closest('#dior-income-chart-refresh')) {
+            renderIncomeChart();
+        }
+    });
+
+    var panel = document.getElementById('tab-doc-accounts-income-report');
+    if (panel) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
+                    setTimeout(renderIncomeChart, 50);
+                }
+            });
+        });
+        observer.observe(panel, { attributes: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderIncomeChart);
+    } else {
+        renderIncomeChart();
+    }
+})();
+</script>
++Number(v||0).toFixed(2)+'</td>';}).join('')+'<td class="text-end pe-3 fw-bold">
+
+    document.getElementById('dior-income-table-year')?.addEventListener('change', function(){
+        var url = new URL(window.location.href);
+        url.searchParams.set('income_year', this.value);
+        window.location.href = url.toString();
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'dior-income-chart-filter') {
+            renderIncomeChart();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.closest('#dior-income-chart-refresh')) {
+            renderIncomeChart();
+        }
+    });
+
+    var panel = document.getElementById('tab-doc-accounts-income-report');
+    if (panel) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
+                    setTimeout(renderIncomeChart, 50);
+                }
+            });
+        });
+        observer.observe(panel, { attributes: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderIncomeChart);
+    } else {
+        renderIncomeChart();
+    }
+})();
+</script>
++sum.toFixed(2)+'</td></tr>';
+        }).join('');
+        thead.innerHTML = htmlHead;
+        tbody.innerHTML = htmlBody || '<tr><td colspan="'+(selectedLabels.length+2)+'" class="text-center text-muted py-4">No departmental income data available yet.</td></tr>';
+        var grand = totalsByDay.reduce(function(a,b){return a+b;},0);
+        tfoot.innerHTML = '<tr class="fw-bold"><td class="ps-3 text-dark">Combined Clinic Revenue</td>'+totalsByDay.map(function(v){return '<td class="text-end text-primary">
+
+    document.getElementById('dior-income-table-year')?.addEventListener('change', function(){
+        var url = new URL(window.location.href);
+        url.searchParams.set('income_year', this.value);
+        window.location.href = url.toString();
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'dior-income-chart-filter') {
+            renderIncomeChart();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.closest('#dior-income-chart-refresh')) {
+            renderIncomeChart();
+        }
+    });
+
+    var panel = document.getElementById('tab-doc-accounts-income-report');
+    if (panel) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
+                    setTimeout(renderIncomeChart, 50);
+                }
+            });
+        });
+        observer.observe(panel, { attributes: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderIncomeChart);
+    } else {
+        renderIncomeChart();
+    }
+})();
+</script>
++v.toFixed(2)+'</td>';}).join('')+'<td class="text-end pe-3 text-primary">
+
+    document.getElementById('dior-income-table-year')?.addEventListener('change', function(){
+        var url = new URL(window.location.href);
+        url.searchParams.set('income_year', this.value);
+        window.location.href = url.toString();
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'dior-income-chart-filter') {
+            renderIncomeChart();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.closest('#dior-income-chart-refresh')) {
+            renderIncomeChart();
+        }
+    });
+
+    var panel = document.getElementById('tab-doc-accounts-income-report');
+    if (panel) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
+                    setTimeout(renderIncomeChart, 50);
+                }
+            });
+        });
+        observer.observe(panel, { attributes: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderIncomeChart);
+    } else {
+        renderIncomeChart();
+    }
+})();
+</script>
++grand.toFixed(2)+'</td></tr>';
+    }
+
+    function escapeIncomeTableText(value) {
+        return String(value).replace(/[&<>"']/g, function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});
+    }
+
+    document.getElementById('dior-income-table-period')?.addEventListener('change', renderIncomeTablePeriod);
+    renderIncomeTablePeriod();
 
     window.diorRenderIncomeChart = renderIncomeChart;
 
