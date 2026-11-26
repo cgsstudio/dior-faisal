@@ -125,18 +125,12 @@ $max_dob = date('Y-m-d', strtotime('-18 years'));
                     <div class="row g-3">
                         <div class="col-12 col-md-6">
                             <label for="ap-email" class="form-label small fw-semibold text-dark">Email Address <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0 text-muted rounded-start-3"><i class="fas fa-envelope"></i></span>
-                                <input type="email" class="form-control rounded-end-3 border-start-0 ps-1" id="ap-email" name="email" placeholder="patient@example.com" required>
-                            </div>
+                            <input type="email" class="form-control rounded-3" id="ap-email" name="email" placeholder="patient@example.com" required>
                             <div class="form-text small">Used for patient portal login and direct clinical communications.</div>
                         </div>
                         <div class="col-12 col-md-6">
                             <label for="ap-phone" class="form-label small fw-semibold text-dark">Mobile Phone <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-end-0 text-muted rounded-start-3"><i class="fas fa-phone"></i></span>
-                                <input type="tel" class="form-control rounded-end-3 border-start-0 ps-1" id="ap-phone" name="phone" placeholder="(555) 000-0000" required>
-                            </div>
+                            <input type="tel" class="form-control rounded-3" id="ap-phone" name="phone" placeholder="(555) 000-0000" required>
                             <div class="form-text small">Used for SMS appointment notifications and telemedicine invitations.</div>
                         </div>
 
@@ -226,15 +220,11 @@ $max_dob = date('Y-m-d', strtotime('-18 years'));
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-6">
                             <label for="ap-em-name" class="form-label small fw-semibold text-dark">Contact Full Name</label>
                             <input type="text" class="form-control rounded-3" id="ap-em-name" name="emergency_name" placeholder="e.g. Robert Johnson">
                         </div>
-                        <div class="col-12 col-md-4">
-                            <label for="ap-em-rel" class="form-label small fw-semibold text-dark">Relationship</label>
-                            <input type="text" class="form-control rounded-3" id="ap-em-rel" name="emergency_relation" placeholder="e.g. Spouse, Parent, Sibling">
-                        </div>
-                        <div class="col-12 col-md-4">
+                        <div class="col-12 col-md-6">
                             <label for="ap-em-phone" class="form-label small fw-semibold text-dark">Emergency Contact Phone</label>
                             <input type="tel" class="form-control rounded-3" id="ap-em-phone" name="emergency_phone" placeholder="(555) 111-2222">
                         </div>
@@ -291,10 +281,10 @@ $max_dob = date('Y-m-d', strtotime('-18 years'));
                         </div>
 
                         <div class="col-12 col-md-6 d-flex align-items-center">
-                            <div class="form-check p-3 bg-light rounded-3 border w-100 mt-md-4">
-                                <input class="form-check-input ms-0 me-2" type="checkbox" id="ap-send-email" name="send_welcome_email" value="1" checked>
-                                <label class="form-check-label small fw-semibold text-dark" for="ap-send-email">
-                                    <i class="fas fa-paper-plane text-primary me-1"></i> Send welcome email with login credentials to patient
+                            <div class="form-check d-flex align-items-center gap-2 p-3 bg-light rounded-3 border w-100 mt-md-4">
+                                <input class="form-check-input m-0 flex-shrink-0" type="checkbox" id="ap-send-email" name="send_welcome_email" value="1" checked>
+                                <label class="form-check-label small fw-semibold text-dark mb-0" for="ap-send-email">
+                                    Send welcome email with login credentials to patient
                                 </label>
                             </div>
                         </div>
