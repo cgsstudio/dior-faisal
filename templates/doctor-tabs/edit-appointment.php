@@ -15,6 +15,7 @@ $users_table = $wpdb->users;
 
 // Resolve the logged-in doctor's own account and linked DocBooker IDs.
 $doctor_scope_ids = Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id);
+if ($doctor_id === (int) Dior_Doctor_Resolver::get_default_doctor_id()) $doctor_scope_ids = array_merge($doctor_scope_ids, [0, 1]);
 $doctor_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope_ids))));
 $doctor_scope_in = implode(',', array_fill(0, count($doctor_scope_ids), '%d'));
 $assigned_patient_ids = Dior_Auth_Service::get_doctor_patient_ids($doctor_id);
