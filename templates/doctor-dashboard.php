@@ -119,9 +119,7 @@
                             <button type="button" class="dior-nav-btn submenu-btn btn" data-tab="doc-accounts-bill-list">
                                 <i class="fas fa-receipt"></i><span class="nav-label">Bill List</span>
                             </button>
-                            <button type="button" class="dior-nav-btn submenu-btn btn" data-tab="doc-accounts-add-bill">
-                                <i class="fas fa-file-invoice-dollar"></i><span class="nav-label">Add Bill</span>
-                            </button>
+                            <?php /* Add Bill navigation temporarily hidden; restore when this page is ready. */ ?>
                             <button type="button" class="dior-nav-btn submenu-btn btn" data-tab="doc-accounts-income">
                                 <i class="fas fa-arrow-trend-up"></i><span class="nav-label">Income</span>
                             </button>
