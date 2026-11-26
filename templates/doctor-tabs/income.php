@@ -181,12 +181,7 @@
                             <td><i class="far fa-calendar va-icon-blue"></i> <?php echo esc_html($i_date); ?></td>
                             <td><?php echo esc_html($ir['invoice_uid'] ?? '—'); ?></td>
                             <td><span class="va-badge <?php echo esc_attr($st_cls); ?>"><?php echo esc_html($st_raw); ?></span></td>
-                            <td>
-                                <div class="va-row-actions" style="justify-content: center;">
-                                    <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                    <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                                </div>
-                            </td>
+                            <td class="text-center text-muted">Payment record</td>
                         </tr>
                     <?php endforeach; endif; ?>
                 </tbody>
