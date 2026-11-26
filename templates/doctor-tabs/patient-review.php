@@ -16,7 +16,7 @@ $reviews_sql = "SELECT r.*,
     LEFT JOIN {$wpdb->prefix}dior_patients p ON p.user_id = r.patient_id
     LEFT JOIN {$wpdb->users} u ON u.ID = r.patient_id";
 if (!current_user_can('manage_options')) {
-    $review_doctor_ids = Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id);
+    $review_doctor_ids = Dior_Auth_Service::get_doctor_user_scope_ids($doctor_id);
     if (!empty($review_doctor_ids)) {
         $review_placeholders = implode(',', array_fill(0, count($review_doctor_ids), '%d'));
         $reviews_sql .= $wpdb->prepare(" WHERE r.doctor_id IN ($review_placeholders)", ...$review_doctor_ids);
