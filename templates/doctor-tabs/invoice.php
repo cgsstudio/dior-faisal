@@ -61,9 +61,27 @@
         gap: 20px;
     }
     
+    /* Larger branded logo panel for the invoice and exported PDF. */
+    .dior-company-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        min-width: 190px;
+    }
+
     .dior-company-info img {
-        height: 42px;
-        margin-bottom: 16px;
+        display: block;
+        width: 150px;
+        height: 104px;
+        max-width: 100%;
+        padding: 12px 16px;
+        margin: 0 0 16px;
+        object-fit: contain;
+        object-position: left center;
+        background: #ffffff;
+        border: 1px solid #e5edf5;
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, .06);
     }
     
     .dior-company-info h3 {
@@ -675,18 +693,95 @@
         });
 
         var pdfButton = panel.querySelector('#download-invoice-pdf');
-        if (pdfButton) pdfButton.addEventListener('click', function () {
+        if (pdfButton) pdfButton.addEventListener('click', async function () {
             var content = panel.querySelector('#invoice-pdf-content');
             if (!content) return;
-            if (typeof window.html2pdf !== 'function') { window.alert('PDF library is not available. Please refresh and try again.'); return; }
+            if (typeof window.html2pdf !== 'function') {
+                window.alert('PDF generator could not load. Please refresh the page and try again.');
+                return;
+            }
+
             var selected = records[selector ? Number(selector.value) : 0];
-            window.html2pdf().set({
-                margin: 10,
-                filename: (selected ? selected.uid : 'Invoice') + '.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(content).save();
+            var originalLabel = pdfButton.innerHTML;
+            pdfButton.disabled = true;
+            pdfButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Preparing PDF...';
+
+            try {
+                // Wait for the invoice logo and other images before capturing the invoice.
+                var images = Array.prototype.slice.call(content.querySelectorAll('img'));
+                await Promise.all(images.map(function (img) {
+                    if (img.complete && img.naturalWidth > 0) {
+                        return typeof img.decode === 'function' ? img.decode().catch(function () {}) : Promise.resolve();
+                    }
+                    return new Promise(function (resolve) {
+                        img.addEventListener('load', resolve, { once: true });
+                        img.addEventListener('error', resolve, { once: true });
+                        window.setTimeout(resolve, 5000);
+                    });
+                }));
+
+                if (document.fonts && document.fonts.ready) await document.fonts.ready;
+
+                var options = {
+                    margin: [10, 10, 12, 10],
+                    filename: ((selected && selected.uid) ? selected.uid : 'Dior-Medical-Invoice') + '.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: false,
+                        backgroundColor: '#ffffff',
+                        logging: false,
+                        scrollX: 0,
+                        scrollY: 0,
+                        windowWidth: Math.max(content.scrollWidth, 794),
+                        onclone: function (clonedDocument) {
+                            var clonedContent = clonedDocument.getElementById('invoice-pdf-content');
+                            if (!clonedContent) return;
+                            clonedContent.style.display = 'block';
+                            clonedContent.style.width = '100%';
+                            clonedContent.style.maxWidth = '100%';
+                            clonedContent.style.padding = '18px';
+                            clonedContent.style.background = '#ffffff';
+                            clonedContent.style.color = '#172033';
+                            clonedContent.style.boxSizing = 'border-box';
+
+                            var clonedLogo = clonedContent.querySelector('.dior-company-info img');
+                            if (clonedLogo) {
+                                clonedLogo.style.width = '150px';
+                                clonedLogo.style.height = '104px';
+                                clonedLogo.style.objectFit = 'contain';
+                                clonedLogo.style.padding = '12px 16px';
+                            }
+
+                            clonedContent.querySelectorAll('table').forEach(function (table) {
+                                table.style.width = '100%';
+                                table.style.borderCollapse = 'collapse';
+                                table.style.tableLayout = 'fixed';
+                            });
+                            clonedContent.querySelectorAll('th, td').forEach(function (cell) {
+                                cell.style.padding = '10px 8px';
+                                cell.style.fontSize = '11px';
+                                cell.style.overflowWrap = 'anywhere';
+                            });
+                            clonedContent.querySelectorAll('tr, .dior-invoice-header, .dior-invoice-info, .dior-invoice-summary-section, .dior-company-info').forEach(function (node) {
+                                node.style.breakInside = 'avoid';
+                                node.style.pageBreakInside = 'avoid';
+                            });
+                        }
+                    },
+                    pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.dior-invoice-header', '.dior-invoice-info', '.dior-invoice-summary-section'] },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true }
+                };
+
+                await window.html2pdf().set(options).from(content).save();
+            } catch (error) {
+                console.error('Dior invoice PDF export failed:', error);
+                window.alert('PDF could not be generated. Please try again. If the issue continues, check the browser console.');
+            } finally {
+                pdfButton.disabled = false;
+                pdfButton.innerHTML = originalLabel;
+            }
         });
 
         var emailButton = panel.querySelector('#dior-email-invoice');
