@@ -250,30 +250,50 @@ class Dior_Patient_Portal_Data
             $raw = [];
         }
 
-        // Recursively flatten nested raw_data if present
+        // Recursively flatten all nested HIPAAtizer payload wrappers.
+        // This also recovers fields from older submissions stored as raw_data[0].data.
         $flattened = $raw;
-        if (!empty($raw['raw_data']) && is_array($raw['raw_data'])) {
-            foreach ($raw['raw_data'] as $rk => $rv) {
-                if (is_array($rv) && !empty($rv['data']) && is_array($rv['data'])) {
-                    foreach ($rv['data'] as $k3 => $v3) {
-                        if (!isset($flattened[$k3]) || $flattened[$k3] === '') {
-                            $flattened[$k3] = $v3;
-                        }
-                    }
-                } elseif (!isset($flattened[$rk]) || $flattened[$rk] === '') {
-                    $flattened[$rk] = $rv;
+        $flatten_payload = function ($node) use (&$flatten_payload, &$flattened) {
+            if (!is_array($node)) {
+                return;
+            }
+
+            // Prefer values inside HIPAAtizer's "data" wrapper.
+            if (isset($node['data']) && is_array($node['data'])) {
+                $flatten_payload($node['data']);
+            }
+
+            foreach ($node as $key => $value) {
+                if ($key === 'data' && is_array($value)) {
+                    continue;
+                }
+
+                if (is_array($value)) {
+                    $flatten_payload($value);
+                    continue;
+                }
+
+                // Preserve already normalized values; fill only missing fields.
+                if (!isset($flattened[$key]) || $flattened[$key] === '' || $flattened[$key] === null) {
+                    $flattened[$key] = $value;
                 }
             }
+        };
+
+        if (!empty($raw['raw_data']) && is_array($raw['raw_data'])) {
+            $flatten_payload($raw['raw_data']);
         }
 
-        // Helper to find first non-empty string across candidate keys
+        // Helper to find the first non-empty scalar value across candidate keys.
         $pick = function (...$keys) use ($flattened, $raw) {
             foreach ($keys as $k) {
-                if (!empty($flattened[$k]) && is_string($flattened[$k]) && trim($flattened[$k]) !== '') {
-                    return trim($flattened[$k]);
-                }
-                if (!empty($raw[$k]) && is_string($raw[$k]) && trim($raw[$k]) !== '') {
-                    return trim($raw[$k]);
+                foreach ([$flattened, $raw] as $source) {
+                    if (array_key_exists($k, $source) && is_scalar($source[$k])) {
+                        $value = trim((string) $source[$k]);
+                        if ($value !== '') {
+                            return $value;
+                        }
+                    }
                 }
             }
             return '';
@@ -429,14 +449,18 @@ class Dior_Patient_Portal_Data
         // Extract normalized HIPAAtizer intake data as fallback
         $hipaa_intake = self::get_normalized_hipaa_intake($user_id);
         if (!empty($hipaa_intake)) {
+            // Recover older HIPAAtizer values and persist them into the profile meta keys.
             if (empty($height) && !empty($hipaa_intake['height'])) {
                 $height = $hipaa_intake['height'];
+                update_user_meta($user_id, 'height', $height);
             }
             if (empty($weight) && !empty($hipaa_intake['weight'])) {
                 $weight = $hipaa_intake['weight'];
+                update_user_meta($user_id, 'weight', $weight);
             }
             if (empty($blood_group) && !empty($hipaa_intake['blood_group'])) {
                 $blood_group = $hipaa_intake['blood_group'];
+                update_user_meta($user_id, 'blood_group', $blood_group);
             }
             if (empty($first_name) && !empty($hipaa_intake['first_name'])) {
                 $first_name = $hipaa_intake['first_name'];
