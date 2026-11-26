@@ -2614,11 +2614,6 @@ class Dior_Doctor_Resolver
             $ids[] = $post_id;
         }
 
-        // Legacy unassigned appointment rows belong to the existing single-doctor account only.
-        if ($doctor_user_id === (int) self::get_default_doctor_id()) {
-            $ids[] = 0;
-            $ids[] = 1;
-        }
         return array_values(array_unique(array_filter(array_map('intval', $ids))));
     }
 
