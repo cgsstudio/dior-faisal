@@ -212,7 +212,7 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap flex-shrink-0" style="min-width:0;">
                 <span class="text-secondary small fw-semibold d-none d-sm-inline">Period:</span>
-                <select id="dior-income-chart-filter" class="form-select form-select-sm rounded-3 py-1.5 fw-semibold" style="width: 168px; min-width: 168px; max-width: 100%;">
+                <select id="dior-income-chart-filter" class="form-select form-select-sm rounded-3 py-1.5 fw-semibold" style="width: 210px; min-width: 210px; max-width: 100%;">
                     <option value="Monthly" selected>Monthly (Jan - Dec)</option>
                     <option value="Daily">Daily (Last 14 Days)</option>
                     <option value="Yearly">Yearly (5 Years)</option>
@@ -306,8 +306,8 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
 
 <style id="dior-income-report-chart-overlap-fix">
 #tab-doc-accounts-income-report #dior-income-chart-filter{
-    width:168px!important;
-    min-width:168px!important;
+    width:210px!important;
+    min-width:210px!important;
     max-width:100%!important;
     flex:0 1 168px!important;
     white-space:nowrap!important;
