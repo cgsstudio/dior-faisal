@@ -28,23 +28,31 @@
     }
 }
 
-/* Consistent horizontal spacing for every Doctor Dashboard tab/page. */
-#dior-doctor-app .dior-tab-content {
+/* Keep the topbar full-width; inset all Doctor Dashboard page panels. */
+#dior-doctor-app .dior-main-content > #dior-doc-content.dior-tab-content {
+    display: block !important;
     box-sizing: border-box !important;
-    width: 100% !important;
-    padding-left: 16px !important;
-    padding-right: 16px !important;
+    width: calc(100% - 40px) !important;
+    max-width: calc(100% - 40px) !important;
+    margin-left: 20px !important;
+    margin-right: 20px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }
 @media (max-width: 1024px) {
-    #dior-doctor-app .dior-tab-content {
-        padding-left: 12px !important;
-        padding-right: 12px !important;
+    #dior-doctor-app .dior-main-content > #dior-doc-content.dior-tab-content {
+        width: calc(100% - 24px) !important;
+        max-width: calc(100% - 24px) !important;
+        margin-left: 12px !important;
+        margin-right: 12px !important;
     }
 }
 @media (max-width: 600px) {
-    #dior-doctor-app .dior-tab-content {
-        padding-left: 8px !important;
-        padding-right: 8px !important;
+    #dior-doctor-app .dior-main-content > #dior-doc-content.dior-tab-content {
+        width: calc(100% - 16px) !important;
+        max-width: calc(100% - 16px) !important;
+        margin-left: 8px !important;
+        margin-right: 8px !important;
     }
 }
 </style>
