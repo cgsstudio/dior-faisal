@@ -490,7 +490,18 @@ foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
 
 
 <script>
-(function() {
+(function () {
+    'use strict';
+
+    // Guard against duplicate initialization if the dashboard template is injected again.
+    if (window.diorIncomeReportInitialized) {
+        if (typeof window.diorRenderIncomeChart === 'function') {
+            window.diorRenderIncomeChart();
+        }
+        return;
+    }
+    window.diorIncomeReportInitialized = true;
+
     var incomeChartInstance = null;
 
     var incomeChartData = {
@@ -511,16 +522,12 @@ foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
     function renderIncomeChart() {
         var el = document.getElementById('dior-income-report-apex-chart');
         var panel = document.getElementById('tab-doc-accounts-income-report');
-        if (!el || !panel) return;
+        if (!el || !panel || !panel.contains(el)) return;
 
-        if (typeof ApexCharts === 'undefined') {
-            setTimeout(renderIncomeChart, 100);
-            return;
-        }
+        // Do not initialize a chart inside a hidden dashboard tab.
+        if (window.getComputedStyle(panel).display === 'none') return;
 
-        if (window.getComputedStyle(panel).display === 'none') {
-            return;
-        }
+        if (typeof window.ApexCharts === 'undefined') return;
 
         if (incomeChartInstance) {
             incomeChartInstance.destroy();
@@ -528,11 +535,11 @@ foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
         }
 
         var filterEl = document.getElementById('dior-income-chart-filter');
-        var period = (filterEl ? filterEl.value : 'Monthly') || 'Monthly';
-        var d = incomeChartData[period] || incomeChartData.Monthly;
+        var period = (filterEl && filterEl.value) || 'Monthly';
+        var data = incomeChartData[period] || incomeChartData.Monthly;
 
         var options = {
-            series: d.series,
+            series: data.series,
             chart: {
                 type: 'area',
                 height: 390,
@@ -559,10 +566,7 @@ foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
             },
             colors: ['#0B3768', '#1A528E', '#3B82B8', '#62A6C8', '#8AB8D6'],
             dataLabels: { enabled: false },
-            stroke: {
-                curve: 'smooth',
-                width: 2.5
-            },
+            stroke: { curve: 'smooth', width: 2.5 },
             fill: {
                 type: 'gradient',
                 gradient: {
@@ -573,7 +577,7 @@ foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
                 }
             },
             xaxis: {
-                categories: d.categories,
+                categories: data.categories,
                 labels: {
                     style: { colors: '#64748b', fontSize: '12px', fontWeight: 500 }
                 },
@@ -582,8 +586,8 @@ foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
             },
             yaxis: {
                 labels: {
-                    formatter: function(val) {
-                        return '$' + Number(val).toLocaleString();
+                    formatter: function (value) {
+                        return '$' + Number(value || 0).toLocaleString();
                     },
                     style: { colors: '#64748b', fontSize: '12px' }
                 }
@@ -592,8 +596,8 @@ foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
                 shared: true,
                 intersect: false,
                 y: {
-                    formatter: function(val) {
-                        return '$' + Number(val).toLocaleString() + '.00';
+                    formatter: function (value) {
+                        return '$' + Number(value || 0).toFixed(2);
                     }
                 }
             },
@@ -612,38 +616,41 @@ foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
             }
         };
 
-        incomeChartInstance = new ApexCharts(el, options);
+        incomeChartInstance = new window.ApexCharts(el, options);
         incomeChartInstance.render();
     }
 
     window.diorRenderIncomeChart = renderIncomeChart;
 
-    document.addEventListener('change', function(e) {
-        if (e.target && e.target.id === 'dior-income-chart-filter') {
+    // Event delegation supports this template even when the tab is switched dynamically.
+    document.addEventListener('change', function (event) {
+        if (event.target && event.target.id === 'dior-income-chart-filter') {
             renderIncomeChart();
         }
     });
 
-    document.addEventListener('click', function(e) {
-        if (e.target && e.target.closest('#dior-income-chart-refresh')) {
+    document.addEventListener('click', function (event) {
+        if (event.target && event.target.closest('#dior-income-chart-refresh')) {
             renderIncomeChart();
         }
     });
 
+    // The dashboard tab becomes visible when the user selects Income Report.
     var panel = document.getElementById('tab-doc-accounts-income-report');
-    if (panel) {
-        var observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
-                    setTimeout(renderIncomeChart, 50);
+    if (panel && typeof MutationObserver !== 'undefined') {
+        var observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (mutation.attributeName === 'style' &&
+                    window.getComputedStyle(panel).display !== 'none') {
+                    window.requestAnimationFrame(renderIncomeChart);
                 }
             });
         });
-        observer.observe(panel, { attributes: true });
+        observer.observe(panel, { attributes: true, attributeFilter: ['style', 'class'] });
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', renderIncomeChart);
+        document.addEventListener('DOMContentLoaded', renderIncomeChart, { once: true });
     } else {
         renderIncomeChart();
     }
