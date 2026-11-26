@@ -6,8 +6,9 @@ global $wpdb;
 $inv_table = $wpdb->prefix . 'dior_invoices';
 $ir_rows = [];
 $current_report_year = (int) current_time('Y');
+$minimum_report_year = 2026; // Do not include historical report data before 2026.
 $ir_year = isset($_GET['income_year']) ? absint($_GET['income_year']) : $current_report_year;
-if ($ir_year < $current_report_year - 4 || $ir_year > $current_report_year) $ir_year = $current_report_year;
+if ($ir_year < $minimum_report_year || $ir_year > $current_report_year) $ir_year = $current_report_year;
 $report_doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
 $report_doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $report_doctor_ids))));
 if ($report_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
@@ -73,8 +74,7 @@ for ($i = 13; $i >= 0; $i--) {
     $day = strtotime('-' . $i . ' days', $today);
     $ir_daily_categories[] = wp_date('M j', $day);
 }
-for ($i = 4; $i >= 0; $i--) {
-    $year = $ir_year - $i;
+for ($year = $minimum_report_year; $year <= $current_report_year; $year++) {
     $ir_year_categories[] = (string) $year;
     $ir_year_values[$year] = 0.0;
 }
@@ -240,7 +240,7 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
             <div class="va-actions-wrapper">
                 <span class="text-secondary small fw-semibold d-none d-sm-inline">Fiscal Year:</span>
                 <select id="dior-income-table-year" class="form-select form-select-sm rounded-3 py-1.5 fw-semibold" style="width: auto;" aria-label="Income report year">
-                    <?php for ($year_option = $current_report_year; $year_option >= $current_report_year - 4; $year_option--): ?>
+                    <?php for ($year_option = $current_report_year; $year_option >= $minimum_report_year; $year_option--): ?>
                     <option value="<?php echo esc_attr($year_option); ?>" <?php selected($ir_year, $year_option); ?>><?php echo esc_html($year_option); ?></option>
                     <?php endfor; ?>
                 </select>
