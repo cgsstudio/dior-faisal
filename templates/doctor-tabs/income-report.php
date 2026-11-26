@@ -5,41 +5,80 @@ if (!defined('ABSPATH')) {
 global $wpdb;
 $inv_table = $wpdb->prefix . 'dior_invoices';
 $ir_rows = [];
-if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
-    $ir_rows = $wpdb->get_results("SELECT * FROM $inv_table ORDER BY created_at DESC LIMIT 500", ARRAY_A);
+$ir_year = (int) current_time('Y');
+$report_doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
+$report_doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $report_doctor_ids))));
+if ($report_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
+    $report_in = implode(',', array_fill(0, count($report_doctor_ids), '%d'));
+    $ir_rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM $inv_table WHERE doctor_id IN ($report_in) AND LOWER(status) IN ('paid','completed','succeeded') ORDER BY created_at DESC LIMIT 500",
+        ...$report_doctor_ids
+    ), ARRAY_A);
 }
-
+$manual_report_table = $wpdb->prefix . 'dior_doctor_bills';
+if ($report_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $manual_report_table)) === $manual_report_table) {
+    $report_in = implode(',', array_fill(0, count($report_doctor_ids), '%d'));
+    $manual_report_rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM $manual_report_table WHERE doctor_id IN ($report_in) AND LOWER(status)='paid' ORDER BY created_at DESC LIMIT 500",
+        ...$report_doctor_ids
+    ), ARRAY_A);
+    foreach ((array) $manual_report_rows as $manual_row) {
+        $manual_row['amount'] = $manual_row['total_amount'];
+        $manual_row['department'] = $manual_row['service_type'];
+        $ir_rows[] = $manual_row;
+    }
+}
 $ir_total_revenue = 0.0;
 $ir_monthly = array_fill(0, 12, 0.0);
 $ir_dept_totals = [];
 $ir_dept_monthly = [];
-$ir_year = (int) current_time('Y');
-
+$ir_daily_categories = [];
+$ir_daily_values = array_fill(0, 14, 0.0);
+$ir_year_categories = [];
+$ir_year_values = [];
+$today = current_time('timestamp');
+for ($i = 13; $i >= 0; $i--) {
+    $day = strtotime('-' . $i . ' days', $today);
+    $ir_daily_categories[] = wp_date('M j', $day);
+}
+for ($i = 4; $i >= 0; $i--) {
+    $year = $ir_year - $i;
+    $ir_year_categories[] = (string) $year;
+    $ir_year_values[$year] = 0.0;
+}
 foreach ($ir_rows as $row) {
     $amt = (float) ($row['total_amount'] ?? $row['amount'] ?? 0);
     $ir_total_revenue += $amt;
     $dept = trim((string) ($row['department'] ?? $row['service_type'] ?? 'General'));
     if ($dept === '') $dept = 'General';
     $ir_dept_totals[$dept] = ($ir_dept_totals[$dept] ?? 0.0) + $amt;
-    if (!isset($ir_dept_monthly[$dept])) {
-        $ir_dept_monthly[$dept] = array_fill(0, 12, 0.0);
-    }
-    $ts = !empty($row['created_at']) ? strtotime($row['created_at']) : false;
-    if ($ts && (int) date('Y', $ts) === $ir_year) {
-        $m = (int) date('n', $ts) - 1;
-        $ir_monthly[$m] += $amt;
-        $ir_dept_monthly[$dept][$m] += $amt;
+    if (!isset($ir_dept_monthly[$dept])) $ir_dept_monthly[$dept] = array_fill(0, 12, 0.0);
+    $ts = !empty($row['paid_at']) ? strtotime($row['paid_at']) : (!empty($row['created_at']) ? strtotime($row['created_at']) : false);
+    if ($ts) {
+        $row_year = (int) wp_date('Y', $ts);
+        if ($row_year === $ir_year) {
+            $month_index = (int) wp_date('n', $ts) - 1;
+            $ir_monthly[$month_index] += $amt;
+            $ir_dept_monthly[$dept][$month_index] += $amt;
+            $day_key = wp_date('Y-m-d', $ts);
+            for ($i = 13; $i >= 0; $i--) {
+                $target = wp_date('Y-m-d', strtotime('-' . $i . ' days', $today));
+                if ($target === $day_key) $ir_daily_values[13 - $i] += $amt;
+            }
+        }
+        if (isset($ir_year_values[$row_year])) $ir_year_values[$row_year] += $amt;
     }
 }
 arsort($ir_dept_totals);
 $ir_top_dept = !empty($ir_dept_totals) ? array_key_first($ir_dept_totals) : '—';
 $ir_top_dept_amt = !empty($ir_dept_totals) ? $ir_dept_totals[$ir_top_dept] : 0.0;
 $ir_monthly_avg = $ir_total_revenue > 0 ? ($ir_total_revenue / 12) : 0.0;
-
 $ir_chart_series = [];
 foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
     $ir_chart_series[] = ['name' => $d_name, 'data' => array_map(static function ($v) { return round($v, 2); }, $d_vals)];
 }
+$ir_daily_series = [['name' => 'Collected Income', 'data' => array_map(static function ($v) { return round($v, 2); }, $ir_daily_values)]];
+$ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static function ($v) { return round($v, 2); }, array_values($ir_year_values))]];
 ?>
 <section class="dior-tab-panel" id="tab-doc-accounts-income-report" style="display: none;">
     <!-- Breadcrumb Header -->
@@ -494,18 +533,9 @@ foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
     var incomeChartInstance = null;
 
     var incomeChartData = {
-        Monthly: {
-            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            series: <?php echo wp_json_encode($ir_chart_series); ?>
-        },
-        Daily: {
-            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            series: <?php echo wp_json_encode($ir_chart_series); ?>
-        },
-        Yearly: {
-            categories: ['<?php echo esc_js((string) $ir_year); ?>'],
-            series: <?php echo wp_json_encode(array_map(static function ($k, $v) { return ['name' => $k, 'data' => [round($v, 2)]]; }, array_keys(array_slice($ir_dept_totals, 0, 5, true)), array_values(array_slice($ir_dept_totals, 0, 5, true)))); ?>
-        }
+        Monthly: { categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], series: <?php echo wp_json_encode($ir_chart_series); ?> },
+        Daily: { categories: <?php echo wp_json_encode($ir_daily_categories); ?>, series: <?php echo wp_json_encode($ir_daily_series); ?> },
+        Yearly: { categories: <?php echo wp_json_encode($ir_year_categories); ?>, series: <?php echo wp_json_encode($ir_year_series); ?> }
     };
 
     function renderIncomeChart() {
