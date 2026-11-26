@@ -2348,7 +2348,10 @@ class Dior_Doctor_Dashboard
             if (!$appointment || (int) $appointment['patient_id'] !== $patient_id) {
                 wp_send_json_error(["message" => "The selected appointment does not belong to this patient."], 403);
             }
-            if (!current_user_can('manage_options') && (int) $appointment['doctor_id'] !== $current_user_id) {
+            $prescription_scope = class_exists('Dior_Doctor_Resolver')
+                ? Dior_Doctor_Resolver::get_accessible_doctor_ids($current_user_id)
+                : [$current_user_id];
+            if (!in_array((int) $appointment['doctor_id'], array_map('intval', (array) $prescription_scope), true)) {
                 wp_send_json_error(["message" => "You are not authorized to prescribe for this appointment."], 403);
             }
         }
