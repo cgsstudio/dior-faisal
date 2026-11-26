@@ -473,7 +473,8 @@ $status_badges = [
                             $doc_avatar = $doc_info['avatar'] ?? (get_user_meta($doc_id, 'dior_profile_image', true) ?: ('https://ui-avatars.com/api/?name=' . urlencode($doc_name) . '&background=00346c&color=ffffff&bold=true'));
                             $doc_email = $doc_info['email'] ?? ($a['doctor_email'] ?? 'doctor@diormedical.com');
                             ?>
-                            <tr data-appt-uid="<?php echo $uid; ?>"
+                            <tr data-db-id="<?php echo esc_attr((int) ($a['id'] ?? 0)); ?>"
+                                data-appt-uid="<?php echo $uid; ?>"
                                 data-appointment-id="<?php echo esc_attr((string) ($a['appointment_id'] ?? ($a['id'] ?? ''))); ?>"
                                 data-appointment-uid="<?php echo esc_attr((string) ($a['appointment_uid'] ?? ($a['uid'] ?? $uid_raw))); ?>"
                                 data-patient-id="<?php echo $patient_id; ?>"
@@ -1226,7 +1227,7 @@ $status_badges = [
                 }
 
                 var invalidRows = checkedRows.filter(function (row) {
-                    return !(row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid);
+                    return !/^\d+$/.test(row.dataset.dbId || '');
                 });
                 if (invalidRows.length) {
                     Swal.fire({ icon: 'error', title: 'Delete Failed', text: invalidRows.length + ' selected appointment(s) have no ID. No records were sent for deletion.' });
@@ -1264,6 +1265,7 @@ $status_badges = [
                         var data = new FormData();
                         data.append('action', 'dior_doc_appointment_delete');
                         data.append('nonce', nonce);
+                        data.append('appointment_db_id', row.dataset.dbId || '');
                         data.append('appt_uid', uid);
                         data.append('patient_user_id', row.dataset.patientUserId || '');
 
