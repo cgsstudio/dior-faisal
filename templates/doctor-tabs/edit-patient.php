@@ -999,6 +999,18 @@ if (empty($patients)) {
   }
 }
 </style>
+
+<style id="dior-edit-patient-checkbox-spacing">
+/* Add clear spacing between the password-email checkbox and its label. */
+#dior-doctor-app #dior-doc-content #tab-doc-patients-edit #ep-send-password-email {
+    margin-right: 12px !important;
+    flex-shrink: 0;
+}
+#dior-doctor-app #dior-doc-content #tab-doc-patients-edit label[for="ep-send-password-email"] {
+    display: inline-block;
+    margin-left: 0 !important;
+}
+</style>
 <style id="dior-edit-patient-ui-tweaks">
 /* Add clear spacing between password controls without changing their behavior. */
 #dior-doctor-app #dior-doc-content #tab-doc-patients-edit .ep-password-actions {
