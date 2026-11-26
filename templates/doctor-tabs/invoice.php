@@ -818,7 +818,10 @@
                 exportStage = document.createElement('section');
                 exportStage.id = 'tab-doc-accounts-invoice'; // Preserve the invoice-scoped print/PDF styles.
                 exportStage.setAttribute('aria-hidden', 'true');
-                exportStage.style.cssText = 'position:fixed;left:0;top:0;width:794px;min-height:1123px;padding:0;margin:0;background:#fff;z-index:2147483647;overflow:visible;box-sizing:border-box;';
+                exportStage.setAttribute('data-dior-pdf-stage', '1');
+                // Keep the temporary PDF render copy invisible on the live dashboard.
+                // html2canvas makes it visible only inside its isolated capture document.
+                exportStage.style.cssText = 'position:fixed;left:0;top:0;width:794px;min-height:1123px;padding:0;margin:0;background:#fff;z-index:-1;opacity:0;pointer-events:none;overflow:visible;box-sizing:border-box;';
                 var exportContent = content.cloneNode(true);
                 exportContent.style.cssText = 'display:block!important;width:778px!important;max-width:778px!important;min-width:778px!important;margin:0!important;padding:30px!important;background:#fff!important;color:#172b4d!important;box-sizing:border-box!important;font-family:Arial,Helvetica,sans-serif!important;overflow:visible!important;';
                 exportStage.appendChild(exportContent);
@@ -864,7 +867,7 @@
                     margin: [8,8,8,8],
                     filename: filename,
                     image: {type:'jpeg',quality:0.98},
-                    html2canvas: {scale:2,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,windowWidth:794,scrollX:0,scrollY:0},
+                    html2canvas: {scale:2,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,windowWidth:794,scrollX:0,scrollY:0,onclone:function(clonedDocument){var captureStage=clonedDocument.querySelector('[data-dior-pdf-stage="1"]');if(captureStage){captureStage.style.opacity='1';captureStage.style.zIndex='1';captureStage.style.pointerEvents='none';}}},
                     pagebreak: {mode:['css','legacy'],avoid:['tr','.dior-standard-invoice__top','.dior-standard-invoice__parties','.dior-standard-invoice__bottom']},
                     jsPDF: {unit:'mm',format:'a4',orientation:'portrait',compress:true}
                 }).from(exportStage).save();
