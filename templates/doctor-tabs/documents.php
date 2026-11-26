@@ -14,7 +14,7 @@ $doctor_display_name = $current_doctor_user->display_name ?: 'Doctor';
 
 // 1. Fetch documents authored by this doctor or attached to one of this doctor's assigned patients.
 $doc_scope_ids = class_exists('Dior_Doctor_Resolver')
-    ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id())
+    ? Dior_Auth_Service::get_doctor_user_scope_ids(get_current_user_id())
     : [get_current_user_id()];
 $doc_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doc_scope_ids))));
 $doc_patient_ids = [];
