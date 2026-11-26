@@ -12,7 +12,7 @@ $pp_doctor_id = get_current_user_id();
 
 // Retrieve only patients assigned to the logged-in doctor through their appointments.
 $pp_scope_ids = class_exists('Dior_Doctor_Resolver')
-    ? Dior_Doctor_Resolver::get_accessible_doctor_ids($pp_doctor_id)
+    ? Dior_Auth_Service::get_doctor_user_scope_ids($pp_doctor_id)
     : [$pp_doctor_id];
 $pp_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $pp_scope_ids))));
 $pp_patient_ids = [];
