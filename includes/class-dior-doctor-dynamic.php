@@ -46,6 +46,9 @@ class Dior_Doctor_Dynamic {
         $doctor_id = self::doctor_id();
         if (!$doctor_id || !user_can($doctor_id, 'doctor') || user_can($doctor_id, 'administrator') || user_can($doctor_id, 'manage_options')) return false;
         $scope = self::doctor_scope_ids();
+        if (class_exists('Dior_Doctor_Resolver') && $doctor_id === (int) Dior_Doctor_Resolver::get_default_doctor_id()) {
+            $scope = array_merge($scope, [0, 1]);
+        }
         $owner = (int) ($a['doctor_id'] ?? 0);
         if (in_array($owner, $scope, true)) return true;
         return $owner > 0 && class_exists('Dior_Doctor_Resolver')
