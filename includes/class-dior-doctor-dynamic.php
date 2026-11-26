@@ -817,8 +817,12 @@ class Dior_Doctor_Dynamic {
             ...array_merge([$pid], $scope_ids)
         ), ARRAY_A) ?: []) : [];
         $legacy_rx = get_user_meta($pid, 'dior_prescriptions', true);
+        $current_doctor = get_userdata(self::doctor_id());
+        $current_doctor_name = $current_doctor ? strtolower(trim($current_doctor->display_name)) : '';
         foreach ((array) $legacy_rx as $rx) {
             if (!is_array($rx)) continue;
+            $prescriber = strtolower(trim((string) ($rx['prescribed_by'] ?? '')));
+            if (!$prescriber || !$current_doctor_name || (strpos($prescriber, $current_doctor_name) === false && strpos($current_doctor_name, $prescriber) === false)) continue;
             $prescriptions[] = [
                 'medication' => $rx['medication'] ?? ($rx['name'] ?? ''),
                 'instructions' => $rx['instructions'] ?? ($rx['notes'] ?? ''),
