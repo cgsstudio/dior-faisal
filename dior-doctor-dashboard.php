@@ -561,12 +561,14 @@ class Dior_Doctor_Dashboard
     public static function get_dashboard_data($doctor_user_id = 0)
     {
         static $cache = [];
-        $doctor_user_id = (int)($doctor_user_id ?: get_current_user_id());
+        $current_user_id = get_current_user_id();
+        $doctor_user_id = (int)($doctor_user_id ?: $current_user_id);
+        // Never let a logged-in doctor request another doctor's dashboard payload.
+        if (!$current_user_id || $doctor_user_id !== $current_user_id || self::is_user_admin($current_user_id) || !Dior_Auth_Service::is_doctor($current_user_id)) {
+            return [];
+        }
         if (isset($cache[$doctor_user_id])) {
             return $cache[$doctor_user_id];
-        }
-        if (!$doctor_user_id || self::is_user_admin($doctor_user_id) || !user_can($doctor_user_id, 'doctor')) {
-            return [];
         }
 
         $appointments = self::get_all_appointments($doctor_user_id);
