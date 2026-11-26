@@ -65,13 +65,15 @@
                         <th style="width: 50px; text-align: center;">
                             <input type="checkbox" class="va-checkbox form-check-input">
                         </th>
-                        <th>Admission ID <i class="fas fa-sort"></i></th>
+                        <th>Invoice ID <i class="fas fa-sort"></i></th>
                         <th>Patient Name <i class="fas fa-sort"></i></th>
                         <th>Doctor <i class="fas fa-sort"></i></th>
+                        <th>Payment Details</th>
                         <th>Status <i class="fas fa-sort"></i></th>
                         <th>Date <i class="fas fa-sort"></i></th>
-                        <th>Tax <i class="fas fa-sort"></i></th>
-                        <th>Discount <i class="fas fa-sort"></i></th>
+                        <th>Amount <i class="fas fa-sort"></i></th>
+                        <th>Tax</th>
+                        <th>Discount</th>
                         <th>Total <i class="fas fa-sort"></i></th>
                         <th style="text-align: center;">Actions</th>
                     </tr>
@@ -79,43 +81,152 @@
                 <tbody>
                     <?php
                     global $wpdb;
-                    $inv_table = $wpdb->prefix . 'dior_invoices';
+
+                    // Limit billing records to the signed-in doctor's accessible scope.
+                    $current_doctor_id = get_current_user_id();
+                    $doctor_ids = class_exists('Dior_Doctor_Resolver')
+                        ? Dior_Doctor_Resolver::get_accessible_doctor_ids($current_doctor_id)
+                        : [$current_doctor_id];
+                    $doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_ids))));
                     $bill_rows = [];
-                    if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
-                        $bill_rows = $wpdb->get_results(
-                            "SELECT i.*, p.first_name, p.last_name, u.display_name AS patient_display, doc.display_name AS doctor_display
-                             FROM $inv_table i
-                             LEFT JOIN {$wpdb->prefix}dior_patients p ON (p.user_id = i.patient_id OR p.id = i.patient_id)
-                             LEFT JOIN {$wpdb->users} u ON u.ID = i.patient_id
-                             LEFT JOIN {$wpdb->users} doc ON doc.ID = i.doctor_id
-                             ORDER BY i.created_at DESC, i.id DESC
-                             LIMIT 100",
+                    $seen_invoice_ids = [];
+
+                    $inv_table = $wpdb->prefix . 'dior_invoices';
+                    $pay_table = $wpdb->prefix . 'dior_payments';
+                    $patients_table = $wpdb->prefix . 'dior_patients';
+                    $invoices_exist = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table;
+                    $payments_exist = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $pay_table)) === $pay_table;
+
+                    if ($doctor_ids && $invoices_exist) {
+                        $doctor_placeholders = implode(',', array_fill(0, count($doctor_ids), '%d'));
+                        $payment_join = $payments_exist
+                            ? "LEFT JOIN $pay_table pay ON pay.invoice_uid = i.invoice_uid"
+                            : "LEFT JOIN (SELECT NULL AS invoice_uid, NULL AS payment_method, NULL AS transaction_id, NULL AS amount, NULL AS currency, NULL AS status, NULL AS paid_at) pay ON 1=0";
+                        $invoice_sql = "SELECT i.*, p.first_name, p.last_name, u.display_name AS patient_display,
+                                               doc.display_name AS doctor_display,
+                                               pay.payment_method, pay.transaction_id, pay.amount AS paid_amount,
+                                               pay.currency AS paid_currency, pay.status AS payment_status, pay.paid_at
+                                        FROM $inv_table i
+                                        LEFT JOIN $patients_table p ON (p.user_id = i.patient_id OR p.id = i.patient_id)
+                                        LEFT JOIN {$wpdb->users} u ON u.ID = i.patient_id
+                                        LEFT JOIN {$wpdb->users} doc ON doc.ID = i.doctor_id
+                                        $payment_join
+                                        WHERE i.doctor_id IN ($doctor_placeholders)
+                                        ORDER BY COALESCE(pay.paid_at, i.created_at) DESC, i.id DESC
+                                        LIMIT 200";
+                        $invoice_rows = $wpdb->get_results($wpdb->prepare($invoice_sql, ...$doctor_ids), ARRAY_A);
+                        foreach ((array) $invoice_rows as $invoice) {
+                            $invoice_id = (string) ($invoice['invoice_uid'] ?? '');
+                            if ($invoice_id !== '') $seen_invoice_ids[$invoice_id] = true;
+                            $bill_rows[] = $invoice;
+                        }
+                    }
+
+                    // Stripe checkout currently records patient payment receipts in the patient's dior_payments meta.
+                    // Include those real receipts as well, avoiding duplicates already represented by invoice rows.
+                    if ($doctor_ids) {
+                        $meta_rows = $wpdb->get_results(
+                            $wpdb->prepare(
+                                "SELECT pm.user_id, pm.meta_value, u.display_name AS patient_display
+                                 FROM {$wpdb->usermeta} pm
+                                 INNER JOIN {$wpdb->users} u ON u.ID = pm.user_id
+                                 WHERE pm.meta_key = %s
+                                 ORDER BY pm.umeta_id DESC
+                                 LIMIT 500",
+                                'dior_payments'
+                            ),
                             ARRAY_A
                         );
+
+                        foreach ((array) $meta_rows as $meta_row) {
+                            $patient_payments = maybe_unserialize($meta_row['meta_value']);
+                            if (!is_array($patient_payments)) continue;
+
+                            foreach ($patient_payments as $payment) {
+                                if (!is_array($payment)) continue;
+                                $payment_doctor_id = absint($payment['doctor_id'] ?? 0);
+                                if (!$payment_doctor_id || !in_array($payment_doctor_id, $doctor_ids, true)) continue;
+
+                                $invoice_id = sanitize_text_field($payment['invoice_uid'] ?? $payment['id'] ?? '');
+                                if ($invoice_id !== '' && isset($seen_invoice_ids[$invoice_id])) continue;
+                                if ($invoice_id !== '') $seen_invoice_ids[$invoice_id] = true;
+
+                                $doctor_user = get_userdata($payment_doctor_id);
+                                $bill_rows[] = [
+                                    'invoice_uid' => $invoice_id ?: 'PAY-' . absint($meta_row['user_id']),
+                                    'patient_id' => absint($meta_row['user_id']),
+                                    'doctor_id' => $payment_doctor_id,
+                                    'patient_display' => $meta_row['patient_display'] ?? 'Patient',
+                                    'doctor_display' => $payment['doctor_name'] ?? ($doctor_user ? $doctor_user->display_name : 'Attending Physician'),
+                                    'payment_method' => $payment['method'] ?? '—',
+                                    'transaction_id' => $payment['stripe_session_id'] ?? '',
+                                    'status' => $payment['status'] ?? 'Paid',
+                                    'payment_status' => $payment['status'] ?? 'Paid',
+                                    'created_at' => $payment['date'] ?? '',
+                                    'paid_at' => $payment['date'] ?? '',
+                                    'amount' => $payment['amount'] ?? $payment['total'] ?? 0,
+                                    'paid_amount' => $payment['amount'] ?? $payment['total'] ?? 0,
+                                    'currency' => 'USD',
+                                    'tax' => $payment['tax'] ?? null,
+                                    'discount' => $payment['discount'] ?? null,
+                                    'total_amount' => $payment['total'] ?? $payment['amount'] ?? 0,
+                                    'description' => $payment['description'] ?? '',
+                                ];
+                            }
+                        }
                     }
+
+                    usort($bill_rows, static function ($left, $right) {
+                        $left_date = strtotime((string) ($left['paid_at'] ?? $left['created_at'] ?? '')) ?: 0;
+                        $right_date = strtotime((string) ($right['paid_at'] ?? $right['created_at'] ?? '')) ?: 0;
+                        return $right_date <=> $left_date;
+                    });
+                    $bill_rows = array_slice($bill_rows, 0, 200);
+
+                    $format_bill_amount = static function ($value, $currency = 'USD') {
+                        if ($value === null || $value === '') return '—';
+                        if (is_string($value)) {
+                            $numeric = preg_replace('/[^0-9.\\-]/', '', $value);
+                            if ($numeric === '' || !is_numeric($numeric)) return esc_html($value);
+                            $value = (float) $numeric;
+                        }
+                        $symbol = strtoupper((string) $currency) === 'USD' ? '$' : strtoupper((string) $currency) . ' ';
+                        return $symbol . number_format((float) $value, 2);
+                    };
+
                     if (empty($bill_rows)): ?>
                         <tr>
-                            <td colspan="10" class="dior-empty-state text-center text-muted py-5">
+                            <td colspan="11" class="dior-empty-state text-center text-muted py-5">
                                 <i class="fas fa-receipt fs-3 d-block mb-2 text-secondary opacity-50"></i>
-                                <span class="small fw-semibold">No bills found.</span>
+                                <span class="small fw-semibold">No patient payments or bills found.</span>
                             </td>
                         </tr>
                     <?php else:
                         foreach ($bill_rows as $br):
                             $p_name = trim((string) (($br['first_name'] ?? '') . ' ' . ($br['last_name'] ?? ''))) ?: ($br['patient_display'] ?? 'Patient');
-                            $parts  = preg_split('/\s+/', $p_name);
-                            $init   = strtoupper(substr($parts[0] ?? 'P', 0, 1) . substr($parts[1] ?? '', 0, 1));
+                            $parts = preg_split('/\\s+/', $p_name);
+                            $init = strtoupper(substr($parts[0] ?? 'P', 0, 1) . substr($parts[1] ?? '', 0, 1));
                             $d_name = $br['doctor_display'] ?? 'Attending Physician';
-                            $st_raw = ucfirst(strtolower((string) ($br['status'] ?? 'Unpaid')));
-                            $st_cls = strtolower($st_raw) === 'paid' ? 'va-badge-completed' : 'va-badge-cancelled';
-                            $b_date = !empty($br['created_at']) ? wp_date('M j, Y', strtotime($br['created_at'])) : '—';
-                            $tax    = isset($br['tax']) ? $br['tax'] . '%' : '0%';
-                            $disc   = isset($br['discount']) ? $br['discount'] . '%' : '0%';
-                            $total  = '$' . number_format((float) ($br['total_amount'] ?? $br['amount'] ?? 0), 2);
+                            $st_raw = ucfirst(strtolower((string) ($br['payment_status'] ?? $br['status'] ?? 'Pending')));
+                            $st_cls = in_array(strtolower($st_raw), ['paid', 'completed', 'succeeded'], true)
+                                ? 'va-badge-completed'
+                                : (in_array(strtolower($st_raw), ['failed', 'cancelled', 'canceled'], true) ? 'va-badge-cancelled' : 'va-badge-pending');
+                            $raw_date = $br['paid_at'] ?? $br['issued_at'] ?? $br['created_at'] ?? '';
+                            $b_date = $raw_date && strtotime((string) $raw_date) ? wp_date('M j, Y', strtotime((string) $raw_date)) : '—';
+                            $currency = $br['paid_currency'] ?? $br['currency'] ?? 'USD';
+                            $method = $br['payment_method'] ?? $br['method'] ?? '—';
+                            $transaction = $br['transaction_id'] ?? $br['stripe_session_id'] ?? '';
+                            $amount = $format_bill_amount($br['paid_amount'] ?? $br['amount'] ?? null, $currency);
+                            $tax = $format_bill_amount($br['tax'] ?? null, $currency);
+                            $discount = $format_bill_amount($br['discount'] ?? null, $currency);
+                            $total = $format_bill_amount($br['total_amount'] ?? $br['total'] ?? $br['amount'] ?? null, $currency);
                     ?>
                         <tr>
-                            <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input"></td>
-                            <td><?php echo esc_html($br['invoice_uid'] ?? ('INV-' . ($br['id'] ?? ''))); ?></td>
+                            <td style="text-align:center;"><input type="checkbox" class="va-checkbox form-check-input" value="<?php echo esc_attr($br['invoice_uid'] ?? ''); ?>"></td>
+                            <td>
+                                <strong><?php echo esc_html($br['invoice_uid'] ?? ('INV-' . ($br['id'] ?? ''))); ?></strong>
+                                <?php if (!empty($br['description'])): ?><small class="d-block text-muted"><?php echo esc_html($br['description']); ?></small><?php endif; ?>
+                            </td>
                             <td>
                                 <div class="va-user-profile">
                                     <span class="va-user-avatar va-user-initials" aria-hidden="true"><?php echo esc_html($init); ?></span>
@@ -123,20 +234,27 @@
                                 </div>
                             </td>
                             <td><?php echo esc_html($d_name); ?></td>
+                            <td>
+                                <strong><?php echo esc_html($method); ?></strong>
+                                <?php if ($transaction !== ''): ?><small class="d-block text-muted" title="<?php echo esc_attr($transaction); ?>"><?php echo esc_html(wp_trim_words($transaction, 5, '…')); ?></small><?php endif; ?>
+                            </td>
                             <td><span class="va-badge <?php echo esc_attr($st_cls); ?>"><?php echo esc_html($st_raw); ?></span></td>
                             <td><i class="far fa-calendar va-icon-blue"></i> <?php echo esc_html($b_date); ?></td>
+                            <td><?php echo esc_html($amount); ?></td>
                             <td><?php echo esc_html($tax); ?></td>
-                            <td><?php echo esc_html($disc); ?></td>
+                            <td><?php echo esc_html($discount); ?></td>
                             <td><?php echo esc_html($total); ?></td>
                             <td>
-                                <div class="va-row-actions" style="justify-content: center;">
-                                    <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                    <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
+                                <div class="va-row-actions" style="justify-content:center;">
+                                    <button type="button" class="va-action-btn-sm va-btn-edit btn" title="View payment details"
+                                        onclick="alert(<?php echo wp_json_encode('Payment: ' . $method . ($transaction ? ' | Transaction: ' . $transaction : '') . ' | Status: ' . $st_raw); ?>);">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
                     <?php endforeach; endif; ?>
-                </tbody>
+                </tbody>        </tbody>
             </table>
         </div>
 
