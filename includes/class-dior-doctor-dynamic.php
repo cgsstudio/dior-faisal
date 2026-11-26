@@ -705,6 +705,10 @@ class Dior_Doctor_Dynamic {
             'patient_uid' => $p['patient_uid'] ?? ($profile['patient_id'] ?? ''),
             'status' => get_user_meta($pid, 'dior_patient_status', true) ?: ($p['status'] ?? 'active'),
             'marital_status' => get_user_meta($pid, 'marital_status', true),
+            // Keep the stored centimetre value intact; the Doctor Dashboard formats it for display.
+            'height' => get_user_meta($pid, 'height', true) ?: ($intake['height'] ?? ''),
+            'weight' => get_user_meta($pid, 'weight', true) ?: ($intake['weight'] ?? ''),
+            'blood_group' => get_user_meta($pid, 'blood_group', true) ?: ($intake['blood_group'] ?? ''),
             'national_id' => get_user_meta($pid, 'national_id', true),
             'allergies' => $intake['drug_allergies_list'] ?? ($intake['allergies'] ?? ''),
             'conditions' => $intake['diagnosed_conditions'] ?? ($intake['other_conditions'] ?? ''),
