@@ -400,6 +400,10 @@ class Dior_Medical_REST_API
      */
     public function create_appointment($request)
     {
+        $user_id = get_current_user_id();
+        if (!Dior_Auth_Service::is_patient($user_id)) {
+            return new WP_Error('dior_rest_forbidden', 'Only patients may create appointments through this endpoint.', ['status' => 403]);
+        }
         $params = $request->get_json_params();
 
         $appointment = [
