@@ -309,7 +309,7 @@ $status_badges = [
             </div>
 
             <!-- Bulk Selection & Single-Line Action Toolbar -->
-            <div class="va-actions-wrapper d-flex flex-wrap flex-lg-nowrap align-items-center justify-content-lg-end gap-2 ms-lg-auto">
+            <div class="va-actions-wrapper d-flex align-items-center justify-content-lg-end gap-2 ms-lg-auto" style="display:flex; flex-wrap:nowrap; min-width:410px;">
                 <!-- Bulk Selection Toolbar (reveals when items checked) -->
                 <div id="va-bulk-bar" class="d-none align-items-center gap-2 flex-shrink-0">
                     <span class="badge bg-primary text-white rounded-pill px-2 py-1 small fw-semibold text-nowrap"
@@ -322,7 +322,7 @@ $status_badges = [
                 </div>
 
                 <!-- Search & Actions in Single Line -->
-                <div class="input-group input-group-sm dior-bs-search-group flex-shrink-1" style="min-width: 210px; max-width: 260px;">
+                <div class="input-group input-group-sm dior-bs-search-group flex-shrink-1" style="width:220px; min-width:180px; max-width:220px;">
                     <input type="text" id="va-appt-search" class="form-control border-start-0 ps-0 shadow-none"
                         placeholder="Search patient, doctor, UID...">
                 </div>
@@ -1022,10 +1022,15 @@ $status_badges = [
         }
 
         function getVisibleRows() {
-            var search = (document.getElementById('va-appt-search').value || '').toLowerCase().trim();
-            var docFilter = (document.getElementById('va-doctor-filter') ? document.getElementById('va-doctor-filter').value : '').toLowerCase().trim();
-            var status = (document.getElementById('va-status-filter').value || '').toLowerCase().trim();
-            var dateFilter = (document.getElementById('va-date-filter').value || '').toLowerCase().trim();
+            // Some filter controls are not rendered on this view; treat missing controls as no filter.
+            var searchEl = document.getElementById('va-appt-search');
+            var doctorEl = document.getElementById('va-doctor-filter');
+            var statusEl = document.getElementById('va-status-filter');
+            var dateEl = document.getElementById('va-date-filter');
+            var search = (searchEl ? searchEl.value : '').toLowerCase().trim();
+            var docFilter = (doctorEl ? doctorEl.value : '').toLowerCase().trim();
+            var status = (statusEl ? statusEl.value : '').toLowerCase().trim();
+            var dateFilter = (dateEl ? dateEl.value : '').toLowerCase().trim();
 
             return allRows.filter(function (r) {
                 var text = r.textContent.toLowerCase();
@@ -1051,10 +1056,11 @@ $status_badges = [
         }
 
         function renderPage(page) {
-            currentPage = page;
             var visible = getVisibleRows();
             var total = visible.length;
-            var start = (page - 1) * perPage;
+            var pages = Math.max(1, Math.ceil(total / perPage));
+            currentPage = Math.min(Math.max(1, parseInt(page, 10) || 1), pages);
+            var start = (currentPage - 1) * perPage;
 
             allRows.forEach(function (r) { r.style.display = 'none'; });
             visible.slice(start, start + perPage).forEach(function (r) { r.style.display = ''; });
@@ -1119,7 +1125,6 @@ $status_badges = [
             var input = document.getElementById('va-appt-search');
             if (input) {
                 input.addEventListener('input', applyFilters);
-                input.addEventListener('keyup', applyFilters);
             }
         }
 
@@ -1167,6 +1172,14 @@ $status_badges = [
             if (!tbody) return;
             tbody.addEventListener('change', function (e) {
                 if (e.target && e.target.classList.contains('va-row-check')) {
+                    var visible = getVisibleRows();
+                    var master = document.getElementById('va-select-all');
+                    if (master) {
+                        master.checked = visible.length > 0 && visible.every(function (row) {
+                            var cb = row.querySelector('.va-row-check');
+                            return cb && cb.checked;
+                        });
+                    }
                     updateBulkBar();
                 }
             });
@@ -2277,6 +2290,14 @@ $status_badges = [
                 var row = btn.closest('tr');
                 var patientName = btn.dataset.name || 'this patient';
                 var uid = btn.dataset.uid || (row ? (row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid) : '') || '';
+                if (!uid) {
+                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Delete Failed', text: 'Appointment ID is missing. Please refresh the page and try again.' });
+                    return;
+                }
+                if (!window.Swal) {
+                    window.alert('Delete confirmation is unavailable. Please reload the page and try again.');
+                    return;
+                }
 
                 Swal.fire({
                     title: 'Delete Appointment?',
