@@ -637,7 +637,6 @@ if (empty($patients)) {
             setVal('ep-country', p.country || 'United States of America');
 
             setVal('ep-em-name', p.emergency_name);
-            setVal('ep-em-rel', p.emergency_relation);
             setVal('ep-em-phone', p.emergency_phone);
 
             setVal('ep-pharm-name', p.pharmacy_name || p.preferred_pharmacy_name);
