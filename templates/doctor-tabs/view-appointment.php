@@ -615,12 +615,6 @@ $status_badges = [
                                                 <i class="fas fa-ban me-1"></i>Cancel
                                             </button>
                                         <?php endif; ?>
-                                        <button type="button"
-                                            class="btn btn-outline-danger btn-sm rounded-3 fw-semibold va-delete-appt-btn"
-                                            data-uid="<?php echo esc_attr($uid); ?>" data-name="<?php echo esc_attr($fname); ?>"
-                                            title="Delete Appointment">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
                                     </div>
                                 </td>
                             </tr>
