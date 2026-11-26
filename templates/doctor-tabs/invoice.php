@@ -469,10 +469,24 @@
             $patient_name = trim((string) (($record['first_name'] ?? '') . ' ' . ($record['last_name'] ?? '')));
             $patient_name = $patient_name ?: ($record['patient_display'] ?? 'Patient');
             $currency = strtoupper((string) ($record['paid_currency'] ?? $record['currency'] ?? 'USD'));
-            $amount = (float) ($record['amount'] ?? $record['total_amount'] ?? 0);
             $tax = (float) ($record['tax'] ?? 0);
             $discount = (float) ($record['discount'] ?? 0);
-            $total = (float) ($record['total_amount'] ?? ($amount + $tax - $discount));
+            $amount = (float) ($record['amount'] ?? 0);
+            $paid_amount = (float) ($record['paid_amount'] ?? 0);
+            $stored_total = (float) ($record['total_amount'] ?? 0);
+
+            // Some gateway invoices store the payable amount on the payment row,
+            // while the invoice row's amount/total_amount can be empty or zero.
+            // Use the real payment total as a fallback and derive the pre-tax line value.
+            if ($amount <= 0 && $paid_amount > 0) {
+                $amount = max(0, $paid_amount - $tax + $discount);
+            }
+            if ($amount <= 0 && $stored_total > 0) {
+                $amount = max(0, $stored_total - $tax + $discount);
+            }
+            $total = $stored_total > 0
+                ? $stored_total
+                : ($paid_amount > 0 ? $paid_amount : ($amount + $tax - $discount));
             $invoice_json[] = [
                 'uid' => (string) ($record['invoice_uid'] ?? ('INV-' . ($record['id'] ?? ''))),
                 'patient' => $patient_name,
@@ -752,7 +766,11 @@
             setField('method', item.method);
             setField('transaction', item.transaction || '—');
         }
-        if (selector) selector.addEventListener('change', function () { renderInvoice(Number(selector.value)); });
+        if (selector) {
+            selector.addEventListener('change', function () { renderInvoice(Number(selector.value)); });
+            // Apply the selected record's real currency and amounts on initial page load too.
+            renderInvoice(Number(selector.value) || 0);
+        }
 
         var printButton = panel.querySelector('.dior-invoice-actions .dior-btn-primary');
         if (printButton) printButton.addEventListener('click', function (event) {
