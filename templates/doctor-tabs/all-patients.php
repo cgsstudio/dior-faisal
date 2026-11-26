@@ -13,15 +13,9 @@ $doctor_scope_ids = class_exists('Dior_Doctor_Resolver')
     ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id)
     : [$doctor_id];
 $doctor_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope_ids))));
-$assigned_patient_ids = [];
-if ($doctor_scope_ids) {
-    $doctor_placeholders = implode(',', array_fill(0, count($doctor_scope_ids), '%d'));
-    $assigned_patient_ids = $wpdb->get_col($wpdb->prepare(
-        "SELECT DISTINCT patient_id FROM {$wpdb->prefix}dior_appointments WHERE is_deleted = 0 AND doctor_id IN ($doctor_placeholders)",
-        ...$doctor_scope_ids
-    ));
-}
-$assigned_patient_ids = array_values(array_unique(array_filter(array_map('absint', (array) $assigned_patient_ids))));
+$assigned_patient_ids = class_exists('Dior_Auth_Service')
+    ? Dior_Auth_Service::get_doctor_patient_ids($doctor_id)
+    : [];
 $patients = [];
 if ($assigned_patient_ids) {
     $patient_placeholders = implode(',', array_fill(0, count($assigned_patient_ids), '%d'));
