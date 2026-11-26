@@ -397,8 +397,8 @@ if (empty($patients)) {
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
                                 <label for="ep-password" class="form-label small fw-semibold text-dark">Reset Password (Optional)</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control rounded-start-3 font-monospace" id="ep-password" name="password" placeholder="Leave blank to keep current password">
+                                <div class="input-group ep-password-actions">
+                                    <input type="text" class="form-control rounded-3 font-monospace" id="ep-password" name="password" placeholder="Leave blank to keep current password">
                                     <button class="btn btn-outline-secondary" type="button" id="ep-gen-pass-btn" title="Generate New Secure Password">
                                         <i class="fas fa-arrows-rotate me-1"></i> Generate
                                     </button>
@@ -1001,3 +1001,26 @@ if (empty($patients)) {
   }
 }
 </style>
+<style id="dior-edit-patient-ui-tweaks">
+/* Add clear spacing between password controls without changing their behavior. */
+#dior-doctor-app #dior-doc-content #tab-doc-patients-edit .ep-password-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+}
+#dior-doctor-app #dior-doc-content #tab-doc-patients-edit .ep-password-actions > .form-control,
+#dior-doctor-app #dior-doc-content #tab-doc-patients-edit .ep-password-actions > .btn {
+    margin-left: 0 !important;
+    border-radius: 8px !important;
+}
+
+/* Keep button colors stable on hover throughout the Edit Patient page. */
+#dior-doctor-app #dior-doc-content #tab-doc-patients-edit .btn:hover:not(:disabled) {
+    color: var(--bs-btn-color) !important;
+    background-color: var(--bs-btn-bg) !important;
+    border-color: var(--bs-btn-border-color) !important;
+    box-shadow: var(--bs-btn-box-shadow, none) !important;
+    filter: none !important;
+}
+</style>
+
