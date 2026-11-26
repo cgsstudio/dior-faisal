@@ -10,25 +10,30 @@ $ajax_url = admin_url('admin-ajax.php');
 $doctor_id = get_current_user_id();
 $doc_name = wp_get_current_user()->display_name;
 
-// Fetch consultation notes (encounters)
-$notes = $wpdb->get_results(
-    $wpdb->prepare(
-        "SELECT e.*, 
-                p.first_name, p.last_name, p.avatar_url, p.patient_uid, p.user_id as patient_user_id
-         FROM {$wpdb->prefix}dior_encounters e
-         LEFT JOIN {$wpdb->prefix}dior_patients p ON p.user_id = e.patient_id
-         WHERE e.is_deleted = 0
-         ORDER BY e.created_at DESC
-         LIMIT 200"
-    ),
-    ARRAY_A
-);
+$doctor_scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
+$doctor_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope_ids))));
+$doctor_scope_in = $doctor_scope_ids ? implode(',', array_fill(0, count($doctor_scope_ids), '%d')) : '';
 
-// Fetch patients for dropdown
-$patients = $wpdb->get_results(
-    "SELECT user_id, first_name, last_name, patient_uid FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' ORDER BY first_name ASC LIMIT 300",
-    ARRAY_A
-);
+// Fetch only this doctor's clinical encounters.
+$notes = $doctor_scope_ids ? ($wpdb->get_results($wpdb->prepare(
+    "SELECT e.*, p.first_name, p.last_name, p.avatar_url, p.patient_uid, p.user_id as patient_user_id
+     FROM {$wpdb->prefix}dior_encounters e
+     LEFT JOIN {$wpdb->prefix}dior_patients p ON p.user_id = e.patient_id
+     WHERE e.is_deleted = 0 AND e.doctor_id IN ($doctor_scope_in)
+     ORDER BY e.created_at DESC LIMIT 200",
+    ...$doctor_scope_ids
+), ARRAY_A) ?: []) : [];
+
+// Fetch only patients assigned to this doctor for the note dropdown.
+$assigned_patient_ids = Dior_Auth_Service::get_doctor_patient_ids($doctor_id);
+$patients = [];
+if ($assigned_patient_ids) {
+    $patient_in = implode(',', array_fill(0, count($assigned_patient_ids), '%d'));
+    $patients = $wpdb->get_results($wpdb->prepare(
+        "SELECT user_id, first_name, last_name, patient_uid FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' AND user_id IN ($patient_in) ORDER BY first_name ASC LIMIT 300",
+        ...$assigned_patient_ids
+    ), ARRAY_A);
+}
 if (empty($patients)) {
     $wp_users = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'number' => 100]);
     $patients = [];
