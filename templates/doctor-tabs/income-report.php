@@ -158,7 +158,7 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
                 <div class="d-flex align-items-start justify-content-between">
                     <div>
                         <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Total Annual Revenue</span>
-                        <div class="fs-2 fw-bold text-dark mt-1">$<?php echo esc_html(number_format($ir_total_revenue, 2)); ?></div>
+                        <div class="fs-4 fw-bold text-dark mt-1">$<?php echo esc_html(number_format($ir_total_revenue, 2)); ?></div>
                     </div>
                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-3 p-2.5">
                         <i class="fas fa-wallet fs-5"></i>
@@ -174,7 +174,7 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
                 <div class="d-flex align-items-start justify-content-between">
                     <div>
                         <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Monthly Average</span>
-                        <div class="fs-2 fw-bold text-dark mt-1">$<?php echo esc_html(number_format($ir_monthly_avg, 2)); ?></div>
+                        <div class="fs-4 fw-bold text-dark mt-1">$<?php echo esc_html(number_format($ir_monthly_avg, 2)); ?></div>
                     </div>
                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-3 p-2.5">
                         <i class="fas fa-chart-line fs-5"></i>
@@ -190,7 +190,7 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
                 <div class="d-flex align-items-start justify-content-between">
                     <div>
                         <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Top Department</span>
-                        <div class="fs-2 fw-bold text-dark mt-1"><?php echo esc_html($ir_top_dept); ?></div>
+                        <div class="fs-5 fw-bold text-dark mt-1"><?php echo esc_html($ir_top_dept); ?></div>
                     </div>
                     <span class="badge bg-info-subtle text-info border border-info-subtle rounded-3 p-2.5">
                         <i class="fas fa-heart-pulse fs-5"></i>
@@ -206,7 +206,7 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
                 <div class="d-flex align-items-start justify-content-between">
                     <div>
                         <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Total Invoices</span>
-                        <div class="fs-2 fw-bold text-success mt-1"><?php echo esc_html(count($ir_rows)); ?></div>
+                        <div class="fs-4 fw-bold text-success mt-1"><?php echo esc_html(count($ir_rows)); ?></div>
                     </div>
                     <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-3 p-2.5">
                         <i class="fas fa-arrow-trend-up fs-5"></i>
