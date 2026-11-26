@@ -867,7 +867,7 @@
                     margin: [8,8,8,8],
                     filename: filename,
                     image: {type:'jpeg',quality:0.98},
-                    html2canvas: {scale:2,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,windowWidth:794,windowHeight:1123,scrollX:0,scrollY:0},
+                    html2canvas: {scale:2,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,windowWidth:794,windowHeight:1123,scrollX:0,scrollY:0,onclone:function(clonedDocument){var captureStage=clonedDocument.querySelector('[data-dior-pdf-stage="1"]');if(captureStage){captureStage.style.setProperty('position','fixed','important');captureStage.style.setProperty('left','0','important');captureStage.style.setProperty('top','0','important');captureStage.style.setProperty('width','794px','important');captureStage.style.setProperty('min-height','1123px','important');captureStage.style.setProperty('display','block','important');captureStage.style.setProperty('visibility','visible','important');captureStage.style.setProperty('opacity','1','important');captureStage.style.setProperty('z-index','2147483647','important');captureStage.style.setProperty('transform','none','important');captureStage.style.setProperty('clip-path','none','important');}}},
                     pagebreak: {mode:['css','legacy'],avoid:['tr','.dior-standard-invoice__top','.dior-standard-invoice__parties','.dior-standard-invoice__bottom']},
                     jsPDF: {unit:'mm',format:'a4',orientation:'portrait',compress:true}
                 }).from(exportStage).save();
