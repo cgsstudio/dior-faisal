@@ -3,10 +3,12 @@
 <style id="dior-doctor-sidebar-desktop-width">
 /* Widen the expanded Doctor Dashboard sidebar by 40px on desktop only. */
 @media (min-width: 1025px) {
-    #dior-doctor-app .dior-app:not(.dior-sidebar-collapsed) > #dior-doc-sidebar {
-        width: 260px !important;
-        min-width: 260px !important;
-        flex: 0 0 260px !important;
+    /* The collapsed-state class is applied to #dior-doctor-app, not .dior-app. */
+    #dior-doctor-app:not(.dior-sidebar-collapsed) #dior-doc-sidebar {
+        width: 280px !important;
+        min-width: 280px !important;
+        max-width: 280px !important;
+        flex: 0 0 280px !important;
     }
 }
 </style>
