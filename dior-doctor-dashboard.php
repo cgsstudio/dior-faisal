@@ -2060,8 +2060,8 @@ class Dior_Doctor_Dashboard
         $room_url = esc_url_raw($_POST['room_url'] ?? '');
         $notes = sanitize_textarea_field($_POST['notes'] ?? '');
 
-        if (!$patient_id) {
-            wp_send_json_error(["message" => "Please select a valid patient."]);
+        if (!$patient_id || !Dior_Auth_Service::can_access_patient($patient_id, $doctor_id)) {
+            wp_send_json_error(["message" => "You are not authorized to create a visit for this patient."], 403);
         }
         if (empty($visit_date)) {
             wp_send_json_error(["message" => "Please select a valid visit date."]);
@@ -2204,13 +2204,18 @@ class Dior_Doctor_Dashboard
         if ($rec && in_array((int) $rec->doctor_id, array_map('intval', (array) $tele_scope), true)) {
             $wpdb->delete($table_tele, ['tele_uid' => $tele_uid, 'doctor_id' => (int) $rec->doctor_id], ['%s', '%d']);
             if (!empty($rec->appointment_uid)) {
-                $wpdb->update(
-                    $wpdb->prefix . 'dior_appointments',
-                    ['is_deleted' => 1],
-                    ['appt_uid' => $rec->appointment_uid],
-                    ['%d'],
-                    ['%s']
-                );
+                $appt_scope = class_exists('Dior_Doctor_Resolver')
+                    ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id())
+                    : [get_current_user_id()];
+                $appt_scope = array_values(array_unique(array_filter(array_map('absint', (array) $appt_scope))));
+                if ($appt_scope) {
+                    $in = implode(',', array_fill(0, count($appt_scope), '%d'));
+                    $args = array_merge([$rec->appointment_uid], $appt_scope);
+                    $wpdb->query($wpdb->prepare(
+                        "UPDATE {$wpdb->prefix}dior_appointments SET is_deleted=1, updated_at=%s WHERE appt_uid=%s AND doctor_id IN ($in) AND is_deleted=0",
+                        ...array_merge([current_time('mysql')], $args)
+                    ));
+                }
             }
         }
 
