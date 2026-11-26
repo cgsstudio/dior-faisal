@@ -117,6 +117,39 @@
                             $inc_rows[] = $bill;
                         }
                     }
+                    // Stripe receipts are also stored in the patient's payment ledger.
+                    $income_seen = [];
+                    foreach ($inc_rows as $existing_income) {
+                        $key = (string) ($existing_income['invoice_uid'] ?? '');
+                        if ($key !== '') $income_seen[$key] = true;
+                    }
+                    if ($income_doctor_ids) {
+                        $meta_rows = $wpdb->get_results($wpdb->prepare(
+                            "SELECT pm.user_id, pm.meta_value, u.display_name AS patient_display FROM {$wpdb->usermeta} pm
+                             INNER JOIN {$wpdb->users} u ON u.ID=pm.user_id WHERE pm.meta_key=%s ORDER BY pm.umeta_id DESC LIMIT 500",
+                            'dior_payments'
+                        ), ARRAY_A);
+                        foreach ((array) $meta_rows as $meta_row) {
+                            $patient_payments = maybe_unserialize($meta_row['meta_value']);
+                            if (!is_array($patient_payments)) continue;
+                            foreach ($patient_payments as $payment) {
+                                if (!is_array($payment) || !in_array(absint($payment['doctor_id'] ?? 0), $income_doctor_ids, true)) continue;
+                                $payment_uid = sanitize_text_field($payment['invoice_uid'] ?? $payment['id'] ?? '');
+                                if ($payment_uid && isset($income_seen[$payment_uid])) continue;
+                                if ($payment_uid) $income_seen[$payment_uid] = true;
+                                $inc_rows[] = [
+                                    'id' => $payment_uid ?: 'PAY-' . absint($meta_row['user_id']),
+                                    'invoice_uid' => $payment_uid,
+                                    'patient_display' => $meta_row['patient_display'],
+                                    'description' => $payment['description'] ?? 'Patient payment',
+                                    'total_amount' => preg_replace('/[^0-9.\\-]/', '', (string) ($payment['total'] ?? $payment['amount'] ?? 0)),
+                                    'status' => $payment['status'] ?? 'Paid',
+                                    'payment_method' => $payment['method'] ?? '—',
+                                    'created_at' => $payment['date'] ?? '',
+                                ];
+                            }
+                        }
+                    }
                     usort($inc_rows, static function ($a, $b) {
                         return (strtotime((string)($b['created_at'] ?? '')) ?: 0) <=> (strtotime((string)($a['created_at'] ?? '')) ?: 0);
                     });
