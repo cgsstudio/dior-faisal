@@ -153,7 +153,6 @@ if ($pr_is_admin) {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php
                     <?php if (!empty($records)): ?>
                         <?php foreach ($records as $r):
                             $patient_id = (int) ($r['user_id'] ?? 0);
