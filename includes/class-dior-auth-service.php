@@ -108,54 +108,38 @@ class Dior_Auth_Service
      */
     public static function can_access_patient($patient_id, $user_id = 0)
     {
-        $user_id = $user_id ? (int)$user_id : get_current_user_id();
-        $patient_id = (int)$patient_id;
+        $user_id = $user_id ? (int) $user_id : get_current_user_id();
+        $patient_id = (int) $patient_id;
+        if (!$user_id || !$patient_id) return false;
 
-        if (!$user_id || !$patient_id) {
-            return false;
+        // Admins use separate admin tools; they never inherit Doctor Dashboard access.
+        if (self::is_admin($user_id)) return true;
+
+        // Doctors have priority if an account also carries a patient/customer role.
+        if (self::is_doctor($user_id)) {
+            if (in_array($patient_id, self::get_doctor_patient_ids($user_id), true)) return true;
+
+            global $wpdb;
+            $appointment_table = $wpdb->prefix . 'dior_appointments';
+            if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $appointment_table)) !== $appointment_table) return false;
+
+            $doctor_ids = class_exists('Dior_Doctor_Resolver')
+                ? Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id)
+                : [$user_id];
+            $doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_ids))));
+            if (!$doctor_ids) return false;
+
+            $placeholders = implode(',', array_fill(0, count($doctor_ids), '%d'));
+            $args = array_merge([$patient_id], $doctor_ids);
+            $sql = $wpdb->prepare(
+                "SELECT id FROM {$appointment_table} WHERE patient_id = %d AND doctor_id IN ($placeholders) AND is_deleted = 0 LIMIT 1",
+                ...$args
+            );
+            return (bool) $wpdb->get_var($sql);
         }
 
-        // Admin access is handled by admin-specific screens/endpoints, not the Doctor Dashboard.
-        if (self::is_admin($user_id)) {
-            return true;
-        }
-
-        // Patients may only access their own portal data.
-        if (self::is_patient($user_id)) {
-            return $user_id === $patient_id;
-        }
-
-        // Doctors may access a patient only when explicitly assigned or linked to owned clinical records.
-        if (!self::is_doctor($user_id)) {
-            return false;
-        }
-
-        if (in_array($patient_id, self::get_doctor_patient_ids($user_id), true)) return true;
-
-        global $wpdb;
-        $doctor_ids = class_exists('Dior_Doctor_Resolver')
-            ? Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id)
-            : [$user_id];
-        $doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_ids))));
-        if (!$doctor_ids) return false;
-
-        $appointment_table = $wpdb->prefix . 'dior_appointments';
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $appointment_table)) !== $appointment_table) {
-            return false;
-        }
-        $doctor_ids = class_exists('Dior_Doctor_Resolver')
-            ? Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id)
-            : [$user_id];
-        $doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_ids))));
-        if (!$doctor_ids) return false;
-
-        $placeholders = implode(',', array_fill(0, count($doctor_ids), '%d'));
-        $args = array_merge([$patient_id], $doctor_ids);
-        $sql = $wpdb->prepare(
-            "SELECT id FROM {$appointment_table} WHERE patient_id = %d AND doctor_id IN ($placeholders) AND is_deleted = 0 LIMIT 1",
-            ...$args
-        );
-        return (bool) $wpdb->get_var($sql);
+        // Patient accounts can access only their own portal data.
+        return self::is_patient($user_id) && $user_id === $patient_id;
     }
 
     /**
