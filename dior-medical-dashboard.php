@@ -64,6 +64,8 @@ if (!class_exists('Dior_Demo_Data')) {
 if (!class_exists('Dior_Questionnaire_Service')) {
     require_once(DIOR_PORTAL_PATH . 'includes/class-dior-questionnaire-service.php');
 }
+// Temporary admin-only HIPAAtizer intake inspection page.
+require_once(DIOR_PORTAL_PATH . 'includes/class-dior-hipaatizer-logs.php');
 if (!class_exists('Dior_Doctor_Dynamic')) {
     require_once(DIOR_PORTAL_PATH . 'includes/class-dior-doctor-dynamic.php');
 }
