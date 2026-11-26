@@ -249,7 +249,7 @@ $initial_status_badge_class = $edit_status_badge_palette[$initial_status_key] ??
         <div class="row g-3 align-items-center">
             <div class="col-lg-5 col-md-6 col-12">
                 <label class="form-label small text-uppercase text-secondary fw-bold mb-1" for="dior-edit-patient-selector">
-                    <i class="fas fa-user-injured text-primary me-1"></i> Select Patient <span class="badge bg-primary-subtle text-primary ms-1 small fw-bold dior-edit-step-badge dior-edit-step-primary">Step 1</span>
+                    <i class="fas fa-user-injured text-primary me-1"></i> Select Patient 
                 </label>
                 <select class="form-select rounded-3 py-2 fw-semibold dior-edit-selector dior-edit-selector-primary" id="dior-edit-patient-selector" onchange="diorOnHeaderPatientSelect(this.value)">
                     <option value="">-- All Patients (View All Appointments) --</option>
@@ -266,7 +266,7 @@ $initial_status_badge_class = $edit_status_badge_palette[$initial_status_key] ??
             </div>
             <div class="col-lg-5 col-md-6 col-12">
                 <label class="form-label small text-uppercase text-secondary fw-bold mb-1" for="dior-edit-appt-selector">
-                    <i class="fas fa-calendar-check text-primary me-1"></i> Select Appointment to Edit <span class="badge bg-primary text-primary ms-1 small fw-bold dior-edit-step-badge dior-edit-step-info">Step 2</span>
+                    <i class="fas fa-calendar-check text-primary me-1"></i> Select Appointment to Edit 
                 </label>
                 <select class="form-select rounded-3 py-2 fw-semibold dior-edit-selector dior-edit-selector-info" id="dior-edit-appt-selector" onchange="diorOnHeaderApptSelect(this.value)">
                     <option value="">-- Choose an appointment from records --</option>
@@ -282,12 +282,6 @@ $initial_status_badge_class = $edit_status_badge_palette[$initial_status_key] ??
                 </select>
             </div>
             <div class="col-lg-2 col-md-12 d-flex flex-wrap align-items-center justify-content-lg-end gap-2 pt-lg-3">
-                <span id="dior-selected-appt-badge" class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2 small fw-semibold dior-edit-appt-id-badge">
-                    <span id="dior-badge-appt-id"><?php echo !empty($first_appt_uid) ? '#' . esc_html($first_appt_uid) : 'No Appt Selected'; ?></span>
-                </span>
-                <span id="dior-selected-status-badge" class="badge <?php echo esc_attr($initial_status_badge_class); ?> border rounded-pill px-3 py-2 small fw-semibold dior-edit-status-badge">
-                    <span id="dior-badge-status-text"><?php echo esc_html($initial_appointment_status); ?></span>
-                </span>
                 <button type="button" class="btn btn-outline-primary btn-sm rounded-3 fw-semibold px-3 py-2" onclick="if(typeof diorAdminSwitchTab==='function') diorAdminSwitchTab('doc-appointments-view'); else if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-appointments-view');">
                     <i class="fas fa-table-list me-1"></i> View All
                 </button>
