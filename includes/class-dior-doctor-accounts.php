@@ -77,7 +77,7 @@ final class Dior_Doctor_Accounts {
         self::auth(); global $wpdb;
         $patient_id = absint($_POST['patient_id'] ?? 0);
         $patient = get_userdata($patient_id);
-        if (!$patient || !in_array('patient', (array) $patient->roles, true)) {
+        if (!$patient || !in_array('patient', (array) $patient->roles, true) || !Dior_Doctor_Dynamic::patient_belongs_to_doctor($patient_id, get_current_user_id())) {
             wp_send_json_error(['message' => 'Select a valid patient account.']);
         }
         $service = sanitize_text_field(wp_unslash($_POST['service_type'] ?? ''));
