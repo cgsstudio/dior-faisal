@@ -524,6 +524,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!invoiceElement) return;
             const invoiceHeading = invoiceElement.querySelector('.dior-invoice-header h2');
             const invoiceName = invoiceHeading ? invoiceHeading.textContent.replace(/[^a-z0-9_-]+/gi, '_') : 'Invoice';
+            if (!invoiceElement) return;
+            const invoiceHeading = invoiceElement.querySelector('.dior-invoice-header h2');
+            const invoiceName = invoiceHeading ? invoiceHeading.textContent.replace(/[^a-z0-9_-]+/gi, '_') : 'Invoice';
             
             // Generate PDF
             const opt = {
