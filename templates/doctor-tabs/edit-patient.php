@@ -11,13 +11,19 @@ $ajax_url = admin_url('admin-ajax.php');
 $today = date('Y-m-d');
 $max_dob = date('Y-m-d', strtotime('-18 years'));
 
-// Fetch all registered patients from wp_dior_patients
-$patients = $wpdb->get_results(
-    "SELECT user_id, first_name, last_name, patient_uid, email, phone, status, avatar_url FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' ORDER BY first_name ASC, last_name ASC LIMIT 500",
-    ARRAY_A
-);
-if (empty($patients)) {
-    $users = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'number' => 200]);
+// Fetch only patients assigned to the logged-in doctor.
+$assigned_patient_ids = Dior_Auth_Service::get_doctor_patient_ids(get_current_user_id());
+$assigned_patient_ids = array_values(array_unique(array_filter(array_map('absint', (array) $assigned_patient_ids))));
+$patients = [];
+if ($assigned_patient_ids) {
+    $patient_in = implode(',', array_fill(0, count($assigned_patient_ids), '%d'));
+    $patients = $wpdb->get_results($wpdb->prepare(
+        "SELECT user_id, first_name, last_name, patient_uid, email, phone, status, avatar_url FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' AND user_id IN ($patient_in) ORDER BY first_name ASC, last_name ASC LIMIT 500",
+        ...$assigned_patient_ids
+    ), ARRAY_A);
+}
+if (empty($patients) && $assigned_patient_ids) {
+    $users = get_users(['include' => $assigned_patient_ids, 'role__in' => ['patient', 'subscriber', 'customer'], 'number' => count($assigned_patient_ids)]);
     $patients = [];
     foreach ($users as $u) {
         $patients[] = [
