@@ -2736,18 +2736,17 @@ class Dior_Doctor_Resolver
 
         if (is_numeric($doctor_ref)) {
             $reference_id = (int) $doctor_ref;
-            if (get_user_meta($reference_id, '_dior_merged_into_doctor_id', true)) {
-                return $central_id;
-            }
-            $post = get_post($reference_id);
-            if ($post && $post->post_type === 'wpddb_doctor') {
-                return self::sync_docbooker_doctor_to_wp_user($post->ID);
-            }
+            $merged_into = (int) get_user_meta($reference_id, '_dior_merged_into_doctor_id', true);
+            if ($merged_into) return $merged_into;
             $user = get_userdata($reference_id);
             if ($user && in_array('administrator', (array) $user->roles, true) && !in_array('doctor', (array) $user->roles, true)) {
                 return 0;
             }
             if ($user && in_array('doctor', (array) $user->roles, true)) return (int) $user->ID;
+            $post = get_post($reference_id);
+            if ($post && $post->post_type === 'wpddb_doctor') {
+                return self::sync_docbooker_doctor_to_wp_user($post->ID);
+            }
         }
 
         if (is_string($doctor_ref)) {
