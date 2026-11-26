@@ -1173,7 +1173,8 @@ $status_badges = [
             if (dateF) dateF.addEventListener('change', applyFilters);
         }
 
-        // No selection toolbar: selected rows are deleted using the registry trash action.
+        // Selection toolbar intentionally removed; keep this no-op for existing checkbox handlers.
+        function updateBulkBar() {}
 
         function setupSelectAll() {
             var selectAll = document.getElementById('va-select-all');
@@ -1325,63 +1326,6 @@ $status_badges = [
                 });
             }
 
-            // Bulk Mark Complete
-            var compBtn = document.getElementById('va-bulk-complete-btn');
-            if (compBtn) {
-                compBtn.addEventListener('click', function () {
-                    var checkedRows = Array.from(document.querySelectorAll('#va-appointments-tbody .va-row-check:checked')).map(function (cb) {
-                        return cb.closest('tr');
-                    }).filter(Boolean);
-
-                    if (checkedRows.length === 0) {
-                        if (window.Swal) {
-                            Swal.fire({ icon: 'info', title: 'No Appointments Selected', text: 'Please select at least one appointment to mark as completed.' });
-                        }
-                        return;
-                    }
-
-                    var promises = checkedRows.map(function (row) {
-                        var uid = row.dataset.apptUid;
-                        var pid = row.dataset.patientId;
-                        var date = row.dataset.date;
-                        var data = new FormData();
-                        data.append('action', 'dior_doc_appointment_update');
-                        data.append('nonce', nonce);
-                        data.append('appt_uid', uid);
-                        data.append('patient_id', pid);
-                        data.append('status', 'Completed');
-                        data.append('date', date);
-                        return fetch(ajaxUrl, { method: 'POST', body: data }).then(function (r) { return r.json(); });
-                    });
-
-                    Promise.all(promises).then(function () {
-                        checkedRows.forEach(function (row) {
-                            row.dataset.status = 'Completed';
-                            var badge = row.querySelector('.va-badge');
-                            if (badge) {
-                                badge.className = 'va-badge ' + (statusBadgeMap['completed'] || 'badge bg-primary-subtle text-primary rounded-pill px-2 py-1 small fw-semibold');
-                                badge.textContent = 'Completed';
-                            }
-                            var cb = row.querySelector('.va-row-check');
-                            if (cb) cb.checked = false;
-                        });
-                        updateBulkBar();
-                        updateKpiCounters();
-                        renderPage(currentPage);
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Updated',
-                            text: checkedRows.length + ' appointment(s) marked as Completed.',
-                            toast: true,
-                            position: 'top-end',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                    }).catch(function () {
-                        Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to update selected appointments.' });
-                    });
-                });
-            }
         }
 
         // =========================================================================
