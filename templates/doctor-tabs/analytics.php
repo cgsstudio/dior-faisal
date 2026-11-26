@@ -5,7 +5,8 @@ if (!defined('ABSPATH')) {
 
 global $wpdb;
 $doctor_id = get_current_user_id();
-$is_admin = current_user_can('administrator') || current_user_can('manage_options');
+// Admin users are denied access to the Doctor Dashboard; keep this query doctor-scoped.
+$is_admin = false;
 $table_appts = $wpdb->prefix . 'dior_appointments';
 $table_patients = $wpdb->prefix . 'dior_patients';
 
