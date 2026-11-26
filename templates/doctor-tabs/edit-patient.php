@@ -349,15 +349,11 @@ if (empty($patients)) {
                         </div>
 
                         <div class="row g-3">
-                            <div class="col-12 col-md-4">
+                            <div class="col-12 col-md-6">
                                 <label for="ep-em-name" class="form-label small fw-semibold text-dark">Contact Full Name</label>
                                 <input type="text" class="form-control rounded-3" id="ep-em-name" name="emergency_name" placeholder="e.g. Robert Johnson">
                             </div>
-                            <div class="col-12 col-md-4">
-                                <label for="ep-em-rel" class="form-label small fw-semibold text-dark">Relationship</label>
-                                <input type="text" class="form-control rounded-3" id="ep-em-rel" name="emergency_relation" placeholder="e.g. Spouse, Parent, Sibling">
-                            </div>
-                            <div class="col-12 col-md-4">
+                            <div class="col-12 col-md-6">
                                 <label for="ep-em-phone" class="form-label small fw-semibold text-dark">Emergency Contact Phone</label>
                                 <input type="tel" class="form-control rounded-3" id="ep-em-phone" name="emergency_phone" placeholder="(555) 111-2222">
                             </div>
