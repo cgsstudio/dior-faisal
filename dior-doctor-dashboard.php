@@ -814,11 +814,11 @@ class Dior_Doctor_Dashboard
             $where_parts = [];
             $where_values = [];
             foreach ($identifier_columns as $identifier_column) {
-                $where_parts[] = "$identifier_column = %s";
+                $where_parts[] = "a.$identifier_column = %s";
                 $where_values[] = $aid;
             }
             if (ctype_digit($aid) && in_array('id', (array) $appointment_columns, true)) {
-                $where_parts[] = 'id = %d';
+                $where_parts[] = 'a.id = %d';
                 $where_values[] = (int) $aid;
             }
 
@@ -878,11 +878,17 @@ class Dior_Doctor_Dashboard
                 }
 
                 if (in_array('is_deleted', (array) $appointment_columns, true)) {
+                    $delete_data = ['is_deleted' => 1];
+                    $delete_formats = ['%d'];
+                    if (in_array('updated_at', (array) $appointment_columns, true)) {
+                        $delete_data['updated_at'] = current_time('mysql');
+                        $delete_formats[] = '%s';
+                    }
                     $updated = $wpdb->update(
                         $table_appts,
-                        ['is_deleted' => 1, 'updated_at' => current_time('mysql')],
+                        $delete_data,
                         ['id' => (int) $row['id']],
-                        ['%d', '%s'],
+                        $delete_formats,
                         ['%d']
                     );
 
