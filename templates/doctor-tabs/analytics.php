@@ -366,11 +366,7 @@ $recent_reports = array_slice($cr_rows, 0, 20);
         <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 mt-3 border-top gap-2 text-muted small">
             <div id="dior-clinical-count-display">0 selected / <?php echo count($recent_reports); ?> total</div>
             <nav aria-label="Page navigation">
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item disabled"><span class="page-link rounded-2 me-1"><i class="fas fa-chevron-left small"></i></span></li>
-                    <li class="page-item active"><span class="page-link rounded-2 me-1">1</span></li>
-                    <li class="page-item disabled"><span class="page-link rounded-2"><i class="fas fa-chevron-right small"></i></span></li>
-                </ul>
+                <ul class="pagination pagination-sm mb-0" id="dior-clinical-pagination"></ul>
             </nav>
         </div>
     </div>
@@ -482,10 +478,41 @@ $recent_reports = array_slice($cr_rows, 0, 20);
     });
 
     var search=root.querySelector('#dior-clinical-search-input');
-    if(search)search.addEventListener('input',function(){
-        var query=this.value.trim().toLowerCase();
-        root.querySelectorAll('#dior-clinical-reports-tbody > tr').forEach(function(row){row.style.display=row.innerText.toLowerCase().indexOf(query)!==-1?'':'none';});
-    });
+    var currentPage=1;
+    var pageSize=10;
+    function filteredRows(){
+        var query=search?search.value.trim().toLowerCase():'';
+        return Array.from(root.querySelectorAll('#dior-clinical-reports-tbody > tr')).filter(function(row){
+            return row.querySelectorAll('td').length && row.innerText.toLowerCase().indexOf(query)!==-1;
+        });
+    }
+    function renderTablePage(){
+        var rows=Array.from(root.querySelectorAll('#dior-clinical-reports-tbody > tr')).filter(function(row){return row.querySelectorAll('td').length;});
+        var visible=filteredRows();
+        var pages=Math.max(1,Math.ceil(visible.length/pageSize));
+        currentPage=Math.min(currentPage,pages);
+        rows.forEach(function(row){row.style.display='none';});
+        visible.forEach(function(row,index){
+            if(index >= (currentPage-1)*pageSize && index < currentPage*pageSize) row.style.display='';
+        });
+        var pagination=root.querySelector('#dior-clinical-pagination');
+        if(pagination){
+            pagination.innerHTML='';
+            function addPage(label,page,disabled,active){
+                var li=document.createElement('li');li.className='page-item'+(disabled?' disabled':'')+(active?' active':'');
+                var button=document.createElement('button');button.type='button';button.className='page-link rounded-2 me-1';button.textContent=label;
+                button.disabled=!!disabled;button.addEventListener('click',function(){currentPage=page;renderTablePage();});
+                li.appendChild(button);pagination.appendChild(li);
+            }
+            addPage('‹',Math.max(1,currentPage-1),currentPage===1,false);
+            for(var page=1;page<=pages;page++)addPage(String(page),page,false,page===currentPage);
+            addPage('›',Math.min(pages,currentPage+1),currentPage===pages,false);
+        }
+        var count=root.querySelector('#dior-clinical-count-display');
+        if(count)count.textContent='Showing '+(visible.length?((currentPage-1)*pageSize+1):0)+' to '+Math.min(currentPage*pageSize,visible.length)+' of '+visible.length+' entries';
+    }
+    if(search)search.addEventListener('input',function(){currentPage=1;renderTablePage();});
+    renderTablePage();
 
     var exportBtn=root.querySelector('#dior-clinical-export-btn');
     if(exportBtn)exportBtn.addEventListener('click',function(){
@@ -706,8 +733,8 @@ $recent_reports = array_slice($cr_rows, 0, 20);
 #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-primary:hover,
 #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-info:hover,
 #dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-success:hover {
-    background-color:#143F6D!important;
-    border-color:#143F6D!important;
+    background-color:#1A528E!important;
+    border-color:#1A528E!important;
 }
 #dior-doctor-app #dior-doc-content #tab-doc-analytics .card {
     border-color:#DFE8F1!important;
