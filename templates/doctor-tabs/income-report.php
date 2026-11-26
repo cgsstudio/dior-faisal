@@ -308,6 +308,8 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
                 </tbody>
                 <tfoot class="table-light border-top">
                     <tr class="fw-bold">
+                        <!-- Empty cell aligns totals with the checkbox column inserted by the table UI. -->
+                        <td class="dior-income-footer-select-spacer" aria-hidden="true"></td>
                         <td class="ps-3 text-dark">Combined Clinic Revenue</td>
                         <?php foreach ($ir_monthly as $m_tot): ?>
                             <td class="text-end text-primary">$<?php echo esc_html(number_format($m_tot, 2)); ?></td>
@@ -556,6 +558,12 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
 #tab-doc-accounts-income-report #dior-income-report-table tfoot td{display:block!important;min-width:0!important;padding:4px!important;border:0!important;white-space:normal!important;overflow-wrap:anywhere!important}
 }
 
+#tab-doc-accounts-income-report #dior-income-report-table tfoot .dior-income-footer-select-spacer{
+    width:48px!important;min-width:48px!important;padding:0!important;border-right:0!important;
+}
+#tab-doc-accounts-income-report #dior-income-report-table tfoot td{vertical-align:top!important;white-space:nowrap!important;}
+#tab-doc-accounts-income-report #dior-income-report-table tfoot td.ps-3{white-space:normal!important;min-width:150px!important;}
+@media(max-width:767.98px){#tab-doc-accounts-income-report #dior-income-report-table tfoot .dior-income-footer-select-spacer{display:none!important;}}
 </style>
 
 
