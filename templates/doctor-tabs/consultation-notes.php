@@ -34,8 +34,8 @@ if ($assigned_patient_ids) {
         ...$assigned_patient_ids
     ), ARRAY_A);
 }
-if (empty($patients)) {
-    $wp_users = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'number' => 100]);
+if (empty($patients) && !empty($assigned_patient_ids)) {
+    $wp_users = get_users(['include' => $assigned_patient_ids, 'role__in' => ['patient', 'subscriber', 'customer'], 'number' => count($assigned_patient_ids)]);
     $patients = [];
     foreach ($wp_users as $u) {
         $patients[] = [
