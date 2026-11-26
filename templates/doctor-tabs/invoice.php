@@ -574,7 +574,7 @@
                 </section>
 
                 <section class="dior-standard-invoice__items">
-                    <table class="dior-standard-invoice__table">
+                    <table class="dior-standard-invoice__table dior-no-global-pagination">
                         <thead>
                             <tr><th class="col-no">#</th><th>Description</th><th class="col-qty">Qty</th><th class="col-money">Unit price</th><th class="col-money">Tax / charges</th><th class="col-money">Discount</th><th class="col-total">Amount</th></tr>
                         </thead>
