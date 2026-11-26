@@ -1307,46 +1307,58 @@ $status_badges = [
                             failures.push(uid + ': ' + errorMessage);
                         } finally {
                             completed++;
+                            // Progress UI must never be able to reject a delete worker.
                             var progress = document.getElementById('va-delete-progress');
-                            if (progress) progress.textContent = completed;
-                            Swal.update({
-                                title: 'Deleting appointments...',
-                                html: 'Processed <b>' + completed + '</b> of <b>' + checkedRows.length + '</b> — <b>' + deleted + '</b> deleted'
-                            });
+                            if (progress) {
+                                progress.textContent = completed;
+                                var progressText = progress.parentElement;
+                                if (progressText) {
+                                    progressText.innerHTML = 'Processed <b>' + completed + '</b> of <b>' + checkedRows.length + '</b> — <b>' + deleted + '</b> deleted';
+                                }
+                            }
                         }
                     }
 
-                    // Keep only two requests in flight; the endpoint performs several database lookups per appointment.
-                    var nextIndex = 0;
-                    var workers = Array.from({ length: Math.min(2, checkedRows.length) }, async function () {
-                        while (nextIndex < checkedRows.length) {
-                            var row = checkedRows[nextIndex++];
-                            await deleteOne(row);
-                        }
-                    });
-                    await Promise.all(workers);
-
-                    var master = document.getElementById('va-select-all');
-                    if (master) master.checked = false;
-                    document.querySelectorAll('#va-appointments-tbody .va-row-check').forEach(function (cb) {
-                        cb.checked = false;
-                    });
-                    updateKpiCounters();
-                    renderPage(currentPage);
-
-                    if (deleted === checkedRows.length) {
-                        Swal.fire({ icon: 'success', title: 'Deleted', text: deleted + ' appointment(s) successfully deleted.' });
-                    } else if (deleted > 0) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Partially Deleted',
-                            html: deleted + ' deleted, ' + failures.length + ' failed.<br><small>' + (failures[0] || '') + '</small>'
+                    try {
+                        // Keep only two requests in flight; the endpoint performs several database lookups per appointment.
+                        var nextIndex = 0;
+                        var workers = Array.from({ length: Math.min(2, checkedRows.length) }, async function () {
+                            while (nextIndex < checkedRows.length) {
+                                var row = checkedRows[nextIndex++];
+                                await deleteOne(row);
+                            }
                         });
-                    } else {
+                        await Promise.all(workers);
+
+                        var master = document.getElementById('va-select-all');
+                        if (master) master.checked = false;
+                        document.querySelectorAll('#va-appointments-tbody .va-row-check').forEach(function (cb) {
+                            cb.checked = false;
+                        });
+                        updateKpiCounters();
+                        renderPage(currentPage);
+
+                        if (deleted === checkedRows.length) {
+                            Swal.fire({ icon: 'success', title: 'Deleted', text: deleted + ' appointment(s) successfully deleted.' });
+                        } else if (deleted > 0) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Partially Deleted',
+                                html: deleted + ' deleted, ' + failures.length + ' failed.<br><small>' + (failures[0] || '') + '</small>'
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Delete Failed',
+                                html: 'None of the selected appointments were deleted.<br><small>' + (failures[0] || 'Unknown server error') + '</small>'
+                            });
+                        }
+                    } catch (bulkError) {
+                        console.error('Dior bulk appointment deletion failed:', bulkError);
                         Swal.fire({
                             icon: 'error',
-                            title: 'Delete Failed',
-                            html: 'None of the selected appointments were deleted.<br><small>' + (failures[0] || 'Unknown server error') + '</small>'
+                            title: 'Delete Process Error',
+                            text: bulkError && bulkError.message ? bulkError.message : 'An unexpected error interrupted the delete process.'
                         });
                     }
                 });
