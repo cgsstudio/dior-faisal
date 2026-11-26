@@ -127,13 +127,10 @@ $pp_ajax_url = admin_url('admin-ajax.php');
                 <div class="d-flex align-items-center gap-3">
                     <div class="position-relative flex-shrink-0">
                         <img data-pp="avatar" src="" alt="Patient photo" width="72" height="72" class="rounded-circle border border-2 border-white shadow-sm object-fit-cover" style="width: 72px; height: 72px;">
-                        <span class="position-absolute bottom-0 end-0 p-1 bg-success border border-white rounded-circle" title="Active Record"></span>
                     </div>
                     <div>
                         <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                             <div class="fs-5 fw-bold text-dark mb-0 text-nowrap" data-pp="name" style="font-size: 1.25rem !important;">Patient Name</div>
-                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 small fw-semibold" data-pp="status">Active</span>
-                            <span class="badge bg-light text-secondary border rounded-pill px-3 py-1 small fw-bold font-monospace" data-pp="uid">UID: —</span>
                         </div>
                         <div class="d-flex flex-wrap align-items-center gap-2 gap-sm-3 text-secondary small">
                             <span><i class="fas fa-venus-mars text-primary me-1"></i><span data-pp="gender">—</span></span>
@@ -143,10 +140,6 @@ $pp_ajax_url = admin_url('admin-ajax.php');
                             <span><i class="fas fa-ruler-vertical text-primary me-1"></i>Height: <strong class="text-dark" data-pp="height">—</strong></span>
                             <span class="text-muted">&bull;</span>
                             <span><i class="fas fa-weight-scale text-primary me-1"></i>Weight: <strong class="text-dark" data-pp="weight">—</strong></span>
-                            <span class="text-muted">&bull;</span>
-                            <span><i class="fas fa-droplet text-danger me-1"></i>Blood Group: <strong class="text-dark" data-pp="blood">—</strong></span>
-                            <span class="text-muted">&bull;</span>
-                            <span class="d-inline-flex align-items-center"><i class="fas fa-phone text-success me-1"></i><a data-pp="phone-link" href="#" class="text-decoration-none text-secondary fw-semibold small" style="font-size: 13px !important; line-height: 1.3 !important;"><span data-pp="phone">—</span></a></span>
                         </div>
                     </div>
                 </div>
