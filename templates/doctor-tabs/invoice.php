@@ -456,7 +456,6 @@
         <div class="dior-invoice-actions">
             <button class="dior-btn dior-btn-primary btn" onclick="window.print()"><i class="fas fa-print me-1"></i> Print</button>
             <button class="dior-btn dior-btn-info btn" id="download-invoice-pdf"><i class="fas fa-file-pdf me-1"></i> Download PDF</button>
-            <button class="dior-btn dior-btn-secondary btn"><i class="fas fa-envelope me-1"></i> Email Invoice</button>
         </div>
         
     </div>
@@ -519,11 +518,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if(downloadBtn) {
         downloadBtn.addEventListener('click', function() {
             const invoiceElement = document.getElementById('invoice-pdf-content');
+            if (!invoiceElement) return;
+            const invoiceHeading = invoiceElement.querySelector('.dior-invoice-header h2');
+            const invoiceName = invoiceHeading ? invoiceHeading.textContent.replace(/[^a-z0-9_-]+/gi, '_') : 'Invoice';
             
             // Generate PDF
             const opt = {
                 margin:       [10, 10, 10, 10], // top, left, bottom, right
-                filename:     'Invoice_345766.pdf',
+                filename:     invoiceName + '.pdf',
                 image:        { type: 'jpeg', quality: 1.0 },
                 html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
