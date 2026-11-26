@@ -45,91 +45,53 @@
         </div>
 
         <div style="padding: 20px;">
-            <form>
-                <div class="row">
-                    <div class="col-xl-4 col-lg-4 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Bill Number <span class="text-danger">*</span></label>
-                        <input type="text" placeholder="Bill Number" class="va-form-control form-control">
-                    </div>
-                    <div class="col-xl-4 col-lg-4 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Patient Name <span class="text-danger">*</span></label>
-                        <input type="text" placeholder="Patient Name" class="va-form-control form-control">
-                    </div>
-                    <div class="col-xl-4 col-lg-4 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Patient ID <span class="text-danger">*</span></label>
-                        <input type="text" placeholder="Patient ID" class="va-form-control form-control">
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-xl-4 col-lg-4 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Bill Date <span class="text-danger">*</span></label>
-                        <input type="date" class="va-form-control form-control">
-                    </div>
-                    <div class="col-xl-4 col-lg-4 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Due Date <span class="text-danger">*</span></label>
-                        <input type="date" class="va-form-control form-control">
-                    </div>
-                    <div class="col-xl-4 col-lg-4 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Service <span class="text-danger">*</span></label>
-                        <input type="text" placeholder="Service" class="va-form-control form-control">
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-xl-3 col-lg-3 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Amount <span class="text-danger">*</span></label>
-                        <input type="number" placeholder="Amount" class="va-form-control form-control">
-                    </div>
-                    <div class="col-xl-3 col-lg-3 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Tax</label>
-                        <input type="number" placeholder="Tax" class="va-form-control form-control">
-                    </div>
-                    <div class="col-xl-3 col-lg-3 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Discount</label>
-                        <input type="number" placeholder="Discount" class="va-form-control form-control">
-                    </div>
-                    <div class="col-xl-3 col-lg-3 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Total Amount <span class="text-danger">*</span></label>
-                        <input type="number" placeholder="Total" class="va-form-control form-control">
-                    </div>
-                </div>
-
+            <?php
+            $account_patients = class_exists('Dior_Doctor_Dynamic') ? Dior_Doctor_Dynamic::patients(get_current_user_id()) : [];
+            ?>
+            <form id="dior-doctor-add-bill-form">
                 <div class="row">
                     <div class="col-xl-6 col-lg-6 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Payment Method <span class="text-danger">*</span></label>
-                        <select class="va-form-control form-select">
-                            <option value="">Select Method</option>
-                            <option value="Cash">Cash</option>
-                            <option value="Card">Card</option>
-                            <option value="Insurance">Insurance</option>
-                            <option value="Online">Online</option>
+                        <label class="form-label fw-semibold">Patient *</label>
+                        <select name="patient_id" class="va-form-control form-select" required>
+                            <option value="">Select patient</option>
+                            <?php foreach ($account_patients as $account_patient):
+                                $account_pid = absint($account_patient['user_id'] ?? 0);
+                                if (!$account_pid || !Dior_Doctor_Dynamic::patient_belongs_to_doctor($account_pid, get_current_user_id())) continue;
+                                $account_name = trim(($account_patient['first_name'] ?? '') . ' ' . ($account_patient['last_name'] ?? ''));
+                            ?>
+                            <option value="<?php echo esc_attr($account_pid); ?>"><?php echo esc_html($account_name ?: ($account_patient['email'] ?? 'Patient')); ?> — <?php echo esc_html($account_patient['patient_uid'] ?? ''); ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="col-xl-6 col-lg-6 col-md-12 mb-3">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Status <span class="text-danger">*</span></label>
-                        <select class="va-form-control form-select">
-                            <option value="Pending">Pending</option>
-                            <option value="Paid">Paid</option>
-                            <option value="Overdue">Overdue</option>
-                        </select>
+                        <label class="form-label fw-semibold">Service *</label>
+                        <input name="service_type" type="text" class="va-form-control form-control" placeholder="Consultation / Service" required>
                     </div>
                 </div>
-
                 <div class="row">
-                    <div class="col-12 mb-4">
-                        <label style="font-size:14px; font-weight: 600; color: #4b5563; margin-bottom:8px;">Notes</label>
-                        <textarea rows="3" placeholder="Additional notes" class="va-form-control form-control"></textarea>
-                    </div>
+                    <div class="col-xl-3 col-md-6 mb-3"><label class="form-label fw-semibold">Bill Amount *</label><input name="amount" type="number" min="0.01" step="0.01" class="va-form-control form-control" required></div>
+                    <div class="col-xl-3 col-md-6 mb-3"><label class="form-label fw-semibold">Tax</label><input name="tax" type="number" min="0" step="0.01" value="0" class="va-form-control form-control"></div>
+                    <div class="col-xl-3 col-md-6 mb-3"><label class="form-label fw-semibold">Discount</label><input name="discount" type="number" min="0" step="0.01" value="0" class="va-form-control form-control"></div>
+                    <div class="col-xl-3 col-md-6 mb-3"><label class="form-label fw-semibold">Due Date</label><input name="due_date" type="date" class="va-form-control form-control"></div>
                 </div>
-
                 <div class="row">
-                    <div class="col-12" style="display: flex; gap: 10px;">
-                        <button type="submit" class="va-btn-primary btn" style="padding: 10px 24px; font-weight: 600; border:none; border-radius: 8px; color: #fff;">Submit</button>
-                        <button type="button" style="padding: 10px 24px; font-weight: 600; border:none; border-radius: 8px; background-color: #E2E8F0; color: #475569;">Cancel</button>
-                    </div>
+                    <div class="col-xl-4 col-md-6 mb-3"><label class="form-label fw-semibold">Payment Method *</label><select name="payment_method" class="va-form-control form-select" required><option value="">Select method</option><option>Cash</option><option>Card</option><option>Insurance</option><option>Online</option><option>Stripe</option><option>Other</option></select></div>
+                    <div class="col-xl-4 col-md-6 mb-3"><label class="form-label fw-semibold">Status *</label><select name="status" class="va-form-control form-select"><option>Pending</option><option>Paid</option><option>Overdue</option></select></div>
+                    <div class="col-xl-4 col-md-12 mb-3"><label class="form-label fw-semibold">Total Amount</label><input id="dior-bill-total-preview" type="text" class="va-form-control form-control" readonly value="0.00"></div>
                 </div>
+                <div class="row"><div class="col-12 mb-4"><label class="form-label fw-semibold">Notes</label><textarea name="notes" rows="3" class="va-form-control form-control" placeholder="Additional notes"></textarea></div></div>
+                <div class="row"><div class="col-12 d-flex flex-wrap gap-2"><button type="submit" class="va-btn-primary btn">Save Bill</button><button type="reset" class="btn btn-light">Clear Form</button></div></div>
+                <p id="dior-bill-form-message" class="mt-3 mb-0" role="status" aria-live="polite"></p>
             </form>
+            <script>
+            (function(){
+                const form=document.getElementById('dior-doctor-add-bill-form'); if(!form||form.dataset.bound)return; form.dataset.bound='1';
+                const amount=form.elements.amount,tax=form.elements.tax,discount=form.elements.discount,total=document.getElementById('dior-bill-total-preview'),msg=document.getElementById('dior-bill-form-message');
+                const calc=()=>{total.value=Math.max(0,(Number(amount.value)||0)+(Number(tax.value)||0)-(Number(discount.value)||0)).toFixed(2);};
+                [amount,tax,discount].forEach(el=>el.addEventListener('input',calc));
+                form.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='Saving…';const fd=new FormData(form);fd.append('action','dior_doc_bill_save');fd.append('nonce',window.diorDocNonce||window.dior_doctor_vars?.nonce||window.dior_vars?.nonce||'');try{const res=await fetch(window.diorDocAjax||window.dior_doctor_vars?.ajax_url||window.dior_vars?.ajax_url||'/wp-admin/admin-ajax.php',{method:'POST',body:fd,credentials:'same-origin'});const json=await res.json();if(!json.success)throw new Error(json.data?.message||'Bill could not be saved.');msg.textContent=json.data.message+' Total: '+Number(json.data.total).toFixed(2);form.reset();calc();}catch(err){msg.textContent=err.message;}});
+            })();
+            </script>     </form>
         </div>
     </div>
 </section>
