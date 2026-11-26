@@ -607,10 +607,12 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
         var period = (filterEl ? filterEl.value : 'Monthly') || 'Monthly';
         var d = incomeChartData[period] || incomeChartData.Monthly;
 
+        var isYearlyView = period === 'Yearly';
         var options = {
             series: d.series,
             chart: {
-                type: 'area',
+                // A single available year is one category; use a bar so the value remains visible.
+                type: isYearlyView ? 'bar' : 'area',
                 height: 390,
                 fontFamily: 'inherit',
                 toolbar: {
@@ -634,6 +636,7 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
                 }
             },
             colors: ['#0B3768', '#1A528E', '#3B82B8', '#62A6C8', '#8AB8D6'],
+            plotOptions: { bar: { columnWidth: '38%', borderRadius: 5 } },
             dataLabels: { enabled: false },
             stroke: {
                 curve: 'smooth',
