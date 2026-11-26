@@ -74,7 +74,7 @@ class Dior_Medical_Secure_Files
         $current_user_id = get_current_user_id();
         if ($current_user_id && Dior_Auth_Service::is_doctor($current_user_id)) {
             if (!Dior_Auth_Service::can_access_patient($patient_id, $current_user_id)) return [];
-            $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($current_user_id) : [$current_user_id];
+            $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($current_user_id) : [$current_user_id];
             $scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $scope_ids))));
             if (!$scope_ids) return [];
             $in = implode(',', array_fill(0, count($scope_ids), '%d'));
