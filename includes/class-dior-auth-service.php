@@ -141,6 +141,19 @@ class Dior_Auth_Service
     }
 
     /**
+     * WordPress user IDs that belong to this doctor account. Unlike the appointment
+     * scope, this intentionally excludes DocBooker CPT post IDs.
+     */
+    public static function get_doctor_user_scope_ids($doctor_id = 0)
+    {
+        $doctor_id = (int) ($doctor_id ?: get_current_user_id());
+        if (!$doctor_id || !self::is_doctor($doctor_id)) return [];
+        $merged_ids = get_user_meta($doctor_id, '_dior_merged_doctor_user_ids', true);
+        $ids = array_merge([$doctor_id], is_array($merged_ids) ? $merged_ids : []);
+        return array_values(array_unique(array_filter(array_map('absint', $ids))));
+    }
+
+    /**
      * Anti-IDOR: Check if current user is authorized to access a patient's medical records
      */
     public static function can_access_patient($patient_id, $user_id = 0)
