@@ -60,9 +60,6 @@
                     <button type="button" class="va-icon-btn btn" id="dior-pr-bulk-delete" style="display: none;" title="Delete Selected">
                         <i class="fas fa-trash"></i>
                     </button>
-                    <button type="button" class="va-icon-btn btn" title="Add New Record">
-                        <i class="fas fa-plus"></i>
-                    </button>
                     <button type="button" class="va-icon-btn btn" title="Export to Excel">
                         <i class="fas fa-file-arrow-down"></i>
                     </button>
