@@ -311,6 +311,43 @@ $status_badges = [
                 flex: 1 1 180px;
             }
         }
+
+        /* Keep appointment action buttons visually stable when hovered or focused. */
+        #tab-doc-appointments-view .va-join-meeting-btn,
+        #tab-doc-appointments-view .va-cancel-appt-btn,
+        #tab-doc-appointments-view .va-view-patient-btn,
+        #tab-doc-appointments-view .va-resched-appt-btn,
+        #tab-doc-appointments-view .va-delete-appt-btn {
+            transition: none !important;
+            filter: none !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        #tab-doc-appointments-view .va-join-meeting-btn:hover,
+        #tab-doc-appointments-view .va-join-meeting-btn:focus,
+        #tab-doc-appointments-view .va-cancel-appt-btn:hover,
+        #tab-doc-appointments-view .va-cancel-appt-btn:focus {
+            color: #fff !important;
+            background-color: #1e5a96 !important;
+            border-color: #1e5a96 !important;
+        }
+
+        #tab-doc-appointments-view .va-view-patient-btn:hover,
+        #tab-doc-appointments-view .va-view-patient-btn:focus,
+        #tab-doc-appointments-view .va-resched-appt-btn:hover,
+        #tab-doc-appointments-view .va-resched-appt-btn:focus {
+            color: #0d6efd !important;
+            background-color: #fff !important;
+            border-color: #0d6efd !important;
+        }
+
+        #tab-doc-appointments-view .va-delete-appt-btn:hover,
+        #tab-doc-appointments-view .va-delete-appt-btn:focus {
+            color: #dc3545 !important;
+            background-color: #fff !important;
+            border-color: #dc3545 !important;
+        }
     </style>
 
     <div class="view-appointment-card">
