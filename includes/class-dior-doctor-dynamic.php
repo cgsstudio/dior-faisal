@@ -32,10 +32,10 @@ class Dior_Doctor_Dynamic {
     }
     private static function doctor_id() { return (int)get_current_user_id(); }
     private static function doctor_scope_ids() {
-        $ids = class_exists('Dior_Doctor_Resolver')
-            ? Dior_Doctor_Resolver::get_accessible_doctor_ids(self::doctor_id())
+        $ids = class_exists('Dior_Auth_Service')
+            ? Dior_Auth_Service::get_doctor_user_scope_ids(self::doctor_id())
             : [self::doctor_id()];
-        return array_values(array_unique(array_filter(array_map('intval', (array)$ids))));
+        return array_values(array_unique(array_filter(array_map('intval', (array) $ids))));
     }
     private static function doctor_scope_placeholders() {
         return implode(',', array_fill(0, count(self::doctor_scope_ids()), '%d'));
