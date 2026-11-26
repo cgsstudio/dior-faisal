@@ -160,7 +160,7 @@ class Dior_Auth_Service
     {
         $user_id = $user_id ? (int)$user_id : get_current_user_id();
         if (!$user_id) return false;
-        return self::is_doctor($user_id);
+        return self::is_doctor($user_id) || self::is_admin($user_id);
     }
 
     /**
@@ -171,7 +171,8 @@ class Dior_Auth_Service
         $user_id = $user_id ? (int)$user_id : get_current_user_id();
         if (!$user_id) return false;
 
-        // Doctors can manage documents only for patients assigned to them.
+        // Admin permissions remain available to admin-only tools; the Doctor Dashboard itself denies admin access.
+        if (self::is_admin($user_id)) return true;
         if (self::is_doctor($user_id) && self::can_access_patient($patient_id, $user_id)) return true;
 
         // Patient can only manage their own if they were the author (e.g. self-uploaded intake)
