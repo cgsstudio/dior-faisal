@@ -461,19 +461,20 @@ $recent_reports = array_slice($cr_rows, 0, 20);
         }
     });
 
+    function updateSelectionState(){
+        var boxes=Array.from(root.querySelectorAll('.dior-clinical-row-check'));
+        var count=boxes.filter(function(box){return box.checked;}).length;
+        var master=root.querySelector('#dior-clinical-check-all');
+        if(master){master.checked=boxes.length>0 && count===boxes.length;master.indeterminate=count>0 && count<boxes.length;}
+        var bulkBtn=root.querySelector('#dior-clinical-bulk-delete');
+        if(bulkBtn)bulkBtn.style.display=count?'':'none';
+    }
     root.addEventListener('change',function(event){
         if(event.target.id==='dior-clinical-check-all'){
             root.querySelectorAll('.dior-clinical-row-check').forEach(function(box){box.checked=event.target.checked;});
-        }
-        if(event.target.classList.contains('dior-clinical-row-check')){
-            var boxes=Array.from(root.querySelectorAll('.dior-clinical-row-check'));
-            var count=boxes.filter(function(box){return box.checked;}).length;
-            var master=root.querySelector('#dior-clinical-check-all');
-            if(master){master.checked=boxes.length>0 && count===boxes.length;master.indeterminate=count>0 && count<boxes.length;}
-            var bulkBtn=root.querySelector('#dior-clinical-bulk-delete');
-            if(bulkBtn)bulkBtn.style.display=count?'':'none';
-            var counter=root.querySelector('#dior-clinical-count-display');
-            if(counter)counter.textContent=count+' selected / '+boxes.length+' total';
+            updateSelectionState();
+        } else if(event.target.classList.contains('dior-clinical-row-check')){
+            updateSelectionState();
         }
     });
 
