@@ -565,7 +565,7 @@ class Dior_Doctor_Dashboard
         if (isset($cache[$doctor_user_id])) {
             return $cache[$doctor_user_id];
         }
-        if (!$doctor_user_id || !self::is_user_admin($doctor_user_id) && !user_can($doctor_user_id, 'doctor')) {
+        if (!$doctor_user_id || self::is_user_admin($doctor_user_id) || !user_can($doctor_user_id, 'doctor')) {
             return [];
         }
 
@@ -813,7 +813,11 @@ class Dior_Doctor_Dashboard
                         "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wpddb_doctor_user_id' AND meta_value = %s",
                         (string) $uid
                     ));
-                    $allowed_ids = array_merge((array) $allowed_ids, (array) $linked_post_ids, [0, 1, 1957]);
+                    if ($uid === (int) Dior_Doctor_Resolver::get_default_doctor_id()) {
+                        $allowed_ids = array_merge((array) $allowed_ids, (array) $linked_post_ids, [0, 1]);
+                    } else {
+                        $allowed_ids = array_merge((array) $allowed_ids, (array) $linked_post_ids);
+                    }
                     if (!in_array((int) $row['doctor_id'], array_map('intval', $allowed_ids), true)) {
                         wp_send_json_error(["message" => "Permission denied for this appointment."], 403);
                     }
@@ -870,7 +874,7 @@ class Dior_Doctor_Dashboard
         $table_patients = $wpdb->prefix . 'dior_patients';
 
         if (empty($appt_uid) || $appt_uid === 'new' || $appt_uid === 'undefined') {
-            if (!$patient_id || !Dior_Auth_Service::is_doctor(get_current_user_id())) {
+            if (!$patient_id || !Dior_Auth_Service::is_doctor(get_current_user_id()) || !Dior_Auth_Service::can_access_patient($patient_id, get_current_user_id())) {
                 wp_send_json_error(["message" => "Please select a valid patient to schedule or update an appointment."], 403);
             }
             $patient_user = get_userdata($patient_id);
@@ -2221,15 +2225,7 @@ class Dior_Doctor_Dashboard
         // Prevent a doctor from opening unrelated patient records.
         $current_doctor_id = get_current_user_id();
         if (!self::is_user_admin($current_doctor_id)) {
-            $doctor_appointments = Dior_Appointment_Service::get_doctor_appointments($current_doctor_id);
-            $has_relation = false;
-            foreach ($doctor_appointments as $doctor_appt) {
-                if ((int)($doctor_appt['patient_id'] ?? 0) === (int)$pid) {
-                    $has_relation = true;
-                    break;
-                }
-            }
-            if (!$has_relation) {
+            if (!Dior_Auth_Service::can_access_patient($pid, $current_doctor_id)) {
                 wp_send_json_error(["message" => "You do not have access to this patient record."], 403);
             }
         }
@@ -2237,8 +2233,17 @@ class Dior_Doctor_Dashboard
         $doctor   = self::get_doctor_profile($current_doctor_id);
         $profile  = Dior_Patient_Portal_Data::get_patient_profile($pid);
         $intake   = get_user_meta($pid, "dior_hipaa_intake", true);
-        $apts     = Dior_Appointment_Service::get_patient_appointments($pid);
-        $rxs      = get_user_meta($pid, "dior_prescriptions", true) ?: [];
+        $doctor_scope = Dior_Doctor_Resolver::get_accessible_doctor_ids($current_doctor_id);
+        $apts = array_values(array_filter(Dior_Appointment_Service::get_patient_appointments($pid), static function ($appointment) use ($doctor_scope) {
+            return in_array((int) ($appointment['doctor_id'] ?? 0), array_map('intval', (array) $doctor_scope), true);
+        }));
+        $rxs = get_user_meta($pid, "dior_prescriptions", true) ?: [];
+        $current_doctor = get_userdata($current_doctor_id);
+        $doctor_name = $current_doctor ? strtolower(trim($current_doctor->display_name)) : '';
+        $rxs = array_values(array_filter((array) $rxs, static function ($rx) use ($doctor_name) {
+            $prescriber = strtolower(trim((string) ($rx['prescribed_by'] ?? '')));
+            return $prescriber !== '' && $doctor_name !== '' && (strpos($prescriber, $doctor_name) !== false || strpos($doctor_name, $prescriber) !== false);
+        }));
         $notes    = Dior_Encounter_Service::get_patient_encounters($pid);
         $docs     = Dior_Medical_Secure_Files::get_patient_documents($pid);
         
@@ -2595,6 +2600,11 @@ class Dior_Doctor_Resolver
             $ids[] = $post_id;
         }
 
+        // Legacy unassigned appointment rows belong to the existing single-doctor account only.
+        if ($doctor_user_id === (int) self::get_default_doctor_id()) {
+            $ids[] = 0;
+            $ids[] = 1;
+        }
         return array_values(array_unique(array_filter(array_map('intval', $ids))));
     }
 
