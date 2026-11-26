@@ -189,7 +189,7 @@ class Dior_Doctor_Dynamic {
         }
 
         $date = sanitize_text_field(wp_unslash($_POST['appt_date'] ?? ''));
-        $diagnosis = sanitize_text_field(wp_unslash($_POST['condition_name'] ?? ''));
+        $appointment_type = sanitize_text_field(wp_unslash($_POST['visit_type'] ?? ''));
         $status = sanitize_text_field(wp_unslash($_POST['status'] ?? ''));
         $parsed = DateTime::createFromFormat('Y-m-d', $date);
         $allowed = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled', 'No Show'];
@@ -197,7 +197,7 @@ class Dior_Doctor_Dynamic {
         if (!$parsed || $parsed->format('Y-m-d') !== $date) {
             wp_send_json_error(['message' => 'Please select a valid visit date.']);
         }
-        if ($diagnosis === '') {
+        if ($appointment_type === '') {
             wp_send_json_error(['message' => 'Diagnosis is required.']);
         }
         if (!in_array($status, $allowed, true)) {
@@ -205,7 +205,7 @@ class Dior_Doctor_Dynamic {
         }
 
         $updated = $wpdb->update(self::table('appointments'), [
-            'condition_name' => $diagnosis,
+            'visit_type' => $appointment_type,
             'appt_date' => $date,
             'status' => $status,
             'updated_at' => current_time('mysql'),
