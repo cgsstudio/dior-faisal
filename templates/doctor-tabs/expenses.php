@@ -1,7 +1,7 @@
 <?php
 global $wpdb;
 $expense_table = $wpdb->prefix . 'dior_doctor_expenses';
-$expense_doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
+$expense_doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids(get_current_user_id()) : [get_current_user_id()];
 $expense_doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $expense_doctor_ids))));
 $expense_rows = [];
 if ($expense_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $expense_table)) === $expense_table) {
