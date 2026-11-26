@@ -72,21 +72,27 @@ class Dior_Auth_Service
         $scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
         $scope = array_values(array_unique(array_filter(array_map('absint', (array) $scope))));
         if ($scope) {
-            $in = implode(',', array_fill(0, count($scope), '%d'));
+            // Only appointment rows may use the legacy unassigned IDs, and only for the
+            // existing primary doctor. Never use those IDs for prescriptions/files/etc.
+            $appointment_scope = $scope;
+            if (class_exists('Dior_Doctor_Resolver') && $doctor_id === (int) Dior_Doctor_Resolver::get_default_doctor_id()) {
+                $appointment_scope = array_values(array_unique(array_merge($appointment_scope, [0, 1])));
+            }
             $related_tables = [
-                [$wpdb->prefix . 'dior_appointments', 'doctor_id', 'patient_id', "is_deleted = 0"],
-                [$wpdb->prefix . 'dior_prescriptions', 'doctor_id', 'patient_id', '1=1'],
-                [$wpdb->prefix . 'dior_encounters', 'doctor_id', 'patient_id', 'is_deleted = 0'],
-                [$wpdb->prefix . 'dior_documents', 'author_id', 'patient_id', 'is_deleted = 0'],
-                [$wpdb->prefix . 'dior_reviews', 'doctor_id', 'patient_id', '1=1'],
-                [$wpdb->prefix . 'dior_telemedicine', 'doctor_id', 'patient_id', '1=1'],
+                [$wpdb->prefix . 'dior_appointments', 'doctor_id', 'patient_id', "is_deleted = 0", $appointment_scope],
+                [$wpdb->prefix . 'dior_prescriptions', 'doctor_id', 'patient_id', '1=1', $scope],
+                [$wpdb->prefix . 'dior_encounters', 'doctor_id', 'patient_id', 'is_deleted = 0', $scope],
+                [$wpdb->prefix . 'dior_documents', 'author_id', 'patient_id', 'is_deleted = 0', $scope],
+                [$wpdb->prefix . 'dior_reviews', 'doctor_id', 'patient_id', '1=1', $scope],
+                [$wpdb->prefix . 'dior_telemedicine', 'doctor_id', 'patient_id', '1=1', $scope],
             ];
             foreach ($related_tables as $table_info) {
-                [$table, $owner_column, $patient_column, $extra_where] = $table_info;
-                if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) !== $table) continue;
+                [$table, $owner_column, $patient_column, $extra_where, $owner_scope] = $table_info;
+                if (!$owner_scope || $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) !== $table) continue;
+                $in = implode(',', array_fill(0, count($owner_scope), '%d'));
                 $found = $wpdb->get_col($wpdb->prepare(
                     "SELECT DISTINCT {$patient_column} FROM {$table} WHERE {$extra_where} AND {$owner_column} IN ($in)",
-                    ...$scope
+                    ...$owner_scope
                 ));
                 $ids = array_merge($ids, (array) $found);
             }
