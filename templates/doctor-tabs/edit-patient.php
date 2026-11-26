@@ -248,17 +248,15 @@ if (empty($patients)) {
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
                                 <label for="ep-email" class="form-label small fw-semibold text-dark">Email Address <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0 text-muted rounded-start-3"><i class="fas fa-envelope"></i></span>
-                                    <input type="email" class="form-control rounded-end-3 border-start-0 ps-1" id="ep-email" name="email" required>
+                                <div>
+                                    <input type="email" class="form-control rounded-3" id="ep-email" name="email" required>
                                 </div>
                                 <div class="form-text small">Primary email used for portal authentication and clinical alerts.</div>
                             </div>
                             <div class="col-12 col-md-6">
                                 <label for="ep-phone" class="form-label small fw-semibold text-dark">Mobile Phone <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0 text-muted rounded-start-3"><i class="fas fa-phone"></i></span>
-                                    <input type="tel" class="form-control rounded-end-3 border-start-0 ps-1" id="ep-phone" name="phone" required>
+                                <div>
+                                    <input type="tel" class="form-control rounded-3" id="ep-phone" name="phone" required>
                                 </div>
                                 <div class="form-text small">Used for SMS telemedicine invites and appointment notifications.</div>
                             </div>
@@ -413,7 +411,7 @@ if (empty($patients)) {
                                 <div class="form-check p-3 bg-light rounded-3 border w-100 mt-md-4">
                                     <input class="form-check-input ms-0 me-2" type="checkbox" id="ep-send-password-email" name="send_password_email" value="1">
                                     <label class="form-check-label small fw-semibold text-dark" for="ep-send-password-email">
-                                        <i class="fas fa-paper-plane text-primary me-1"></i> Send updated password via email to patient upon saving
+                                        Send updated password via email to patient upon saving
                                     </label>
                                 </div>
                             </div>
