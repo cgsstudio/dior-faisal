@@ -18,10 +18,9 @@ $pp_scope_ids = array_values(array_unique(array_filter(array_map('absint', (arra
 $pp_patient_ids = [];
 if ($pp_scope_ids) {
     $pp_placeholders = implode(',', array_fill(0, count($pp_scope_ids), '%d'));
-    $pp_patient_ids = $wpdb->get_col($wpdb->prepare(
-        "SELECT DISTINCT patient_id FROM {$wpdb->prefix}dior_appointments WHERE is_deleted = 0 AND doctor_id IN ($pp_placeholders)",
-        ...$pp_scope_ids
-    ));
+    $pp_patient_ids = class_exists('Dior_Auth_Service')
+        ? Dior_Auth_Service::get_doctor_patient_ids($pp_doctor_id)
+        : [];
 }
 $pp_patient_ids = array_values(array_unique(array_filter(array_map('absint', (array) $pp_patient_ids))));
 $pp_patients = [];
