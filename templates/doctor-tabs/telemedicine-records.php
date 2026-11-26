@@ -24,12 +24,18 @@ $sql = "SELECT t.*, p.first_name, p.last_name, a.appt_date, a.appt_time, u.displ
 $virtual_records = $wpdb->get_results($wpdb->prepare($sql, ...$doctor_ids), ARRAY_A);
 
 // Fetch active patients for manual record modal
-$all_patients = $wpdb->get_results("
-    SELECT user_id, first_name, last_name, patient_uid
-    FROM {$wpdb->prefix}dior_patients
-    WHERE status <> 'deleted'
-    ORDER BY first_name ASC
-", ARRAY_A);
+$assigned_patient_ids = Dior_Auth_Service::get_doctor_patient_ids($doctor_id);
+$all_patients = [];
+if ($assigned_patient_ids) {
+    $patient_in = implode(',', array_fill(0, count($assigned_patient_ids), '%d'));
+    $all_patients = $wpdb->get_results($wpdb->prepare(
+        "SELECT user_id, first_name, last_name, patient_uid
+         FROM {$wpdb->prefix}dior_patients
+         WHERE status <> 'deleted' AND user_id IN ($patient_in)
+         ORDER BY first_name ASC",
+        ...$assigned_patient_ids
+    ), ARRAY_A);
+}
 if (!is_array($all_patients)) {
     $all_patients = [];
 }
