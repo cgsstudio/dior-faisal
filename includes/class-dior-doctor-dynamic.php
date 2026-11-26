@@ -144,7 +144,9 @@ class Dior_Doctor_Dynamic {
 
     public static function patients($doctor_id=0) {
         global $wpdb;
+        $current_user_id = get_current_user_id();
         $doctor_id = $doctor_id ?: self::doctor_id();
+        if (!$current_user_id || (int) $doctor_id !== (int) $current_user_id || !Dior_Auth_Service::is_doctor($current_user_id)) return [];
         $assigned_ids = class_exists('Dior_Auth_Service')
             ? Dior_Auth_Service::get_doctor_patient_ids($doctor_id)
             : [];
