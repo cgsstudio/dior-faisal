@@ -434,3 +434,55 @@ window.diorToggleDoctorSidebarCollapse = window.diorToggleDoctorSidebarCollapse 
     }
 })();
 
+
+
+/* Doctor header dropdown fallbacks.
+ * These globals live in the always-enqueued navigation controller so the
+ * header remains functional even if an optional dashboard script fails.
+ */
+(function () {
+    'use strict';
+
+    window.diorToggleProfileDropdown = window.diorToggleProfileDropdown || function (event) {
+        if (event && event.preventDefault) event.preventDefault();
+        if (event && event.stopPropagation) event.stopPropagation();
+
+        var dropdown = document.getElementById('dior-profile-dropdown');
+        var notifications = document.getElementById('dior-doc-notif-dd');
+        if (!dropdown) return false;
+
+        if (notifications) notifications.classList.remove('open', 'active');
+        dropdown.classList.toggle('open');
+        return true;
+    };
+
+    window.diorDocToggleNotif = window.diorDocToggleNotif || function (event) {
+        if (event && event.preventDefault) event.preventDefault();
+        if (event && event.stopPropagation) event.stopPropagation();
+
+        var dropdown = document.getElementById('dior-doc-notif-dd');
+        var profile = document.getElementById('dior-profile-dropdown');
+        if (!dropdown) return false;
+
+        if (profile) profile.classList.remove('open', 'active');
+        dropdown.classList.toggle('open');
+        return true;
+    };
+
+    if (!document.__diorHeaderDropdownOutsideClickBound) {
+        document.__diorHeaderDropdownOutsideClickBound = true;
+        document.addEventListener('click', function (event) {
+            var profileWrap = document.querySelector('.dior-user-pill-wrap');
+            var profileDropdown = document.getElementById('dior-profile-dropdown');
+            var notifWrap = document.querySelector('.dior-notif-wrap');
+            var notifDropdown = document.getElementById('dior-doc-notif-dd');
+
+            if (profileWrap && !profileWrap.contains(event.target) && profileDropdown) {
+                profileDropdown.classList.remove('open', 'active');
+            }
+            if (notifWrap && !notifWrap.contains(event.target) && notifDropdown) {
+                notifDropdown.classList.remove('open', 'active');
+            }
+        });
+    }
+})();
