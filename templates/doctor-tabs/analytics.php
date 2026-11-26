@@ -101,6 +101,31 @@ $ipd_pct       = $total_consultations > 0 ? (int) round(($inpatient_admissions /
 $recovery_rate = $total_consultations > 0 ? round(($completed_count / $total_consultations) * 100, 1) . '%' : '0%';
 $recent_reports = array_slice($cr_rows, 0, 20);
 ?>
+<style id="dior-recent-appointments-border-cleanup">
+/* Remove internal grid lines while keeping a clean outer table frame. */
+#tab-doc-analytics #dior-clinical-reports-table {
+    border: 1px solid #e5ebf2 !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+#tab-doc-analytics #dior-clinical-reports-table thead th,
+#tab-doc-analytics #dior-clinical-reports-table tbody td {
+    border-left: 0 !important;
+    border-right: 0 !important;
+}
+#tab-doc-analytics #dior-clinical-reports-table thead th {
+    border-top: 0 !important;
+    border-bottom: 1px solid #e5ebf2 !important;
+}
+#tab-doc-analytics #dior-clinical-reports-table tbody td {
+    border-top: 0 !important;
+    border-bottom: 1px solid #edf1f6 !important;
+}
+#tab-doc-analytics #dior-clinical-reports-table tbody tr:last-child td {
+    border-bottom: 0 !important;
+}
+</style>
+
 <section class="dior-tab-panel" id="tab-doc-analytics" style="display: none;">
     <!-- Breadcrumb Header -->
     <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -362,8 +387,8 @@ $recent_reports = array_slice($cr_rows, 0, 20);
             </table>
         </div>
 
-        <!-- Footer -->
-        <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 mt-3 border-top gap-2 text-muted small">
+        <!-- Footer: single pagination and record count -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 mt-3 gap-2 text-muted small">
             <div id="dior-clinical-count-display">Showing 0 to 0 of <?php echo count($recent_reports); ?> appointments</div>
             <nav aria-label="Page navigation">
                 <ul class="pagination pagination-sm mb-0" id="dior-clinical-pagination"></ul>
