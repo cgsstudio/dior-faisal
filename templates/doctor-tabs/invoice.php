@@ -465,15 +465,35 @@
         });
         $invoice_records = array_slice($invoice_records, 0, 200);
         $invoice_json = [];
+
+        // Payment metadata stores values such as "$125.00"; normalize both
+        // formatted currency strings and numeric database values before calculations.
+        $dior_invoice_number = static function ($value) {
+            if (is_int($value) || is_float($value) || (is_string($value) && is_numeric(trim($value)))) {
+                return (float) $value;
+            }
+            if (!is_scalar($value)) {
+                return 0.0;
+            }
+            $normalized = preg_replace('/[^0-9.\\-]/', '', (string) $value);
+            return ($normalized !== '' && is_numeric($normalized)) ? (float) $normalized : 0.0;
+        };
+
         foreach ($invoice_records as $record) {
             $patient_name = trim((string) (($record['first_name'] ?? '') . ' ' . ($record['last_name'] ?? '')));
             $patient_name = $patient_name ?: ($record['patient_display'] ?? 'Patient');
             $currency = strtoupper((string) ($record['paid_currency'] ?? $record['currency'] ?? 'USD'));
-            $tax = (float) ($record['tax'] ?? 0);
-            $discount = (float) ($record['discount'] ?? 0);
-            $amount = (float) ($record['amount'] ?? 0);
-            $paid_amount = (float) ($record['paid_amount'] ?? 0);
-            $stored_total = (float) ($record['total_amount'] ?? 0);
+            $tax = $dior_invoice_number($record['tax'] ?? 0);
+            $discount = $dior_invoice_number($record['discount'] ?? 0);
+            $amount = $dior_invoice_number($record['amount'] ?? 0);
+            $paid_amount = $dior_invoice_number($record['paid_amount'] ?? 0);
+            $stored_total = $dior_invoice_number($record['total_amount'] ?? 0);
+
+            // Stripe patient-payment metadata stores amount/total as formatted strings.
+            $meta_amount = $dior_invoice_number($record['total'] ?? 0);
+            if ($amount <= 0 && $meta_amount > 0) {
+                $amount = $meta_amount;
+            }
 
             // Some gateway invoices store the payable amount on the payment row,
             // while the invoice row's amount/total_amount can be empty or zero.
@@ -658,7 +678,7 @@
 #tab-doc-accounts-invoice .dior-standard-invoice{background:#fff;color:#172b4d;width:100%;max-width:100%;padding:42px 48px 28px;border:1px solid #e5edf5;border-radius:14px;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
 #tab-doc-accounts-invoice .dior-standard-invoice__top{display:flex;justify-content:space-between;align-items:flex-start;gap:28px}
 #tab-doc-accounts-invoice .dior-standard-invoice__brand{display:flex;align-items:center;gap:18px;min-width:0}
-#tab-doc-accounts-invoice .dior-standard-invoice__brand img{display:block;width:112px;height:92px;object-fit:contain;padding:8px;background:#fff;border:1px solid #e6edf5;border-radius:10px;box-sizing:border-box}
+#tab-doc-accounts-invoice .dior-standard-invoice__brand img{display:block;width:150px;height:105px;max-width:100%;object-fit:contain;object-position:left center;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;box-sizing:border-box}
 #tab-doc-accounts-invoice .dior-standard-invoice__brand-name{font-size:22px;font-weight:800;color:#063b70;letter-spacing:.2px}
 #tab-doc-accounts-invoice .dior-standard-invoice__brand-caption{font-size:12px;color:#718096;margin-top:5px}
 #tab-doc-accounts-invoice .dior-standard-invoice__heading{text-align:right;min-width:190px}
@@ -855,7 +875,7 @@
                 var details = exportContent.querySelector('.dior-standard-invoice__details');
                 if (details) Object.assign(details.style, {borderLeft:'1px solid #e4ebf2',paddingLeft:'20px'});
                 var logo = exportContent.querySelector('.dior-standard-invoice__brand img');
-                if (logo) Object.assign(logo.style, {display:'block',width:'112px',height:'92px',maxWidth:'112px',objectFit:'contain'});
+                if (logo) Object.assign(logo.style, {display:'block',width:'150px',height:'105px',maxWidth:'150px',objectFit:'contain',objectPosition:'left center',padding:'0',background:'transparent',border:'0',borderRadius:'0',boxShadow:'none'});
                 var table = exportContent.querySelector('.dior-standard-invoice__table');
                 if (table) Object.assign(table.style, {display:'table',width:'100%',minWidth:'0',tableLayout:'fixed',borderCollapse:'collapse'});
                 exportContent.querySelectorAll('.dior-standard-invoice__table thead').forEach(function (node) { node.style.display='table-header-group'; });
