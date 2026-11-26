@@ -293,10 +293,6 @@ $recent_reports = array_slice($cr_rows, 0, 20);
                         id="dior-clinical-bulk-delete" style="display: none;" title="Delete selected items">
                         <i class="fas fa-trash"></i>
                     </button>
-                    <button type="button" class="btn btn-primary btn-sm rounded-3 px-3 shadow-sm fw-semibold"
-                        id="dior-clinical-add-btn" title="Add new record">
-                        <i class="fas fa-plus"></i>
-                    </button>
                     <button type="button" class="btn btn-success btn-sm rounded-3 px-3 shadow-sm fw-semibold"
                         id="dior-clinical-export-btn" title="Export to Excel">
                         <i class="fas fa-file-arrow-down"></i>
@@ -732,20 +728,26 @@ $recent_reports = array_slice($cr_rows, 0, 20);
     padding:12px 14px; border-bottom:1px solid #edf1f6; vertical-align:middle;
 }
 #dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table tbody tr:last-child td { border-bottom:0; }
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-edit:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-edit:focus,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-edit:active {
-    color:#1a528e!important; background:#fff!important; border-color:#1a528e!important; box-shadow:none!important;
+/* Restore clear hover feedback for every remaining toolbar and row-action button. */
+#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-edit,
+#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-del,
+#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn {
+    transition:background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-del:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-del:focus,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-del:active {
-    color:#dc3545!important; background:#fff!important; border-color:#dc3545!important; box-shadow:none!important;
+#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-edit:hover {
+    color:#fff!important; background:#1a528e!important; border-color:#1a528e!important; box-shadow:0 2px 6px rgba(26,82,142,.18)!important;
 }
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-primary:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-success:hover,
-#dior-doctor-app #dior-doc-content #tab-doc-analytics .btn-info:hover {
-    background:#1a528e!important; border-color:#1a528e!important; color:#fff!important;
+#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-reports-table .dior-action-del:hover {
+    color:#fff!important; background:#dc3545!important; border-color:#dc3545!important; box-shadow:0 2px 6px rgba(220,53,69,.18)!important;
+}
+#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-bulk-delete:hover {
+    color:#fff!important; background:#b02a37!important; border-color:#b02a37!important;
+}
+#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-export-btn:hover {
+    color:#fff!important; background:#146c43!important; border-color:#146c43!important;
+}
+#dior-doctor-app #dior-doc-content #tab-doc-analytics #dior-clinical-refresh-btn:hover {
+    color:#fff!important; background:#0b5ed7!important; border-color:#0b5ed7!important;
 }
 </style>
 
