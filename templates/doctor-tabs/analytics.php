@@ -377,6 +377,18 @@ $recent_reports = array_slice($cr_rows, 0, 20);
     var root = document.getElementById('tab-doc-analytics');
     if (!root || root.dataset.clinicalActionsReady === '1') return;
     root.dataset.clinicalActionsReady = '1';
+
+    // Remove the generic dashboard pagination for this table; the dedicated 10-row pager below owns it.
+    root.querySelectorAll('.dior-table-pagination').forEach(function (pager) {
+        pager.remove();
+    });
+    var reportTable = root.querySelector('#dior-clinical-reports-table');
+    if (reportTable && reportTable.parentElement) {
+        reportTable.parentElement.querySelectorAll('.dior-table-pagination').forEach(function (pager) {
+            pager.remove();
+        });
+    }
+
     var vars = window.dior_doctor_vars || {};
     var ajaxUrl = vars.ajax_url || window.ajaxurl || '/wp-admin/admin-ajax.php';
     var nonce = vars.nonce || '';
