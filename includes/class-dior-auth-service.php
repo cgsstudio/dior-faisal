@@ -69,16 +69,26 @@ class Dior_Auth_Service
         if (!$doctor_id || !self::is_doctor($doctor_id)) return [];
 
         $ids = [];
-        $appointments = $wpdb->prefix . 'dior_appointments';
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $appointments)) === $appointments) {
-            $scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
-            $scope = array_values(array_unique(array_filter(array_map('absint', (array) $scope))));
-            if ($scope) {
-                $in = implode(',', array_fill(0, count($scope), '%d'));
-                $ids = $wpdb->get_col($wpdb->prepare(
-                    "SELECT DISTINCT patient_id FROM {$appointments} WHERE is_deleted = 0 AND doctor_id IN ($in)",
+        $scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
+        $scope = array_values(array_unique(array_filter(array_map('absint', (array) $scope))));
+        if ($scope) {
+            $in = implode(',', array_fill(0, count($scope), '%d'));
+            $related_tables = [
+                [$wpdb->prefix . 'dior_appointments', 'doctor_id', 'patient_id', "is_deleted = 0"],
+                [$wpdb->prefix . 'dior_prescriptions', 'doctor_id', 'patient_id', '1=1'],
+                [$wpdb->prefix . 'dior_encounters', 'doctor_id', 'patient_id', 'is_deleted = 0'],
+                [$wpdb->prefix . 'dior_documents', 'author_id', 'patient_id', 'is_deleted = 0'],
+                [$wpdb->prefix . 'dior_reviews', 'doctor_id', 'patient_id', '1=1'],
+                [$wpdb->prefix . 'dior_telemedicine', 'doctor_id', 'patient_id', '1=1'],
+            ];
+            foreach ($related_tables as $table_info) {
+                [$table, $owner_column, $patient_column, $extra_where] = $table_info;
+                if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table)) !== $table) continue;
+                $found = $wpdb->get_col($wpdb->prepare(
+                    "SELECT DISTINCT {$patient_column} FROM {$table} WHERE {$extra_where} AND {$owner_column} IN ($in)",
                     ...$scope
                 ));
+                $ids = array_merge($ids, (array) $found);
             }
         }
 
