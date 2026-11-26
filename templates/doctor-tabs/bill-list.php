@@ -289,7 +289,7 @@
                             <td><?php echo esc_html($d_name); ?></td>
                             <td>
                                 <strong><?php echo esc_html($method); ?></strong>
-                                <?php if ($transaction !== ''): ?><small class="d-block text-muted" title="<?php echo esc_attr($transaction); ?>"><?php echo esc_html(wp_trim_words($transaction, 5, '…')); ?></small><?php endif; ?>
+                                
                             </td>
                             <td><span class="va-badge <?php echo esc_attr($st_cls); ?>"><?php echo esc_html($st_raw); ?></span></td>
                             <td><i class="far fa-calendar va-icon-blue"></i> <?php echo esc_html($b_date); ?></td>
