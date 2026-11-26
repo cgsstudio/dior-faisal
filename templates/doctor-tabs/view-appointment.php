@@ -1268,11 +1268,23 @@ $status_badges = [
                         data.append('patient_user_id', row.dataset.patientUserId || '');
 
                         try {
-                            var response = await fetch(ajaxUrl, {
-                                method: 'POST',
-                                credentials: 'same-origin',
-                                body: data
-                            });
+                            // Never let one stalled WordPress AJAX request freeze the entire bulk-delete operation.
+                            var controller = new AbortController();
+                            var requestTimeout = window.setTimeout(function () {
+                                controller.abort();
+                            }, 25000);
+
+                            var response;
+                            try {
+                                response = await fetch(ajaxUrl, {
+                                    method: 'POST',
+                                    credentials: 'same-origin',
+                                    body: data,
+                                    signal: controller.signal
+                                });
+                            } finally {
+                                window.clearTimeout(requestTimeout);
+                            }
                             var responseText = await response.text();
                             var res;
                             try {
@@ -1289,7 +1301,10 @@ $status_badges = [
                             allRows = allRows.filter(function (item) { return item !== row; });
                             row.remove();
                         } catch (error) {
-                            failures.push(uid + ': ' + (error.message || 'Network error.'));
+                            var errorMessage = error && error.name === 'AbortError'
+                                ? 'Server request timed out after 25 seconds.'
+                                : (error.message || 'Network error.');
+                            failures.push(uid + ': ' + errorMessage);
                         } finally {
                             completed++;
                             var progress = document.getElementById('va-delete-progress');
@@ -1301,9 +1316,9 @@ $status_badges = [
                         }
                     }
 
-                    // Limit concurrency to four requests to avoid overwhelming WordPress/PHP.
+                    // Keep only two requests in flight; the endpoint performs several database lookups per appointment.
                     var nextIndex = 0;
-                    var workers = Array.from({ length: Math.min(4, checkedRows.length) }, async function () {
+                    var workers = Array.from({ length: Math.min(2, checkedRows.length) }, async function () {
                         while (nextIndex < checkedRows.length) {
                             var row = checkedRows[nextIndex++];
                             await deleteOne(row);
