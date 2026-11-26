@@ -3008,16 +3008,7 @@ document.addEventListener('DOMContentLoaded', function () {
             window.diorDocSwitchTab = fallbackSwitchTab;
         }
 
-        app.addEventListener('click', function (event) {
-            var btn = event.target.closest('#dior-doc-sidebar .dior-nav-btn[data-tab]');
-            if (!btn) return;
-            var targetTab = btn.getAttribute('data-tab');
-            if (typeof window.diorDocSwitchTab === 'function') {
-                event.preventDefault();
-                event.stopPropagation();
-                window.diorDocSwitchTab(targetTab, true);
-            }
-        }, true);
+        // Navigation clicks are bound once by dior-doctor-navigation.js.
 
         function syncTabFromUrl(updateUrl) {
             var hashMatch = window.location.hash.match(/^#tab=([^&]+)/);
