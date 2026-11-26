@@ -203,6 +203,32 @@
                         }
                     }
 
+                    // Include doctor-created bills from the Accounts form.
+                    $manual_bill_table = $wpdb->prefix . 'dior_doctor_bills';
+                    if ($doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $manual_bill_table)) === $manual_bill_table) {
+                        $doctor_placeholders = implode(',', array_fill(0, count($doctor_ids), '%d'));
+                        $manual_bills = $wpdb->get_results($wpdb->prepare(
+                            "SELECT b.*, u.display_name AS patient_display, doc.display_name AS doctor_display
+                             FROM $manual_bill_table b
+                             LEFT JOIN {$wpdb->users} u ON u.ID = b.patient_id
+                             LEFT JOIN {$wpdb->users} doc ON doc.ID = b.doctor_id
+                             WHERE b.doctor_id IN ($doctor_placeholders)
+                             ORDER BY b.created_at DESC LIMIT 200",
+                            ...$doctor_ids
+                        ), ARRAY_A);
+                        foreach ((array) $manual_bills as $manual_bill) {
+                            $manual_bill['invoice_uid'] = $manual_bill['bill_uid'];
+                            $manual_bill['payment_status'] = $manual_bill['status'];
+                            $manual_bill['paid_amount'] = strtolower($manual_bill['status']) === 'paid' ? $manual_bill['total_amount'] : 0;
+                            $manual_bill['amount'] = $manual_bill['amount'];
+                            $manual_bill['total'] = $manual_bill['total_amount'];
+                            $manual_bill['description'] = $manual_bill['service_type'];
+                            $manual_bill['paid_at'] = $manual_bill['created_at'];
+                            $manual_bill['currency'] = 'USD';
+                            $bill_rows[] = $manual_bill;
+                        }
+                    }
+
                     usort($bill_rows, static function ($left, $right) {
                         $left_date = strtotime((string) ($left['paid_at'] ?? $left['created_at'] ?? '')) ?: 0;
                         $right_date = strtotime((string) ($right['paid_at'] ?? $right['created_at'] ?? '')) ?: 0;
