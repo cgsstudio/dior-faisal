@@ -150,17 +150,7 @@ $dior_overview_book_url = trailingslashit($dior_overview_dashboard_url) . '#tab=
                   }
                   $p_height_num = preg_replace('/[^0-9.]/', '', $p_height);
                   $p_weight_num = preg_replace('/[^0-9.]/', '', $p_weight);
-
-                  // Display numeric centimetre values as feet and inches; preserve already formatted values.
-                  if ($p_height_num !== '' && is_numeric($p_height_num)) {
-                    $height_inches = (int) round(((float) $p_height_num) / 2.54);
-                    $height_feet = (int) floor($height_inches / 12);
-                    $remaining_inches = $height_inches % 12;
-                    $h_display = $height_feet . ' ft ' . $remaining_inches . ' in';
-                  } else {
-                    $h_display = !empty($p_height) ? $p_height : '—';
-                  }
-
+                  $h_display = !empty($p_height_num) ? $p_height_num . ' cm' : (!empty($p_height) ? $p_height : '—');
                   $w_display = !empty($p_weight_num) ? $p_weight_num . ' kg' : (!empty($p_weight) ? $p_weight : '—');
                   ?>
                   <div class="d-flex align-items-center justify-content-between">
