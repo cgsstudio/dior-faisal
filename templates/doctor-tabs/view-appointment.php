@@ -299,6 +299,20 @@ $status_badges = [
     </div>
 
     <!-- Appointment Registry — shared global card, header, form-control and table styles. -->
+    <style>
+        /* Keep the search field and action icons on one line on desktop. */
+        @media (max-width: 991.98px) {
+            .view-appointment-card .va-actions-wrapper {
+                min-width: 0 !important;
+                width: 100%;
+                flex-wrap: wrap !important;
+            }
+            .view-appointment-card .va-actions-wrapper .dior-bs-search-group {
+                flex: 1 1 180px;
+            }
+        }
+    </style>
+
     <div class="view-appointment-card">
 
         <!-- Controls Header Bar -->
