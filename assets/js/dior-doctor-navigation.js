@@ -270,32 +270,20 @@
         app.__diorDoctorNavigationReady = true;
         ensureMobileCloseButton();
 
-        // Capture-phase event delegation for rock-solid click response
-        app.addEventListener('click', function (event) {
-            // Check if clicking a tab switch button
-            var tabBtn = event.target.closest('#dior-doc-sidebar .dior-nav-btn[data-tab]');
-            if (tabBtn) {
-                var tab = tabBtn.getAttribute('data-tab');
-                if (tab) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    window.diorDocSwitchTab(tab, true);
-                    return;
-                }
-            }
+        // Bind each tab button directly instead of relying on bubbling through
+        // other dashboard scripts that may stop or intercept click events.
+        app.querySelectorAll('#dior-doc-sidebar .dior-nav-btn[data-tab]').forEach(function (button) {
+            if (button.__diorTabClickBound) return;
+            button.__diorTabClickBound = true;
+            button.addEventListener('click', function (event) {
+                var tab = button.getAttribute('data-tab');
+                if (!tab) return;
+                event.preventDefault();
+                window.diorDocSwitchTab(tab, true);
+            });
+        });
 
-            // Check if clicking a parent submenu toggle button
-            var parentMenuBtn = event.target.closest('#dior-doc-sidebar .dior-nav-item.has-submenu > .dior-nav-btn');
-            if (parentMenuBtn && !parentMenuBtn.getAttribute('data-tab')) {
-                var parentItem = parentMenuBtn.closest('.dior-nav-item.has-submenu');
-                if (parentItem && parentItem.id) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    window.diorToggleSubmenu(event, parentItem.id);
-                    return;
-                }
-            }
-        }, true);
+        // Submenu parent buttons retain their existing inline toggle handler.
 
         // Sync tab from URL hash on load
         function syncTabFromUrl(updateUrl) {
