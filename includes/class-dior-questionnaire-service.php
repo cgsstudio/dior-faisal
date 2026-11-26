@@ -223,7 +223,7 @@ class Dior_Questionnaire_Service
         $e_signature = $get(['Type Your Full Legal Name', 'e_signature']);
         $signature_date = $get(['Date', 'signature_date']);
         $submission_id = $get(['Submission Id', 'submissionId', 'submission_id']);
-        $form_id = $get(['Form Id', 'workflowId', 'form_id']);
+        $form_id = $get(['Form Id', 'workflowId', 'form_id', 'formId'], $payload['formId'] ?? '');
         $view_submission_link = $get(['View Submission Link', 'viewSubmissionLink']);
         $download_pdf_link = $get(['Download PDF Link', 'downloadPdfLink']);
 
