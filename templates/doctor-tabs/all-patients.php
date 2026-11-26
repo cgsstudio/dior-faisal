@@ -91,10 +91,6 @@ $status_badges = [
                             placeholder="Search patients...">
                     </div>
                     <div class="va-actions-group">
-                        <button class="va-icon-btn va-btn-danger btn" id="ap-bulk-delete-btn" title="Bulk Delete"
-                            style="display:none;">
-                            <i class="fas fa-trash"></i>
-                        </button>
                         <button class="va-icon-btn va-btn-info btn" id="ap-refresh-btn" title="Refresh">
                             <i class="fas fa-rotate-right"></i>
                         </button>
@@ -106,9 +102,6 @@ $status_badges = [
                 <table class="va-table table table-hover" id="ap-patients-table">
                     <thead>
                         <tr>
-                            <th style="width:50px;" class="text-center">
-                                <input type="checkbox" class="va-checkbox form-check-input" id="ap-select-all">
-                            </th>
                             <th>Name <i class="fas fa-sort"></i></th>
                             <th>Patient ID</th>
                             <th>Phone <i class="fas fa-sort"></i></th>
@@ -134,9 +127,6 @@ $status_badges = [
                                 $avatar = esc_url($p['avatar_url'] ?? '');
                                 ?>
                                 <tr data-patient-id="<?php echo $pid; ?>">
-                                    <td class="text-center"><input type="checkbox"
-                                            class="va-checkbox ap-row-check form-check-input" data-id="<?php echo $pid; ?>">
-                                    </td>
                                     <td>
                                         <div class="va-user-profile">
                                             <img src="<?php echo $avatar ?: 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=random'; ?>"
@@ -169,11 +159,6 @@ $status_badges = [
                                                 onclick="if(typeof window.diorEditPatient==='function'){window.diorEditPatient('<?php echo $pid; ?>');}else{window.diorSelectedPatientId='<?php echo $pid; ?>';if(typeof window.diorDocSwitchTab==='function')window.diorDocSwitchTab('doc-patients-edit');}"
                                                 title="Edit Patient Profile">
                                                 <i class="fas fa-user-pen"></i>
-                                            </button>
-                                            <button class="va-action-btn-sm va-btn-delete ap-delete-btn btn"
-                                                data-id="<?php echo $pid; ?>" data-name="<?php echo esc_attr($name); ?>"
-                                                title="Delete Patient">
-                                                <i class="fas fa-trash"></i>
                                             </button>
                                             <button class="va-action-btn-sm va-btn-view btn"
                                                 data-patient-id="<?php echo $pid; ?>"
@@ -286,71 +271,6 @@ $status_badges = [
                             Swal.fire({ icon: 'error', title: 'Update Failed', text: res.data && res.data.message ? res.data.message : 'Update failed.' });
                         }
                     }).finally(function () { btn.disabled = false; });
-            });
-            // Delete
-            document.getElementById('ap-patients-tbody').addEventListener('click', function (e) {
-                var btn = e.target.closest('.ap-delete-btn');
-                if (!btn) return;
-                var patientName = btn.dataset.name || 'this patient';
-                Swal.fire({
-                    title: 'Delete Patient?',
-                    text: 'Are you sure you want to delete patient "' + patientName + '"? This cannot be undone.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#EF4444',
-                    cancelButtonColor: '#64748B',
-                    confirmButtonText: 'Yes, delete',
-                    cancelButtonText: 'Cancel'
-                }).then(function (result) {
-                    if (!result.isConfirmed) return;
-                    var data = new FormData();
-                    data.append('action', 'dior_doc_patient_delete');
-                    data.append('nonce', nonce);
-                    data.append('patient_id', btn.dataset.id);
-                    fetch(ajaxUrl, { method: 'POST', body: data })
-                        .then(function (r) { return r.json(); })
-                        .then(function (res) {
-                            if (res.success) {
-                                var row = btn.closest('tr');
-                                allRows = allRows.filter(function (r) { return r !== row; });
-                                row.remove();
-                                renderPage(currentPage);
-                                Swal.fire({ icon: 'success', title: 'Deleted', text: 'Patient deleted successfully.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
-                            } else {
-                                Swal.fire({ icon: 'error', title: 'Delete Failed', text: res.data && res.data.message ? res.data.message : 'Delete failed.' });
-                            }
-                        });
-                });
-            });
-            // Bulk delete
-            document.getElementById('ap-bulk-delete-btn').addEventListener('click', function () {
-                var ids = Array.from(document.querySelectorAll('.ap-row-check:checked')).map(function (cb) { return cb.dataset.id; });
-                if (!ids.length) return;
-                Swal.fire({
-                    title: 'Delete Selected Patients?',
-                    text: 'Are you sure you want to delete ' + ids.length + ' selected patient(s)? This cannot be undone.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#EF4444',
-                    cancelButtonColor: '#64748B',
-                    confirmButtonText: 'Yes, delete all',
-                    cancelButtonText: 'Cancel'
-                }).then(function (result) {
-                    if (!result.isConfirmed) return;
-                    var data = new FormData();
-                    data.append('action', 'dior_doc_patient_bulk_delete');
-                    data.append('nonce', nonce);
-                    ids.forEach(function (id) { data.append('patient_ids[]', id); });
-                    fetch(ajaxUrl, { method: 'POST', body: data })
-                        .then(function (r) { return r.json(); })
-                        .then(function (res) {
-                            if (res.success) {
-                                location.reload();
-                            } else {
-                                Swal.fire({ icon: 'error', title: 'Bulk Delete Failed', text: res.data && res.data.message ? res.data.message : 'Bulk delete failed.' });
-                            }
-                        });
-                });
             });
             // Refresh
             document.getElementById('ap-refresh-btn').addEventListener('click', function () { location.reload(); });
