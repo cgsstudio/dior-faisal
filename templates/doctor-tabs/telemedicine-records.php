@@ -7,7 +7,7 @@ $doctor_id = get_current_user_id();
 $doctor_nonce = wp_create_nonce('dior_doctor_nonce');
 $ajax_url = admin_url('admin-ajax.php');
 
-$doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
+$doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($doctor_id) : [$doctor_id];
 $doctor_ids = array_values(array_unique(array_filter(array_map('intval', (array) $doctor_ids))));
 if (!$doctor_ids) {
     $doctor_ids = [$doctor_id];
