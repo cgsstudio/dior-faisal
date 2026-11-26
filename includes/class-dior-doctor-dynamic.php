@@ -257,9 +257,22 @@ class Dior_Doctor_Dynamic {
     }
 
     public static function ajax_patient_status(){ self::auth(); global $wpdb; $pid=(int)($_POST['patient_id']??0); self::ensure_patient_row($pid); if(!self::patient_belongs_to_doctor($pid,self::doctor_id())) wp_send_json_error(['message'=>'Access denied.'],403); self::ensure_patient_row($pid); $status=sanitize_key($_POST['status']??'active'); if(!in_array($status,['active','inactive','blocked'],true)) wp_send_json_error(['message'=>'Invalid status.']); $wpdb->update(self::table('patients'),['status'=>$status,'updated_at'=>current_time('mysql')],['user_id'=>$pid]); update_user_meta($pid,'dior_patient_status',$status); wp_send_json_success(['message'=>'Patient status updated.']); }
-    public static function ajax_patient_delete(){ self::auth(); global $wpdb; $pid=(int)($_POST['patient_id']??0); self::ensure_patient_row($pid); if(!self::patient_belongs_to_doctor($pid,self::doctor_id())) wp_send_json_error(['message'=>'Access denied.'],403); $wpdb->update(self::table('patients'),['status'=>'deleted','updated_at'=>current_time('mysql')],['user_id'=>$pid]); update_user_meta($pid,'dior_patient_status','deleted'); wp_send_json_success(['message'=>'Patient removed from the database.']); }
-    public static function ajax_patient_bulk_delete(){ self::auth(); $ids=array_map('intval',(array)($_POST['patient_ids']??[])); if(!$ids) wp_send_json_error(['message'=>'Select at least one patient.']); foreach($ids as $id){ if(self::patient_belongs_to_doctor($id,self::doctor_id())){ $_POST['patient_id']=$id; self::delete_patient_quiet($id); } } wp_send_json_success(['message'=>'Selected patients deleted.']); }
-    private static function delete_patient_quiet($id){ global $wpdb; $wpdb->update(self::table('patients'),['status'=>'deleted','updated_at'=>current_time('mysql')],['user_id'=>(int)$id]); update_user_meta($id,'dior_patient_status','deleted'); }
+    /**
+     * Patient deletion is disabled from the Doctor Dashboard.
+     * Doctors may view and update patient details, but cannot delete patients.
+     */
+    public static function ajax_patient_delete(){
+        self::auth();
+        wp_send_json_error(['message' => 'Patient deletion is not permitted from the Doctor Dashboard. Please contact an administrator.'], 403);
+    }
+
+    /**
+     * Bulk patient deletion is also disabled for Doctor Dashboard users.
+     */
+    public static function ajax_patient_bulk_delete(){
+        self::auth();
+        wp_send_json_error(['message' => 'Bulk patient deletion is not permitted from the Doctor Dashboard. Please contact an administrator.'], 403);
+    }
 
     public static function ajax_patient_add() {
         self::auth();
