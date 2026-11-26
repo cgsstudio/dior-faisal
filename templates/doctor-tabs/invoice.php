@@ -548,7 +548,7 @@
         <div class="dior-invoice-actions">
             <button class="dior-btn dior-btn-primary btn" onclick="window.print()"><i class="fas fa-print me-1"></i> Print</button>
             <button class="dior-btn dior-btn-info btn" id="download-invoice-pdf"><i class="fas fa-file-pdf me-1"></i> Download PDF</button>
-            <button class="dior-btn dior-btn-secondary btn"><i class="fas fa-envelope me-1"></i> Email Invoice</button>
+            <button type="button" class="dior-btn dior-btn-secondary btn" id="dior-email-invoice"><i class="fas fa-envelope me-1"></i> Email Invoice</button>
         </div>
         
     </div>
@@ -606,23 +606,121 @@
 <!-- html2pdf.js library -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const downloadBtn = document.getElementById('download-invoice-pdf');
-    if(downloadBtn) {
-        downloadBtn.addEventListener('click', function() {
-            const invoiceElement = document.getElementById('invoice-pdf-content');
-            
-            // Generate PDF
-            const opt = {
-                margin:       [10, 10, 10, 10], // top, left, bottom, right
-                filename:     'Invoice_345766.pdf',
-                image:        { type: 'jpeg', quality: 1.0 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            
-            html2pdf().set(opt).from(invoiceElement).save();
+(function () {
+    'use strict';
+    function initDiorInvoice() {
+        var panel = document.getElementById('tab-doc-accounts-invoice');
+        if (!panel || panel.dataset.invoiceActionsReady === '1') return;
+        panel.dataset.invoiceActionsReady = '1';
+
+        var selector = panel.querySelector('#dior-invoice-selector');
+        var dataNode = panel.querySelector('#dior-invoice-data');
+        var records = [];
+        try { records = dataNode ? JSON.parse(dataNode.textContent || '[]') : []; } catch (error) { records = []; }
+
+        var currencySymbols = { USD: '$', EUR: '€', GBP: '£', INR: '₹', CAD: 'CA$', AUD: 'A$' };
+        function money(value, currency) {
+            var symbol = currencySymbols[String(currency || 'USD').toUpperCase()] || (String(currency || 'USD').toUpperCase() + ' ');
+            return symbol + Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function dateLabel(value) {
+            if (!value) return '—';
+            var date = new Date(String(value).replace(' ', 'T'));
+            return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+        function setField(name, value) {
+            panel.querySelectorAll('[data-invoice-field="' + name + '"]').forEach(function (node) {
+                node.textContent = value == null || value === '' ? '—' : String(value);
+            });
+        }
+        function renderInvoice(index) {
+            var item = records[index];
+            if (!item) return;
+            var currency = item.currency || 'USD';
+            var subtotal = Number(item.amount || 0);
+            var tax = Number(item.tax || 0);
+            var discount = Number(item.discount || 0);
+            var total = Number(item.total || subtotal + tax - discount);
+            setField('uid', item.uid);
+            setField('status', item.status);
+            setField('patient', item.patient);
+            setField('date', dateLabel(item.date));
+            setField('doctor', item.doctor);
+            setField('description', item.description);
+            setField('unit', money(subtotal, currency));
+            setField('charges', money(tax, currency));
+            setField('discount', '-' + money(discount, currency));
+            setField('total', money(total, currency));
+            setField('subtotal', money(subtotal, currency));
+            setField('subtotal-total', money(subtotal, currency));
+            setField('tax', money(tax, currency));
+            setField('discount-total', '-' + money(discount, currency));
+            setField('grand-total', money(total, currency));
+            setField('method', item.method);
+            setField('transaction', item.transaction || '—');
+        }
+        if (selector) selector.addEventListener('change', function () { renderInvoice(Number(selector.value)); });
+
+        var printButton = panel.querySelector('.dior-invoice-actions .dior-btn-primary');
+        if (printButton) printButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            var content = panel.querySelector('#invoice-pdf-content');
+            if (!content) return;
+            var printWindow = window.open('', '_blank', 'width=900,height=700');
+            if (!printWindow) { window.print(); return; }
+            printWindow.document.write('<!doctype html><html><head><title>Invoice</title><style>body{font:14px Arial,sans-serif;padding:30px;color:#1e293b}table{width:100%;border-collapse:collapse}th,td{padding:12px;border-bottom:1px solid #ddd;text-align:left}.dior-invoice-header,.dior-invoice-info,.dior-invoice-summary-section{display:flex;justify-content:space-between;gap:20px;margin-bottom:24px}.dior-invoice-table{width:100%}.dior-totals-row{display:flex;justify-content:space-between;padding:8px}.dior-status-paid{padding:6px 12px;border:1px solid #ddd;border-radius:20px}</style></head><body>' + content.outerHTML + '</body></html>');
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+        });
+
+        var pdfButton = panel.querySelector('#download-invoice-pdf');
+        if (pdfButton) pdfButton.addEventListener('click', function () {
+            var content = panel.querySelector('#invoice-pdf-content');
+            if (!content) return;
+            if (typeof window.html2pdf !== 'function') { window.alert('PDF library is not available. Please refresh and try again.'); return; }
+            var selected = records[selector ? Number(selector.value) : 0];
+            window.html2pdf().set({
+                margin: 10,
+                filename: (selected ? selected.uid : 'Invoice') + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(content).save();
+        });
+
+        var emailButton = panel.querySelector('#dior-email-invoice');
+        if (emailButton) emailButton.addEventListener('click', function () {
+            var item = records[selector ? Number(selector.value) : 0];
+            if (!item) return;
+            if (!item.patient_email) { window.alert('Patient email address is not available for this invoice.'); return; }
+            var currency = item.currency || 'USD';
+            var body = [
+                'Dear ' + item.patient + ',',
+                '',
+                'Please find your invoice details below.',
+                'Invoice: ' + item.uid,
+                'Doctor: ' + item.doctor,
+                'Date: ' + dateLabel(item.date),
+                'Description: ' + item.description,
+                'Payment method: ' + item.method,
+                'Status: ' + item.status,
+                'Total: ' + money(item.total, currency),
+                '',
+                'Regards,',
+                'Dior Medical'
+            ].join('\n');
+            window.location.href = 'mailto:' + encodeURIComponent(item.patient_email) +
+                '?subject=' + encodeURIComponent('Invoice ' + item.uid + ' - Dior Medical') +
+                '&body=' + encodeURIComponent(body);
         });
     }
-});
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDiorInvoice);
+    else initDiorInvoice();
+    document.addEventListener('click', function (event) {
+        if (event.target.closest('[data-doc-tab="doc-accounts-invoice"]')) {
+            window.setTimeout(initDiorInvoice, 0);
+        }
+    });
+})();
 </script>
