@@ -24,13 +24,18 @@ if (!current_user_can('manage_options')) {
 }
 $reviews = $wpdb->get_results($reviews_sql . ' ORDER BY r.created_at DESC LIMIT 200', ARRAY_A);
 
-// Fetch patients for dropdown in future
-$patients = $wpdb->get_results(
-    "SELECT user_id, first_name, last_name, patient_uid FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' ORDER BY first_name ASC LIMIT 300",
-    ARRAY_A
-);
-if (empty($patients)) {
-    $wp_users = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'number' => 100]);
+// Fetch only patients assigned to this doctor for the review dropdown.
+$assigned_patient_ids = Dior_Auth_Service::get_doctor_patient_ids($doctor_id);
+$patients = [];
+if ($assigned_patient_ids) {
+    $patient_in = implode(',', array_fill(0, count($assigned_patient_ids), '%d'));
+    $patients = $wpdb->get_results($wpdb->prepare(
+        "SELECT user_id, first_name, last_name, patient_uid FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' AND user_id IN ($patient_in) ORDER BY first_name ASC LIMIT 300",
+        ...$assigned_patient_ids
+    ), ARRAY_A);
+}
+if (empty($patients) && $assigned_patient_ids) {
+    $wp_users = get_users(['include' => $assigned_patient_ids, 'role__in' => ['patient', 'subscriber', 'customer'], 'number' => count($assigned_patient_ids)]);
     $patients = [];
     foreach ($wp_users as $u) {
         $patients[] = [
