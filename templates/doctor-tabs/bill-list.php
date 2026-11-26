@@ -68,7 +68,7 @@
                         <th>Invoice ID <i class="fas fa-sort"></i></th>
                         <th>Patient Name <i class="fas fa-sort"></i></th>
                         <th>Doctor <i class="fas fa-sort"></i></th>
-                        <th>Payment Details</th>
+                        <th>Payment Method</th>
                         <th>Status <i class="fas fa-sort"></i></th>
                         <th>Date <i class="fas fa-sort"></i></th>
                         <th>Amount <i class="fas fa-sort"></i></th>
