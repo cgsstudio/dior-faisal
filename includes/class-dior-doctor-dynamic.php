@@ -15,7 +15,7 @@ class Dior_Doctor_Dynamic {
             'get_patient_profile','save_consultation','delete_consultation','document_save','document_delete','document_update_meta',
             'review_save','review_delete','review_bulk_delete','review_get','telemed_save','telemed_delete','notification_read',
             'notification_all_read','settings_save','chat_send','chat_get',
-            'medicine_save','medicine_delete','medicine_bulk_delete'
+            'medicine_save','medicine_delete','medicine_bulk_delete','clinical_report_update','clinical_report_delete','clinical_report_bulk_delete'
         ];
         foreach ($actions as $action) add_action('wp_ajax_dior_doc_' . $action, [__CLASS__, 'ajax_' . $action]);
         add_action('wp_ajax_dior_doctor_add_patient', [__CLASS__, 'ajax_patient_add']);
@@ -175,6 +175,101 @@ class Dior_Doctor_Dynamic {
         if($ok!==false){ if(class_exists('Dior_Audit_Service')) Dior_Audit_Service::log('appointment_delete','appointment',$uid,(int)$a['patient_id'],'success'); wp_send_json_success(['message'=>'Appointment permanently deleted.']); }
         wp_send_json_error(['message'=>'Unable to delete appointment.']);
     }
+    /**
+     * Update a clinical report backed by an appointment record.
+     * Writes are limited to the appointment's assigned doctor or an administrator.
+     */
+    public static function ajax_clinical_report_update() {
+        self::auth();
+        global $wpdb;
+        $uid = sanitize_text_field(wp_unslash($_POST['appt_uid'] ?? ''));
+        $appointment = $uid ? Dior_Appointment_Service::get_appointment($uid) : null;
+        if (!$appointment || !self::doctor_can_manage_appointment($appointment)) {
+            wp_send_json_error(['message' => 'Report not found or access denied.'], 403);
+        }
+
+        $date = sanitize_text_field(wp_unslash($_POST['appt_date'] ?? ''));
+        $diagnosis = sanitize_text_field(wp_unslash($_POST['condition_name'] ?? ''));
+        $status = sanitize_text_field(wp_unslash($_POST['status'] ?? ''));
+        $parsed = DateTime::createFromFormat('Y-m-d', $date);
+        $allowed = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled', 'No Show'];
+
+        if (!$parsed || $parsed->format('Y-m-d') !== $date) {
+            wp_send_json_error(['message' => 'Please select a valid visit date.']);
+        }
+        if ($diagnosis === '') {
+            wp_send_json_error(['message' => 'Diagnosis is required.']);
+        }
+        if (!in_array($status, $allowed, true)) {
+            wp_send_json_error(['message' => 'Please select a valid report status.']);
+        }
+
+        $updated = $wpdb->update(self::table('appointments'), [
+            'condition_name' => $diagnosis,
+            'appt_date' => $date,
+            'status' => $status,
+            'updated_at' => current_time('mysql'),
+        ], ['appt_uid' => $uid]);
+
+        if ($updated === false) {
+            wp_send_json_error(['message' => 'The clinical report could not be updated.'], 500);
+        }
+        wp_send_json_success(['message' => 'Clinical report updated successfully.']);
+    }
+
+    /**
+     * Soft-delete one report so it no longer appears in active Clinical Reports.
+     */
+    public static function ajax_clinical_report_delete() {
+        self::auth();
+        global $wpdb;
+        $uid = sanitize_text_field(wp_unslash($_POST['appt_uid'] ?? ''));
+        $appointment = $uid ? Dior_Appointment_Service::get_appointment($uid) : null;
+        if (!$appointment || !self::doctor_can_manage_appointment($appointment)) {
+            wp_send_json_error(['message' => 'Report not found or access denied.'], 403);
+        }
+
+        $deleted = $wpdb->update(self::table('appointments'), [
+            'is_deleted' => 1,
+            'updated_at' => current_time('mysql'),
+        ], ['appt_uid' => $uid]);
+
+        if ($deleted === false) {
+            wp_send_json_error(['message' => 'The clinical report could not be deleted.'], 500);
+        }
+        wp_send_json_success(['message' => 'Clinical report deleted successfully.']);
+    }
+
+    /**
+     * Bulk soft-delete selected reports, checking permission for each appointment.
+     */
+    public static function ajax_clinical_report_bulk_delete() {
+        self::auth();
+        global $wpdb;
+        $raw = $_POST['appt_uids'] ?? [];
+        if (is_string($raw)) $raw = explode(',', $raw);
+        $uids = array_values(array_unique(array_filter(array_map('sanitize_text_field', (array) $raw))));
+        if (!$uids) {
+            wp_send_json_error(['message' => 'Select at least one report to delete.']);
+        }
+
+        $deleted = 0;
+        foreach ($uids as $uid) {
+            $appointment = Dior_Appointment_Service::get_appointment($uid);
+            if (!$appointment || !self::doctor_can_manage_appointment($appointment)) continue;
+            $result = $wpdb->update(self::table('appointments'), [
+                'is_deleted' => 1,
+                'updated_at' => current_time('mysql'),
+            ], ['appt_uid' => $uid]);
+            if ($result !== false) $deleted++;
+        }
+
+        if (!$deleted) {
+            wp_send_json_error(['message' => 'No selected reports could be deleted.'], 403);
+        }
+        wp_send_json_success(['message' => $deleted . ' clinical report(s) deleted.']);
+    }
+
     public static function ajax_appointment_update() {
         self::auth(); global $wpdb; 
         $uid = sanitize_text_field($_POST['appt_uid'] ?? ''); 
