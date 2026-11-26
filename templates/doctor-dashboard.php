@@ -1,61 +1,62 @@
-
 <div class="dior-wrap dior-doctor-wrap" id="dior-doctor-app">
-<style id="dior-doctor-sidebar-desktop-width">
-/* Expanded desktop layout: wider sidebar and main content fills the remaining space. */
-@media (min-width: 1025px) {
-    #dior-doctor-app .dior-app {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: stretch !important;
-        width: 100% !important;
-        min-width: 0 !important;
-    }
+    <style id="dior-doctor-sidebar-desktop-width">
+        /* Expanded desktop layout: wider sidebar and main content fills the remaining space. */
+        @media (min-width: 1025px) {
+            #dior-doctor-app .dior-app {
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: stretch !important;
+                width: 100% !important;
+                min-width: 0 !important;
+            }
 
-    #dior-doctor-app .dior-app:not(.dior-sidebar-collapsed) > #dior-doc-sidebar {
-        box-sizing: border-box !important;
-        width: 280px !important;
-        min-width: 280px !important;
-        max-width: 280px !important;
-        flex: 0 0 280px !important;
-    }
+            #dior-doctor-app .dior-app:not(.dior-sidebar-collapsed)>#dior-doc-sidebar {
+                box-sizing: border-box !important;
+                width: 280px !important;
+                min-width: 280px !important;
+                max-width: 280px !important;
+                flex: 0 0 280px !important;
+            }
 
-    #dior-doctor-app .dior-app:not(.dior-sidebar-collapsed) > .dior-main-content {
-        box-sizing: border-box !important;
-        width: auto !important;
-        min-width: 0 !important;
-        max-width: none !important;
-        flex: 1 1 0 !important;
-    }
-}
+            #dior-doctor-app .dior-app:not(.dior-sidebar-collapsed)>.dior-main-content {
+                box-sizing: border-box !important;
+                width: auto !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                flex: 1 1 0 !important;
+            }
+        }
 
-/* Keep the topbar full-width; inset all Doctor Dashboard page panels. */
-#dior-doctor-app .dior-main-content > #dior-doc-content.dior-tab-content {
-    display: block !important;
-    box-sizing: border-box !important;
-    width: calc(100% - 40px) !important;
-    max-width: calc(100% - 40px) !important;
-    margin-left: 20px !important;
-    margin-right: 20px !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-}
-@media (max-width: 1024px) {
-    #dior-doctor-app .dior-main-content > #dior-doc-content.dior-tab-content {
-        width: calc(100% - 24px) !important;
-        max-width: calc(100% - 24px) !important;
-        margin-left: 12px !important;
-        margin-right: 12px !important;
-    }
-}
-@media (max-width: 600px) {
-    #dior-doctor-app .dior-main-content > #dior-doc-content.dior-tab-content {
-        width: calc(100% - 16px) !important;
-        max-width: calc(100% - 16px) !important;
-        margin-left: 8px !important;
-        margin-right: 8px !important;
-    }
-}
-</style>
+        /* Keep the topbar full-width; inset all Doctor Dashboard page panels. */
+        #dior-doctor-app .dior-main-content>#dior-doc-content.dior-tab-content {
+            display: block !important;
+            box-sizing: border-box !important;
+            width: calc(100% - 94px) !important;
+            max-width: calc(100% - 30px) !important;
+            margin-left: 60px !important;
+            margin-right: 104px !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        @media (max-width: 1024px) {
+            #dior-doctor-app .dior-main-content>#dior-doc-content.dior-tab-content {
+                width: calc(100% - 24px) !important;
+                max-width: calc(100% - 24px) !important;
+                margin-left: 12px !important;
+                margin-right: 12px !important;
+            }
+        }
+
+        @media (max-width: 600px) {
+            #dior-doctor-app .dior-main-content>#dior-doc-content.dior-tab-content {
+                width: calc(100% - 16px) !important;
+                max-width: calc(100% - 16px) !important;
+                margin-left: 8px !important;
+                margin-right: 8px !important;
+            }
+        }
+    </style>
 
 
     <div class="dior-drawer-backdrop" id="dior-doc-backdrop" onclick="diorDocCloseMobile()"></div>
@@ -134,7 +135,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <button type="button" class="dior-nav-btn btn" data-tab="doc-analytics" title="Analytics"><i
                             class="fas fa-chart-line"></i><span class="nav-label">Analytics</span></button>
                     <div class="dior-nav-item has-submenu" id="accounts-menu-item">
@@ -144,7 +145,8 @@
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
                         <div class="dior-submenu">
-                            <button type="button" class="dior-nav-btn submenu-btn btn" data-tab="doc-accounts-bill-list">
+                            <button type="button" class="dior-nav-btn submenu-btn btn"
+                                data-tab="doc-accounts-bill-list">
                                 <i class="fas fa-receipt"></i><span class="nav-label">Bill List</span>
                             </button>
                             <?php /* Add Bill navigation temporarily hidden; restore when this page is ready. */ ?>
@@ -161,11 +163,13 @@
                             </button>
                         </div>
                     </div>
-                    <button type="button" class="dior-nav-btn btn" data-tab="doc-consultation-notes" title="Consultations Notes"><i
-                            class="fas fa-notes-medical"></i><span class="nav-label">Consultations
+                    <button type="button" class="dior-nav-btn btn" data-tab="doc-consultation-notes"
+                        title="Consultations Notes"><i class="fas fa-notes-medical"></i><span
+                            class="nav-label">Consultations
                             Notes</span></button>
-                    <button type="button" class="dior-nav-btn btn" data-tab="doc-e-prescriptions" title="E - Prescriptions"><i
-                            class="fas fa-prescription-bottle-medical"></i><span class="nav-label">E -
+                    <button type="button" class="dior-nav-btn btn" data-tab="doc-e-prescriptions"
+                        title="E - Prescriptions"><i class="fas fa-prescription-bottle-medical"></i><span
+                            class="nav-label">E -
                             Prescriptions</span></button>
                     <div class="dior-nav-item has-submenu" id="pharmacy-menu-item">
                         <button type="button" class="dior-nav-btn btn"
@@ -189,8 +193,7 @@
                             <i class="fas fa-minus submenu-icon"></i>
                         </button>
                         <div class="dior-submenu">
-                            <button type="button" class="dior-nav-btn submenu-btn btn"
-                                data-tab="doc-documents-upload">
+                            <button type="button" class="dior-nav-btn submenu-btn btn" data-tab="doc-documents-upload">
                                 <i class="fas fa-file-arrow-up"></i><span class="nav-label">Upload Documents</span>
                             </button>
                         </div>
@@ -206,13 +209,16 @@
                                 <i class="fas fa-video"></i><span class="nav-label">Video Consultation</span>
                             </button>
                             <button type="button" class="dior-nav-btn submenu-btn btn" data-tab="doc-telemed-records">
-                                <i class="fas fa-clock-rotate-left"></i><span class="nav-label">Virtual Visit Records</span>
+                                <i class="fas fa-clock-rotate-left"></i><span class="nav-label">Virtual Visit
+                                    Records</span>
                             </button>
                         </div>
                     </div>
-                    <button type="button" class="dior-nav-btn btn" data-tab="doc-patient-review" title="Feedback & Reviews"><i
-                            class="fas fa-star"></i><span class="nav-label">Feedback &amp; Reviews</span></button>
-                    <button type="button" class="dior-nav-btn btn" data-tab="doc-notifications-system" title="Notifications">
+                    <button type="button" class="dior-nav-btn btn" data-tab="doc-patient-review"
+                        title="Feedback & Reviews"><i class="fas fa-star"></i><span class="nav-label">Feedback &amp;
+                            Reviews</span></button>
+                    <button type="button" class="dior-nav-btn btn" data-tab="doc-notifications-system"
+                        title="Notifications">
                         <i class="fas fa-bell"></i><span class="nav-label">Notifications</span>
                     </button>
                     <button type="button" class="dior-nav-btn btn" data-tab="doc-settings" title="Settings"><i
@@ -237,7 +243,7 @@
                     var isOpen = target.classList.contains('active') || target.classList.contains('open');
 
                     // Strict Accordion: Close ALL other submenus
-                    document.querySelectorAll('.dior-nav-item.has-submenu').forEach(function(item) {
+                    document.querySelectorAll('.dior-nav-item.has-submenu').forEach(function (item) {
                         item.classList.remove('active', 'open');
                         var icon = item.querySelector('.submenu-icon');
                         if (icon) {
@@ -291,7 +297,7 @@
 
                     try {
                         localStorage.setItem('dior_doctor_sidebar_collapsed', isCollapsed ? '1' : '0');
-                    } catch (err) {}
+                    } catch (err) { }
 
                     // Trigger resize so responsive tables and charts re-fit smoothly
                     setTimeout(function () {
@@ -319,7 +325,7 @@
                                 }
                             }
                         }
-                    } catch (e) {}
+                    } catch (e) { }
                 })();
             </script>
         </aside>
@@ -362,8 +368,7 @@
                                         data-action-url="<?php echo esc_attr($n['action_url'] ?? ''); ?>"
                                         data-title="<?php echo esc_attr($n['title'] ?? ''); ?>"
                                         data-message="<?php echo esc_attr($n['message'] ?? ''); ?>"
-                                        data-icon="<?php echo esc_attr($n['icon'] ?? ''); ?>"
-                                        style="cursor:pointer;">
+                                        data-icon="<?php echo esc_attr($n['icon'] ?? ''); ?>" style="cursor:pointer;">
                                         <div class="notif-icon"><i class="fas <?php echo esc_attr($n['icon']); ?>"></i>
                                         </div>
                                         <div class="notif-body">
@@ -377,8 +382,7 @@
                                 <?php endforeach; ?>
                             </div>
                             <div class="dior-notif-footer">
-                                <button type="button"
-                                    onclick="diorDocSwitchTab('doc-notifications-system');">View
+                                <button type="button" onclick="diorDocSwitchTab('doc-notifications-system');">View
                                     All
                                     &rarr;</button>
                             </div>
@@ -494,7 +498,8 @@
                         <?php if (!empty($patients)): ?>
                             <?php foreach ($patients as $p): ?>
                                 <option value="<?php echo (int) ($p['user_id'] ?? 0); ?>">
-                                    <?php echo esc_html($p['full_name'] ?? ($p['name'] ?? 'Patient')); ?> (<?php echo esc_html($p['patient_id'] ?? ('PAT-' . str_pad((int)($p['user_id'] ?? 0), 4, '0', STR_PAD_LEFT))); ?>)
+                                    <?php echo esc_html($p['full_name'] ?? ($p['name'] ?? 'Patient')); ?>
+                                    (<?php echo esc_html($p['patient_id'] ?? ('PAT-' . str_pad((int) ($p['user_id'] ?? 0), 4, '0', STR_PAD_LEFT))); ?>)
                                 </option>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -562,7 +567,8 @@
 <div class="dior-modal-overlay dior-ic-bfefd52f66" id="dior-call-alert-modal">
     <div class="dior-modal-dialog dior-ic-c1484e0c1a dior-ic-3627f2adcb">
         <div class="dior-ic-2b0eae5150">
-            <h3 id="dior-call-alert-title" class="dior-ic-76c82d37bf"><i class="fas fa-video me-1" style="color:#22c55e;"></i> Video
+            <h3 id="dior-call-alert-title" class="dior-ic-76c82d37bf"><i class="fas fa-video me-1"
+                    style="color:#22c55e;"></i> Video
                 Consultation</h3>
             <button type="button" onclick="diorDocCloseCallAlert()" class="dior-ic-5e552e6636 btn">&times;</button>
         </div>
