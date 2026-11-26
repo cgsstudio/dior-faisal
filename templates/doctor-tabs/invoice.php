@@ -816,10 +816,10 @@
 
                 // Render a visible export-only copy because the live invoice tab is hidden when inactive.
                 exportStage = document.createElement('section');
+                exportStage.id = 'tab-doc-accounts-invoice'; // Preserve the invoice-scoped print/PDF styles.
                 exportStage.setAttribute('aria-hidden', 'true');
                 exportStage.style.cssText = 'position:fixed;left:0;top:0;width:794px;min-height:1123px;padding:0;margin:0;background:#fff;z-index:2147483647;overflow:visible;box-sizing:border-box;';
                 var exportContent = content.cloneNode(true);
-                exportContent.removeAttribute('id');
                 exportContent.style.cssText = 'display:block!important;width:778px!important;max-width:778px!important;min-width:778px!important;margin:0!important;padding:30px!important;background:#fff!important;color:#172b4d!important;box-sizing:border-box!important;font-family:Arial,Helvetica,sans-serif!important;overflow:visible!important;';
                 exportStage.appendChild(exportContent);
                 document.body.appendChild(exportStage);
