@@ -476,7 +476,9 @@ $status_badges = [
                             <tr data-appt-uid="<?php echo $uid; ?>"
                                 data-appointment-id="<?php echo esc_attr((string) ($a['appointment_id'] ?? ($a['id'] ?? ''))); ?>"
                                 data-appointment-uid="<?php echo esc_attr((string) ($a['appointment_uid'] ?? ($a['uid'] ?? $uid_raw))); ?>"
-                                data-patient-id="<?php echo $patient_id; ?>" data-patient-uid="<?php echo $patient_uid; ?>"
+                                data-patient-id="<?php echo $patient_id; ?>"
+                                data-patient-user-id="<?php echo esc_attr((int) ($a['patient_user_id'] ?? 0)); ?>"
+                                data-patient-uid="<?php echo $patient_uid; ?>"
                                 data-patient-name="<?php echo $fname; ?>" data-patient-avatar="<?php echo $avatar; ?>"
                                 data-patient-phone="<?php echo esc_attr($phone); ?>"
                                 data-patient-email="<?php echo esc_attr($email); ?>" data-doctor-id="<?php echo $doc_id; ?>"
@@ -1259,6 +1261,7 @@ $status_badges = [
                                 data.append('action', 'dior_doc_appointment_delete');
                                 data.append('nonce', nonce);
                                 data.append('appt_uid', uid);
+                                data.append('patient_user_id', row.dataset.patientUserId || '');
 
                                 try {
                                     var response = await fetch(ajaxUrl, {
