@@ -140,6 +140,10 @@ $pp_ajax_url = admin_url('admin-ajax.php');
                             <span class="text-muted">&bull;</span>
                             <span><i class="fas fa-cake-candles text-primary me-1"></i><span data-pp="age">—</span></span>
                             <span class="text-muted">&bull;</span>
+                            <span><i class="fas fa-ruler-vertical text-primary me-1"></i>Height: <strong class="text-dark" data-pp="height">—</strong></span>
+                            <span class="text-muted">&bull;</span>
+                            <span><i class="fas fa-weight-scale text-primary me-1"></i>Weight: <strong class="text-dark" data-pp="weight">—</strong></span>
+                            <span class="text-muted">&bull;</span>
                             <span><i class="fas fa-droplet text-danger me-1"></i>Blood Group: <strong class="text-dark" data-pp="blood">—</strong></span>
                             <span class="text-muted">&bull;</span>
                             <span class="d-inline-flex align-items-center"><i class="fas fa-phone text-success me-1"></i><a data-pp="phone-link" href="#" class="text-decoration-none text-secondary fw-semibold small" style="font-size: 13px !important; line-height: 1.3 !important;"><span data-pp="phone">—</span></a></span>
@@ -1422,6 +1426,17 @@ $pp_ajax_url = admin_url('admin-ajax.php');
         field('age', age);
         field('dob', p.dob || '—');
         field('gender', p.gender ? p.gender.charAt(0).toUpperCase() + p.gender.slice(1) : '—');
+
+        // Convert numeric centimetre values to feet and inches for display only.
+        var rawHeight = String(p.height || '').trim();
+        var heightNumber = Number(rawHeight);
+        var heightDisplay = rawHeight || '—';
+        if (rawHeight && Number.isFinite(heightNumber)) {
+            var totalInches = Math.round(heightNumber / 2.54);
+            heightDisplay = Math.floor(totalInches / 12) + ' ft ' + (totalInches % 12) + ' in';
+        }
+        field('height', heightDisplay);
+        field('weight', p.weight || '—');
         field('blood', p.blood_group || '—');
         field('email', p.email || '—');
         field('phone', p.phone || '—');
