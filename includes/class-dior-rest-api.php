@@ -31,21 +31,9 @@ class Dior_Medical_REST_API
             );
         }
 
-        $current_user = wp_get_current_user();
-        if ( current_user_can( 'manage_options' ) ) return true;
-        if ( in_array( 'doctor', (array) $current_user->roles, true ) ) return true;
-
-        $patient_id = absint( $request->get_param( 'patient_id' ) );
-        if ( ! $patient_id ) {
-            $patient_id = get_current_user_id();
-        }
-
-        if ( $patient_id !== get_current_user_id() ) {
-            return new \WP_Error(
-                'dior_rest_forbidden',
-                'You are not allowed to access this patient record.',
-                array( 'status' => 403 )
-            );
+        $patient_id = absint($request->get_param('patient_id')) ?: get_current_user_id();
+        if (!$patient_id || !class_exists('Dior_Auth_Service') || !Dior_Auth_Service::can_access_patient($patient_id, get_current_user_id())) {
+            return new \WP_Error('dior_rest_forbidden', 'You are not allowed to access this patient record.', ['status' => 403]);
         }
         return true;
     }
@@ -261,9 +249,12 @@ class Dior_Medical_REST_API
         return current_user_can('manage_options');
     }
 
-    public function check_auth_permission()
+    public function check_auth_permission($request = null)
     {
-        return is_user_logged_in();
+        if (!is_user_logged_in()) return false;
+        $user_id = get_current_user_id();
+        if (Dior_Auth_Service::is_admin($user_id)) return false;
+        return Dior_Auth_Service::is_doctor($user_id) || Dior_Auth_Service::is_patient($user_id);
     }
 
     public function check_patient_permission($request)
@@ -275,8 +266,9 @@ class Dior_Medical_REST_API
         $patient_id = $request['id'];
         $current_user = wp_get_current_user();
 
-        // Allow if user is viewing their own profile or is admin
-        return (current_user_can('manage_options') || intval($current_user->ID) === intval($patient_id));
+        if (current_user_can('manage_options')) return true;
+        if (intval($current_user->ID) === intval($patient_id)) return true;
+        return Dior_Auth_Service::can_access_patient($patient_id, $current_user->ID);
     }
 
     /**
@@ -376,33 +368,31 @@ class Dior_Medical_REST_API
     {
         global $wpdb;
 
-        $patient_id = $request['patient_id'] ?? get_current_user_id();
-        $status = $request['status'] ?? null;
-        $from_date = $request['from_date'] ?? date('Y-m-d', strtotime('-1 month'));
-        $to_date = $request['to_date'] ?? date('Y-m-d', strtotime('+1 month'));
+        $user_id = get_current_user_id();
+        $status = sanitize_text_field($request['status'] ?? '');
+        $from_date = sanitize_text_field($request['from_date'] ?? date('Y-m-d', strtotime('-1 month')));
+        $to_date = sanitize_text_field($request['to_date'] ?? date('Y-m-d', strtotime('+1 month')));
 
-        // Build query
-        $where = "WHERE user_id = %d AND appointment_date BETWEEN %s AND %s";
-        $params = [$patient_id, $from_date, $to_date];
-
-        if ($status) {
-            $where .= " AND status = %s";
-            $params[] = $status;
+        if (Dior_Auth_Service::is_doctor($user_id)) {
+            $requested_patient = absint($request['patient_id'] ?? 0);
+            if ($requested_patient && !Dior_Auth_Service::can_access_patient($requested_patient, $user_id)) {
+                return new WP_Error('dior_rest_forbidden', 'Patient is not assigned to this doctor.', ['status' => 403]);
+            }
+            $appointments = Dior_Appointment_Service::get_doctor_appointments($user_id, $status ?: null);
+            $appointments = array_values(array_filter($appointments, static function ($row) use ($requested_patient, $from_date, $to_date) {
+                $date = (string) ($row['appt_date'] ?? '');
+                return (!$requested_patient || (int) ($row['patient_id'] ?? 0) === $requested_patient)
+                    && (!$date || ($date >= $from_date && $date <= $to_date));
+            }));
+        } else {
+            $appointments = Dior_Appointment_Service::get_patient_appointments($user_id);
+            $appointments = array_values(array_filter($appointments, static function ($row) use ($status, $from_date, $to_date) {
+                $date = (string) ($row['appt_date'] ?? $row['date'] ?? '');
+                return (!$status || strcasecmp((string) ($row['status'] ?? ''), $status) === 0)
+                    && (!$date || ($date >= $from_date && $date <= $to_date));
+            }));
         }
-
-        // Note: This assumes custom table. Adjust based on your actual storage
-        $appointments = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM {$wpdb->postmeta} WHERE meta_key = 'appointment_data' $where",
-                ...$params
-            ),
-            ARRAY_A
-        );
-
-        return rest_ensure_response([
-            'data' => $appointments,
-            'count' => count($appointments),
-        ]);
+        return rest_ensure_response(['data' => $appointments, 'count' => count($appointments)]);
     }
 
     /**
@@ -455,6 +445,17 @@ class Dior_Medical_REST_API
             return new WP_Error('appointment_not_found', 'Appointment not found', ['status' => 404]);
         }
 
+        $patient_id = absint(get_post_meta($post->ID, 'patient_id', true));
+        $doctor_id = absint(get_post_meta($post->ID, 'doctor_id', true));
+        $user_id = get_current_user_id();
+        if (Dior_Auth_Service::is_doctor($user_id)) {
+            $scope = Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id);
+            if (($doctor_id && !in_array($doctor_id, $scope, true)) || !$patient_id || !Dior_Auth_Service::can_access_patient($patient_id, $user_id)) {
+                return new WP_Error('dior_rest_forbidden', 'You are not allowed to access this appointment.', ['status' => 403]);
+            }
+        } elseif ($patient_id !== $user_id) {
+            return new WP_Error('dior_rest_forbidden', 'You are not allowed to access this appointment.', ['status' => 403]);
+        }
         $appointment = [
             'id' => $post->ID,
             'service' => get_post_meta($post->ID, 'service', true),
@@ -471,6 +472,19 @@ class Dior_Medical_REST_API
     public function update_appointment($request)
     {
         $appointment_id = intval($request['id']);
+        $post = get_post($appointment_id);
+        if (!$post) return new WP_Error('appointment_not_found', 'Appointment not found.', ['status' => 404]);
+        $patient_id = absint(get_post_meta($appointment_id, 'patient_id', true));
+        $doctor_id = absint(get_post_meta($appointment_id, 'doctor_id', true));
+        $user_id = get_current_user_id();
+        if (Dior_Auth_Service::is_doctor($user_id)) {
+            $scope = Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id);
+            if (($doctor_id && !in_array($doctor_id, $scope, true)) || !$patient_id || !Dior_Auth_Service::can_access_patient($patient_id, $user_id)) {
+                return new WP_Error('dior_rest_forbidden', 'You are not allowed to update this appointment.', ['status' => 403]);
+            }
+        } elseif ($patient_id !== $user_id) {
+            return new WP_Error('dior_rest_forbidden', 'You are not allowed to update this appointment.', ['status' => 403]);
+        }
         $params = $request->get_json_params();
 
         $allowed_updates = ['status', 'appointment_date', 'appointment_time', 'notes'];
@@ -498,24 +512,26 @@ class Dior_Medical_REST_API
     {
         global $wpdb;
 
-        $patient_id = intval($request['patient_id'] ?? get_current_user_id());
-
-        $prescriptions = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM {$wpdb->postmeta} 
-                WHERE post_id IN (
-                    SELECT post_id FROM {$wpdb->postmeta} 
-                    WHERE meta_key = 'patient_id' AND meta_value = %d
-                ) AND meta_key = 'prescription_data'",
-                $patient_id
-            ),
-            ARRAY_A
-        );
-
-        return rest_ensure_response([
-            'data' => $prescriptions,
-            'count' => count($prescriptions),
-        ]);
+        $user_id = get_current_user_id();
+        if (Dior_Auth_Service::is_doctor($user_id)) {
+            $patient_id = absint($request['patient_id'] ?? 0);
+            if ($patient_id && !Dior_Auth_Service::can_access_patient($patient_id, $user_id)) {
+                return new WP_Error('dior_rest_forbidden', 'Patient is not assigned to this doctor.', ['status' => 403]);
+            }
+            $scope = Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id);
+            if (!$scope) return rest_ensure_response(['data' => [], 'count' => 0]);
+            $in = implode(',', array_fill(0, count($scope), '%d'));
+            $args = $scope;
+            $sql = "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE doctor_id IN ($in)";
+            if ($patient_id) { $sql .= " AND patient_id = %d"; $args[] = $patient_id; }
+            $prescriptions = $wpdb->get_results($wpdb->prepare($sql . " ORDER BY id DESC", ...$args), ARRAY_A);
+        } else {
+            $prescriptions = $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE patient_id = %d ORDER BY id DESC",
+                $user_id
+            ), ARRAY_A);
+        }
+        return rest_ensure_response(['data' => $prescriptions ?: [], 'count' => count((array) $prescriptions)]);
     }
 
     /**
@@ -523,16 +539,26 @@ class Dior_Medical_REST_API
      */
     public function get_prescription($request)
     {
-        $prescription_id = intval($request['id']);
-        $prescription_data = get_post_meta($prescription_id, 'prescription_data', true);
-
-        if (!$prescription_data) {
-            return new WP_Error('prescription_not_found', 'Prescription not found', ['status' => 404]);
+        global $wpdb;
+        $prescription_id = absint($request['id']);
+        $user_id = get_current_user_id();
+        if (Dior_Auth_Service::is_doctor($user_id)) {
+            $scope = Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id);
+            if (!$scope) return new WP_Error('prescription_not_found', 'Prescription not found.', ['status' => 404]);
+            $in = implode(',', array_fill(0, count($scope), '%d'));
+            $args = array_merge([$prescription_id], $scope);
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE id = %d AND doctor_id IN ($in) LIMIT 1",
+                ...$args
+            ), ARRAY_A);
+        } else {
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE id = %d AND patient_id = %d LIMIT 1",
+                $prescription_id, $user_id
+            ), ARRAY_A);
         }
-
-        return rest_ensure_response([
-            'data' => array_merge($prescription_data, ['id' => $prescription_id]),
-        ]);
+        if (!$row) return new WP_Error('prescription_not_found', 'Prescription not found.', ['status' => 404]);
+        return rest_ensure_response(['data' => $row]);
     }
 
     /**
