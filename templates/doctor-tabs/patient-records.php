@@ -513,8 +513,37 @@ if ($pr_is_admin) {
             button.addEventListener('click', function () { renderPage(target); });
             pagination.appendChild(button);
         }
-        addButton('‹', currentPage - 1, currentPage === 1, false);
-        for (var p = 1; p <= pages; p++) addButton(String(p), p, false, p === currentPage);
+        // Keep no more than five numeric page buttons visible.
+        function addEllipsis() {
+            var dots = document.createElement('span');
+            dots.textContent = '…';
+            dots.setAttribute('aria-hidden', 'true');
+            dots.style.padding = '0 5px';
+            dots.style.color = '#64748b';
+            pagination.appendChild(dots);
+        }
+
+        if (pages <= 5) {
+            for (var p = 1; p <= pages; p++) {
+                addButton(String(p), p, false, p === currentPage);
+            }
+        } else {
+            addButton('1', 1, false, currentPage === 1);
+
+            var startPage = Math.max(2, currentPage - 1);
+            var endPage = Math.min(pages - 1, currentPage + 1);
+
+            if (startPage > 2) addEllipsis();
+
+            for (var p = startPage; p <= endPage; p++) {
+                addButton(String(p), p, false, p === currentPage);
+            }
+
+            if (endPage < pages - 1) addEllipsis();
+
+            addButton(String(pages), pages, false, currentPage === pages);
+        }
+
         addButton('›', currentPage + 1, currentPage === pages, false);
     }
     function requestArchive(ids) {
