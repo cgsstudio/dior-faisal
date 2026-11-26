@@ -28,6 +28,36 @@ if ($report_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $
         $ir_rows[] = $manual_row;
     }
 }
+// Include Stripe payment receipts from patient ledgers where no invoice row exists.
+$report_seen = [];
+foreach ($ir_rows as $existing_row) {
+    $key = (string) ($existing_row['invoice_uid'] ?? $existing_row['bill_uid'] ?? '');
+    if ($key !== '') $report_seen[$key] = true;
+}
+if ($report_doctor_ids) {
+    $payment_meta_rows = $wpdb->get_results($wpdb->prepare(
+        "SELECT pm.user_id, pm.meta_value FROM {$wpdb->usermeta} pm WHERE pm.meta_key=%s ORDER BY pm.umeta_id DESC LIMIT 500",
+        'dior_payments'
+    ), ARRAY_A);
+    foreach ((array) $payment_meta_rows as $meta_row) {
+        $patient_payments = maybe_unserialize($meta_row['meta_value']);
+        if (!is_array($patient_payments)) continue;
+        foreach ($patient_payments as $payment) {
+            if (!is_array($payment) || !in_array(absint($payment['doctor_id'] ?? 0), $report_doctor_ids, true)) continue;
+            if (!in_array(strtolower((string) ($payment['status'] ?? 'paid')), ['paid','completed','succeeded'], true)) continue;
+            $payment_uid = sanitize_text_field($payment['invoice_uid'] ?? $payment['id'] ?? '');
+            if ($payment_uid && isset($report_seen[$payment_uid])) continue;
+            if ($payment_uid) $report_seen[$payment_uid] = true;
+            $ir_rows[] = [
+                'invoice_uid' => $payment_uid,
+                'amount' => preg_replace('/[^0-9.\\-]/', '', (string) ($payment['total'] ?? $payment['amount'] ?? 0)),
+                'department' => $payment['description'] ?? 'Patient payment',
+                'created_at' => $payment['date'] ?? '',
+                'status' => $payment['status'] ?? 'Paid',
+            ];
+        }
+    }
+}
 $ir_total_revenue = 0.0;
 $ir_monthly = array_fill(0, 12, 0.0);
 $ir_dept_totals = [];
