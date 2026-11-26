@@ -784,181 +784,88 @@ class Dior_Doctor_Dashboard
     public static function ajax_delete_appointment()
     {
         Dior_Auth_Service::verify_ajax_nonce(["dior_doctor_nonce", "dior_auth_nonce", "dior_portal_nonce", "dior_admin_nonce"]);
+
         if (!self::can_access()) {
             wp_send_json_error(["message" => "Unauthorized access."], 403);
         }
 
-        $aid = self::get_post_appointment_identifier();
-        if ($aid === '') {
-            wp_send_json_error(["message" => "Appointment ID is missing."], 400);
+        // Delete the exact canonical appointment row selected in the dashboard.
+        $appointment_db_id = isset($_POST['appointment_db_id'])
+            ? absint(wp_unslash($_POST['appointment_db_id']))
+            : 0;
+
+        if ($appointment_db_id <= 0) {
+            wp_send_json_error(["message" => "A valid appointment database ID is required."], 400);
         }
 
         global $wpdb;
         $table_appts = $wpdb->prefix . 'dior_appointments';
+        $table_exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_appts));
+
+        if ($table_exists !== $table_appts) {
+            wp_send_json_error(["message" => "Appointments table was not found."], 500);
+        }
+
+        // Load the selected row by its primary key. Never guess using a display UID.
+        $appointment = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT id, doctor_id FROM $table_appts WHERE id = %d LIMIT 1",
+                $appointment_db_id
+            ),
+            ARRAY_A
+        );
+
+        if (!$appointment) {
+            wp_send_json_error(["message" => "Appointment record not found."], 404);
+        }
+
+        // Keep doctor ownership protection; administrators can manage all appointments.
         $is_admin = current_user_can('administrator') || current_user_can('manage_options');
-        $uid = get_current_user_id();
-        $row = null;
-        $deleted_canonical = false;
-        $deleted_legacy = false;
-        $canonical_uid = $aid;
+        if (!$is_admin) {
+            $current_user_id = get_current_user_id();
+            $allowed_ids = class_exists('Dior_Doctor_Resolver')
+                ? Dior_Doctor_Resolver::get_accessible_doctor_ids($current_user_id)
+                : [$current_user_id];
 
-        // Find the canonical appointment using every identifier column supported by this database version.
-        // Older records may store APT-* in appointment_uid/appointment_id instead of appt_uid.
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_appts)) === $table_appts) {
-            $appointment_columns = $wpdb->get_col("SHOW COLUMNS FROM $table_appts", 0);
-            $identifier_columns = array_values(array_intersect(
-                ['appt_uid', 'appointment_uid', 'appointment_id', 'uid'],
-                (array) $appointment_columns
+            $linked_post_ids = $wpdb->get_col($wpdb->prepare(
+                "SELECT post_id FROM {$wpdb->postmeta}
+                 WHERE meta_key = '_wpddb_doctor_user_id' AND meta_value = %s",
+                (string) $current_user_id
             ));
+            $allowed_ids = array_map('intval', array_merge((array) $allowed_ids, (array) $linked_post_ids));
 
-            $where_parts = [];
-            $where_values = [];
-            foreach ($identifier_columns as $identifier_column) {
-                $where_parts[] = "a.$identifier_column = %s";
-                $where_values[] = $aid;
-            }
-            if (ctype_digit($aid) && in_array('id', (array) $appointment_columns, true)) {
-                $where_parts[] = 'a.id = %d';
-                $where_values[] = (int) $aid;
+            $default_doctor_id = class_exists('Dior_Doctor_Resolver')
+                ? (int) Dior_Doctor_Resolver::get_default_doctor_id()
+                : 0;
+            if ($default_doctor_id && $current_user_id === $default_doctor_id) {
+                $allowed_ids[] = 0;
+                $allowed_ids[] = 1;
             }
 
-            if (!empty($where_parts)) {
-                $table_patients = $wpdb->prefix . 'dior_patients';
-                $patient_table_exists = ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_patients)) === $table_patients);
-
-                if ($patient_table_exists) {
-                    $select_sql = "SELECT a.*, p.user_id AS patient_user_id
-                                   FROM $table_appts a
-                                   LEFT JOIN $table_patients p ON (p.id = a.patient_id OR p.user_id = a.patient_id)";
-                } else {
-                    $select_sql = "SELECT a.*, 0 AS patient_user_id FROM $table_appts a";
-                }
-
-                $where_sql = '(' . implode(' OR ', $where_parts) . ')';
-                if (in_array('is_deleted', (array) $appointment_columns, true)) {
-                    $where_sql .= ' AND a.is_deleted = 0';
-                }
-
-                $row = $wpdb->get_row(
-                    $wpdb->prepare("$select_sql WHERE $where_sql LIMIT 1", ...$where_values),
-                    ARRAY_A
-                );
-            }
-
-            if ($row) {
-                if (!$is_admin) {
-                    $allowed_ids = class_exists('Dior_Doctor_Resolver')
-                        ? Dior_Doctor_Resolver::get_accessible_doctor_ids($uid)
-                        : [$uid];
-
-                    $linked_post_ids = $wpdb->get_col($wpdb->prepare(
-                        "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wpddb_doctor_user_id' AND meta_value = %s",
-                        (string) $uid
-                    ));
-                    $allowed_ids = array_merge((array) $allowed_ids, (array) $linked_post_ids);
-
-                    $default_doctor_id = class_exists('Dior_Doctor_Resolver')
-                        ? (int) Dior_Doctor_Resolver::get_default_doctor_id()
-                        : 0;
-                    if ($default_doctor_id && (int) $uid === $default_doctor_id) {
-                        $allowed_ids[] = 0;
-                        $allowed_ids[] = 1;
-                    }
-
-                    if (!in_array((int) ($row['doctor_id'] ?? 0), array_map('intval', $allowed_ids), true)) {
-                        wp_send_json_error(["message" => "Permission denied for this appointment."], 403);
-                    }
-                }
-
-                foreach (['appt_uid', 'appointment_uid', 'appointment_id', 'uid'] as $uid_column) {
-                    if (!empty($row[$uid_column])) {
-                        $canonical_uid = (string) $row[$uid_column];
-                        break;
-                    }
-                }
-
-                if (in_array('is_deleted', (array) $appointment_columns, true)) {
-                    $delete_data = ['is_deleted' => 1];
-                    $delete_formats = ['%d'];
-                    if (in_array('updated_at', (array) $appointment_columns, true)) {
-                        $delete_data['updated_at'] = current_time('mysql');
-                        $delete_formats[] = '%s';
-                    }
-                    $updated = $wpdb->update(
-                        $table_appts,
-                        $delete_data,
-                        ['id' => (int) $row['id']],
-                        $delete_formats,
-                        ['%d']
-                    );
-
-                    if ($updated === false) {
-                        wp_send_json_error(["message" => "Database error while deleting the appointment: " . $wpdb->last_error], 500);
-                    }
-
-                    $deleted_check = $wpdb->get_var($wpdb->prepare(
-                        "SELECT is_deleted FROM $table_appts WHERE id = %d LIMIT 1",
-                        (int) $row['id']
-                    ));
-                    $deleted_canonical = ((int) $deleted_check === 1);
-                    if (!$deleted_canonical) {
-                        wp_send_json_error(["message" => "Appointment could not be deleted from the database."], 500);
-                    }
-                } else {
-                    // For legacy schemas without a soft-delete column, remove the canonical row only after ownership validation.
-                    $deleted_canonical = ($wpdb->delete($table_appts, ['id' => (int) $row['id']], ['%d']) !== false);
-                    if (!$deleted_canonical) {
-                        wp_send_json_error(["message" => "Database error while deleting the appointment: " . $wpdb->last_error], 500);
-                    }
-                }
+            if (!in_array((int) $appointment['doctor_id'], array_unique($allowed_ids), true)) {
+                wp_send_json_error(["message" => "You do not have permission to delete this appointment."], 403);
             }
         }
 
-        // Remove matching legacy usermeta entries as well, using both supplied ID and canonical UID.
-        $target_patient_ids = [];
-        if (!empty($row['patient_user_id'])) {
-            // The canonical appointment stores a patient table ID; usermeta is keyed by WP user ID.
-            $target_patient_ids[] = (int) $row['patient_user_id'];
-        } elseif (!empty($_POST['patient_user_id'])) {
-            // Legacy-only appointments are not present in dior_appointments, so use the row's WP user ID.
-            $target_patient_ids[] = absint(wp_unslash($_POST['patient_user_id']));
+        // Permanently remove this one selected database row.
+        $deleted = $wpdb->delete(
+            $table_appts,
+            ['id' => $appointment_db_id],
+            ['%d']
+        );
+
+        if ($deleted !== 1) {
+            wp_send_json_error([
+                "message" => $wpdb->last_error
+                    ? "Database delete failed: " . $wpdb->last_error
+                    : "Appointment was not deleted. Please retry."
+            ], 500);
         }
 
-        $identifiers = array_values(array_unique(array_filter([$aid, $canonical_uid], 'strlen')));
-        foreach (array_unique($target_patient_ids) as $pid) {
-            if ($pid <= 0) {
-                continue;
-            }
-            $meta_appts = get_user_meta($pid, 'dior_appointments', true);
-            if (!is_array($meta_appts) || empty($meta_appts)) {
-                continue;
-            }
-
-            $filtered = array_values(array_filter($meta_appts, static function ($appointment) use ($identifiers) {
-                if (!is_array($appointment)) {
-                    return true;
-                }
-                $keys = [
-                    (string) ($appointment['appt_uid'] ?? ''),
-                    (string) ($appointment['appointment_uid'] ?? ''),
-                    (string) ($appointment['appointment_id'] ?? ''),
-                    (string) ($appointment['id'] ?? ''),
-                ];
-                return !array_intersect($identifiers, $keys);
-            }));
-
-            if (count($filtered) !== count($meta_appts)) {
-                update_user_meta($pid, 'dior_appointments', $filtered);
-                $deleted_legacy = true;
-            }
-        }
-
-        // A missing database row is acceptable only when a matching legacy record was actually removed.
-        if (!$deleted_canonical && !$deleted_legacy) {
-            wp_send_json_error(["message" => "Appointment not found or it was already deleted."], 404);
-        }
-
-        wp_send_json_success(["message" => "Appointment deleted successfully."]);
+        wp_send_json_success([
+            "message" => "Appointment permanently deleted.",
+            "appointment_db_id" => $appointment_db_id
+        ]);
     }
 
     public static function ajax_edit_appointment()
