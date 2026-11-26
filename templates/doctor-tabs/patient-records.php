@@ -1,3 +1,61 @@
+<?php
+global $wpdb;
+$pr_doctor_id = get_current_user_id();
+$pr_is_admin = current_user_can('manage_options');
+$pr_doctor_ids = class_exists('Dior_Doctor_Resolver')
+    ? Dior_Doctor_Resolver::get_accessible_doctor_ids($pr_doctor_id)
+    : [$pr_doctor_id];
+$pr_linked_ids = $wpdb->get_col($wpdb->prepare(
+    "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wpddb_doctor_user_id' AND meta_value = %s",
+    (string) $pr_doctor_id
+));
+$pr_doctor_ids = array_values(array_unique(array_filter(array_map('intval', array_merge((array) $pr_doctor_ids, (array) $pr_linked_ids)))));
+$pr_patients_table = $wpdb->prefix . 'dior_patients';
+$pr_appointments_table = $wpdb->prefix . 'dior_appointments';
+$pr_prescriptions_table = $wpdb->prefix . 'dior_prescriptions';
+$pr_today = current_time('Y-m-d');
+$records = [];
+
+if ($pr_is_admin) {
+    $records = $wpdb->get_results(
+        "SELECT p.*,
+            (SELECT a.visit_type FROM {$pr_appointments_table} a
+             WHERE (a.patient_id = p.user_id OR a.patient_id = p.id) AND a.is_deleted = 0
+             ORDER BY a.appt_date DESC, a.created_at DESC LIMIT 1) AS diagnosis,
+            (SELECT MIN(a.appt_date) FROM {$pr_appointments_table} a
+             WHERE (a.patient_id = p.user_id OR a.patient_id = p.id) AND a.is_deleted = 0
+               AND a.appt_date >= '{$pr_today}' AND a.status NOT IN ('Cancelled','Completed','No Show')) AS next_followup
+         FROM {$pr_patients_table} p
+         WHERE p.status <> 'deleted'
+         ORDER BY p.created_at DESC",
+        ARRAY_A
+    );
+} elseif (!empty($pr_doctor_ids)) {
+    $pr_placeholders = implode(',', array_fill(0, count($pr_doctor_ids), '%d'));
+    $pr_sql = "SELECT p.*,
+        (SELECT a.visit_type FROM {$pr_appointments_table} a
+         WHERE (a.patient_id = p.user_id OR a.patient_id = p.id)
+           AND a.doctor_id IN ({$pr_placeholders}) AND a.is_deleted = 0
+         ORDER BY a.appt_date DESC, a.created_at DESC LIMIT 1) AS diagnosis,
+        (SELECT MIN(a.appt_date) FROM {$pr_appointments_table} a
+         WHERE (a.patient_id = p.user_id OR a.patient_id = p.id)
+           AND a.doctor_id IN ({$pr_placeholders}) AND a.is_deleted = 0
+           AND a.appt_date >= %s AND a.status NOT IN ('Cancelled','Completed','No Show')) AS next_followup
+     FROM {$pr_patients_table} p
+     WHERE p.status <> 'deleted'
+       AND (
+         EXISTS (SELECT 1 FROM {$pr_appointments_table} ax
+                 WHERE (ax.patient_id = p.user_id OR ax.patient_id = p.id)
+                   AND ax.doctor_id IN ({$pr_placeholders}) AND ax.is_deleted = 0)
+         OR EXISTS (SELECT 1 FROM {$pr_prescriptions_table} rx
+                    WHERE (rx.patient_id = p.user_id OR rx.patient_id = p.id)
+                      AND rx.doctor_id IN ({$pr_placeholders}))
+       )
+     ORDER BY p.created_at DESC";
+    $pr_args = array_merge($pr_doctor_ids, $pr_doctor_ids, [$pr_today], $pr_doctor_ids, $pr_doctor_ids);
+    $records = $wpdb->get_results($wpdb->prepare($pr_sql, ...$pr_args), ARRAY_A);
+}
+?>
 <section class="dior-tab-panel dior-appt-screen" id="tab-doc-patients-records" style="display: none;">
     <!-- Breadcrumb Header -->
     <div class="mb-4" style="display: flex; justify-content: space-between; align-items: center;">
@@ -71,7 +129,7 @@
         </div>
 
         <div class="va-table-wrapper">
-            <table class="va-table dior-doc-table table table-hover" id="dior-patient-records-table">
+            <table class="va-table table-hover" id="dior-patient-records-table" data-no-datatables="true">
                 <thead>
                     <tr>
                         <th style="width: 40px; text-align: center;">
@@ -96,61 +154,59 @@
                 </thead>
                 <tbody>
                     <?php
-                    $records = [
-                        ['P001', 'John Doe', 'Male', '#3B82F6', 'Oct 1, 2024', 'Hypertension', 'Nov 1, 2024', 'Active', 'col-green'],
-                        ['P002', 'Jane Smith', 'Female', '#EC4899', 'Oct 5, 2024', 'Type 2 Diabetes', 'Nov 10, 2024', 'Discharged', 'col-blue'],
-                        ['P003', 'David Johnson', 'Male', '#3B82F6', 'Sep 15, 2024', 'Chronic Migraine', 'Oct 30, 2024', 'Discharged', 'col-blue'],
-                        ['P004', 'Emily Davis', 'Female', '#EC4899', 'Oct 3, 2024', 'Asthma', 'Nov 3, 2024', 'Active', 'col-green'],
-                        ['P005', 'Michael Brown', 'Male', '#3B82F6', 'Sep 20, 2024', 'Osteoarthritis', 'Oct 25, 2024', 'Discharged', 'col-blue'],
-                        ['P006', 'Sophia Wilson', 'Female', '#EC4899', 'Oct 7, 2024', 'Hyperthyroidism', 'Oct 28, 2024', 'Discharged', 'col-blue'],
-                        ['P007', 'Lucas Harris', 'Male', '#3B82F6', 'Aug 25, 2024', 'Chronic Obstructive Pulmonary...', 'Sep 30, 2024', 'Active', 'col-green'],
-                        ['P008', 'Charlotte Moore', 'Female', '#EC4899', 'Oct 2, 2024', 'Psoriasis', 'Nov 5, 2024', 'Discharged', 'col-blue'],
-                        ['P009', 'Ethan Taylor', 'Male', '#3B82F6', 'Oct 8, 2024', 'Anxiety Disorder', 'Nov 8, 2024', 'Discharged', 'col-blue'],
-                        ['P010', 'Megan Clark', 'Female', '#EC4899', 'Sep 30, 2024', 'Depression', 'Oct 30, 2024', 'Observation', 'col-indigo']
-                    ];
-
-                    foreach ($records as $r):
+                    <?php if (!empty($records)): ?>
+                        <?php foreach ($records as $r):
+                            $patient_id = (int) ($r['user_id'] ?? 0);
+                            $patient_uid = $r['patient_uid'] ?? ('DM-' . $patient_id);
+                            $patient_name = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?: 'Patient';
+                            $gender = ucfirst(strtolower($r['gender'] ?? ''));
+                            $diagnosis = $r['diagnosis'] ?? '';
+                            $admission_raw = $r['created_at'] ?? '';
+                            $admission_date = $admission_raw ? mysql2date('M j, Y', $admission_raw) : '—';
+                            $followup_raw = $r['next_followup'] ?? '';
+                            $followup_date = $followup_raw ? mysql2date('M j, Y', $followup_raw) : '—';
+                            $status = strtolower($r['status'] ?? 'active');
+                            $status_class = $status === 'active' ? 'col-green' : ($status === 'deleted' ? 'col-indigo' : 'col-blue');
                         ?>
-                        <tr class="pr-row"
-                            data-search="<?php echo strtolower(esc_attr($r[1] . ' ' . $r[0] . ' ' . $r[5])); ?>">
-                            <td data-label="Select" style="text-align: center;">
-                                <input type="checkbox" class="dior-checkbox pr-row-checkbox form-check-input">
-                            </td>
-                            <td data-label="Patient ID"><?php echo esc_html($r[0]); ?></td>
-                            <td data-label="Patient" style="font-weight: 500; color: #1E293B;"><?php echo esc_html($r[1]); ?></td>
-                            <td data-label="Gender">
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <i class="<?php echo $r[2] === 'Male' ? 'fas fa-mars' : 'fas fa-venus'; ?>"
-                                        style="color: <?php echo esc_attr($r[3]); ?>;"></i>
-                                    <span><?php echo esc_html($r[2]); ?></span>
-                                </div>
-                            </td>
-                            <td data-label="Admission date">
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <i class="far fa-calendar" style="color: #3B82F6;"></i>
-                                    <span><?php echo esc_html($r[4]); ?></span>
-                                </div>
-                            </td>
-                            <td data-label="Diagnosis"><?php echo esc_html($r[5]); ?></td>
-                            <td data-label="Follow-up date">
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <i class="far fa-calendar" style="color: #3B82F6;"></i>
-                                    <span><?php echo esc_html($r[6]); ?></span>
-                                </div>
-                            </td>
-                            <td data-label="Status">
-                                <span class="dior-st <?php echo esc_attr($r[8]); ?>"><?php echo esc_html($r[7]); ?></span>
-                            </td>
-                            <td data-label="Actions">
-                                <div class="va-row-actions" style="justify-content: center;">
-                                    <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
-                                    <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
-                                </div>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
+                            <tr class="pr-row" data-patient-id="<?php echo esc_attr($patient_id); ?>"
+                                data-search="<?php echo esc_attr(strtolower($patient_name . ' ' . $patient_uid . ' ' . $diagnosis)); ?>">
+                                <td data-label="Select" style="text-align:center;">
+                                    <input type="checkbox" class="dior-checkbox pr-row-checkbox form-check-input" value="<?php echo esc_attr($patient_id); ?>">
+                                </td>
+                                <td data-label="Patient ID"><?php echo esc_html($patient_uid); ?></td>
+                                <td data-label="Patient" style="font-weight:500;color:#1E293B;"><?php echo esc_html($patient_name); ?></td>
+                                <td data-label="Gender">
+                                    <div style="display:flex;align-items:center;gap:6px;">
+                                        <?php if ($gender): ?><i class="fas <?php echo $gender === 'Male' ? 'fa-mars' : ($gender === 'Female' ? 'fa-venus' : 'fa-genderless'); ?>"
+                                            style="color:<?php echo $gender === 'Female' ? '#EC4899' : '#3B82F6'; ?>;"></i><?php endif; ?>
+                                        <span><?php echo esc_html($gender ?: '—'); ?></span>
+                                    </div>
+                                </td>
+                                <td data-label="Admission date">
+                                    <div style="display:flex;align-items:center;gap:6px;"><i class="far fa-calendar" style="color:#3B82F6;"></i><span><?php echo esc_html($admission_date); ?></span></div>
+                                </td>
+                                <td data-label="Diagnosis"><?php echo esc_html($diagnosis ?: '—'); ?></td>
+                                <td data-label="Follow-up date">
+                                    <div style="display:flex;align-items:center;gap:6px;"><i class="far fa-calendar" style="color:#3B82F6;"></i><span><?php echo esc_html($followup_date); ?></span></div>
+                                </td>
+                                <td data-label="Status"><span class="dior-st <?php echo esc_attr($status_class); ?>"><?php echo esc_html(ucfirst($status)); ?></span></td>
+                                <td data-label="Actions">
+                                    <div class="va-row-actions" style="justify-content:center;">
+                                        <button type="button" class="va-action-btn-sm va-btn-edit btn pr-edit-btn" data-patient-id="<?php echo esc_attr($patient_id); ?>" title="Edit patient"><i class="fas fa-pen"></i></button>
+                                        <button type="button" class="va-action-btn-sm va-btn-delete btn pr-delete-btn" data-patient-id="<?php echo esc_attr($patient_id); ?>" title="Archive patient record"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr class="pr-empty-row"><td colspan="9" style="text-align:center;padding:40px;color:#94a3b8;">No patient records found.</td></tr>
+                    <?php endif; ?>
                 </tbody>
             </table>
+        </div>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-top p-3 bg-white">
+            <div id="pr-showing-info" class="text-secondary small fw-medium"></div>
+            <div id="pr-pagination" class="d-flex align-items-center gap-1"></div>
         </div>
     </div>
 </section>
@@ -396,52 +452,137 @@
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const prSelectAll = document.getElementById('pr-select-all');
-        const prCheckboxes = document.querySelectorAll('.pr-row-checkbox');
-        const prBulkDelete = document.getElementById('dior-pr-bulk-delete');
+(function () {
+    'use strict';
+    var root = document.getElementById('tab-doc-patients-records');
+    if (!root || root.dataset.prInitialized === '1') return;
+    root.dataset.prInitialized = '1';
 
-        function checkPRSelection() {
-            if (!prBulkDelete) return;
-            const anyChecked = document.querySelector('.pr-row-checkbox:checked');
-            if (anyChecked) {
-                prBulkDelete.style.display = 'flex';
-            } else {
-                prBulkDelete.style.display = 'none';
-            }
+    var ajaxUrl = '<?php echo esc_js(admin_url('admin-ajax.php')); ?>';
+    var nonce = '<?php echo esc_js(wp_create_nonce('dior_doctor_nonce')); ?>';
+    var table = root.querySelector('#dior-patient-records-table');
+    var tbody = table ? table.querySelector('tbody') : null;
+    var selectAll = root.querySelector('#pr-select-all');
+    var bulkButton = root.querySelector('#dior-pr-bulk-delete');
+    var searchInput = root.querySelector('.va-search-input');
+    var info = root.querySelector('#pr-showing-info');
+    var pagination = root.querySelector('#pr-pagination');
+    var perPage = 10;
+    var currentPage = 1;
+    var rows = tbody ? Array.from(tbody.querySelectorAll('tr.pr-row')) : [];
 
-            // Update master checkbox
-            const allChecked = prCheckboxes.length > 0 && document.querySelectorAll('.pr-row-checkbox:checked').length === prCheckboxes.length;
-            if (prSelectAll) prSelectAll.checked = allChecked;
+    function checkedBoxes() {
+        return Array.from(tbody.querySelectorAll('.pr-row-checkbox:checked'));
+    }
+    function updateSelection() {
+        var checked = checkedBoxes();
+        if (bulkButton) bulkButton.style.display = checked.length ? 'inline-flex' : 'none';
+        if (selectAll) {
+            selectAll.checked = rows.length > 0 && checked.length === rows.length;
+            selectAll.indeterminate = checked.length > 0 && checked.length < rows.length;
         }
-
-        if (prSelectAll) {
-            prSelectAll.addEventListener('change', function () {
-                prCheckboxes.forEach(cb => cb.checked = this.checked);
-                checkPRSelection();
-            });
-        }
-
-        prCheckboxes.forEach(cb => {
-            cb.addEventListener('change', checkPRSelection);
+    }
+    function visibleRows() {
+        var term = (searchInput ? searchInput.value : '').toLowerCase().trim();
+        return rows.filter(function (row) {
+            return !term || (row.dataset.search || row.textContent.toLowerCase()).indexOf(term) !== -1;
         });
+    }
+    function renderPage(page) {
+        var visible = visibleRows();
+        var total = visible.length;
+        var pages = Math.max(1, Math.ceil(total / perPage));
+        currentPage = Math.min(Math.max(1, page || 1), pages);
+        var start = (currentPage - 1) * perPage;
+        rows.forEach(function (row) { row.style.display = 'none'; });
+        visible.slice(start, start + perPage).forEach(function (row) { row.style.display = ''; });
+        if (info) info.textContent = total ? 'Showing ' + (start + 1) + ' to ' + Math.min(start + perPage, total) + ' of ' + total + ' patient records' : 'No patient records found';
+        renderPagination(pages);
+        updateSelection();
+    }
+    function renderPagination(pages) {
+        if (!pagination) return;
+        pagination.innerHTML = '';
+        if (pages <= 1) return;
+        function addButton(label, target, disabled, active) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = label;
+            button.disabled = !!disabled;
+            button.className = 'btn btn-sm ' + (active ? 'btn-primary' : 'btn-outline-secondary');
+            button.style.minWidth = '34px';
+            button.addEventListener('click', function () { renderPage(target); });
+            pagination.appendChild(button);
+        }
+        addButton('‹', currentPage - 1, currentPage === 1, false);
+        for (var p = 1; p <= pages; p++) addButton(String(p), p, false, p === currentPage);
+        addButton('›', currentPage + 1, currentPage === pages, false);
+    }
+    function requestArchive(ids) {
+        if (!ids.length) return;
+        var confirmAction = window.Swal
+            ? Swal.fire({ icon: 'warning', title: 'Archive patient record(s)?', text: 'Records will be hidden from active lists. Patient accounts and clinical history will be retained.', showCancelButton: true, confirmButtonText: 'Yes, archive', confirmButtonColor: '#dc2626' })
+            : Promise.resolve({ isConfirmed: window.confirm('Archive selected patient record(s)? Patient accounts and clinical history will be retained.') });
+        Promise.resolve(confirmAction).then(function (answer) {
+            if (!answer || !answer.isConfirmed) return;
+            var data = new FormData();
+            data.append('nonce', nonce);
+            data.append('action', ids.length === 1 ? 'dior_doc_patient_delete' : 'dior_doc_patient_bulk_delete');
+            if (ids.length === 1) data.append('patient_id', ids[0]);
+            else ids.forEach(function (id) { data.append('patient_ids[]', id); });
+            if (bulkButton) bulkButton.disabled = true;
+            fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: data })
+                .then(function (response) { return response.json(); })
+                .then(function (result) {
+                    if (!result || !result.success) throw new Error(result && result.data && result.data.message ? result.data.message : 'Unable to archive patient record.');
+                    var removed = ids.map(String);
+                    rows = rows.filter(function (row) {
+                        if (removed.indexOf(String(row.dataset.patientId)) !== -1) {
+                            row.remove();
+                            return false;
+                        }
+                        return true;
+                    });
+                    renderPage(currentPage);
+                    if (window.Swal) Swal.fire({ icon: 'success', title: 'Updated', text: result.data.message || 'Patient record archived.' });
+                })
+                .catch(function (error) {
+                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Archive failed', text: error.message });
+                    else window.alert(error.message);
+                })
+                .finally(function () { if (bulkButton) bulkButton.disabled = false; });
+        });
+    }
+
+    if (selectAll) selectAll.addEventListener('change', function () {
+        var visible = visibleRows();
+        visible.forEach(function (row) {
+            var checkbox = row.querySelector('.pr-row-checkbox');
+            if (checkbox) checkbox.checked = selectAll.checked;
+        });
+        updateSelection();
     });
-
-    window.diorDocFilterPatientRecords = function (val) {
-        val = val.toLowerCase().trim();
-        const table = document.getElementById('dior-patient-records-table');
-        if (!table) return;
-        const rows = table.querySelectorAll('tbody tr.pr-row');
-        rows.forEach(row => {
-            const text = row.getAttribute('data-search') || '';
-            if (val === '' || text.includes(val)) {
-                row.removeAttribute('data-filter-hidden');
-            } else {
-                row.setAttribute('data-filter-hidden', 'true');
+    if (tbody) {
+        tbody.addEventListener('change', function (event) {
+            if (event.target.matches('.pr-row-checkbox')) updateSelection();
+        });
+        tbody.addEventListener('click', function (event) {
+            var deleteButton = event.target.closest('.pr-delete-btn');
+            if (deleteButton) {
+                requestArchive([deleteButton.dataset.patientId]);
+                return;
+            }
+            var editButton = event.target.closest('.pr-edit-btn');
+            if (editButton) {
+                window.diorSelectedPatientId = editButton.dataset.patientId;
+                if (typeof window.diorDocSwitchTab === 'function') window.diorDocSwitchTab('doc-patients-edit');
             }
         });
-        if (table._diorRenderPage) {
-            table._diorRenderPage(1);
-        }
-    };
+    }
+    if (bulkButton) bulkButton.addEventListener('click', function () {
+        requestArchive(checkedBoxes().map(function (checkbox) { return checkbox.value; }));
+    });
+    if (searchInput) searchInput.addEventListener('input', function () { renderPage(1); });
+    renderPage(1);
+})();
 </script>
