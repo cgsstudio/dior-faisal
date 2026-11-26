@@ -451,11 +451,11 @@ $status_badges = [
                             $time = esc_html($time_raw ?: 'Not set');
                             $phone = esc_html(!empty($a['phone']) ? $a['phone'] : (!empty($patient_id) ? get_user_meta($patient_id, 'phone', true) : '—')) ?: '—';
                             $email = esc_html(!empty($a['user_email']) ? $a['user_email'] : (!empty($patient_id) ? (get_userdata($patient_id)->user_email ?? '—') : '—')) ?: '—';
-                            $condition = esc_html(!empty($a['condition_name']) ? $a['condition_name'] : (!empty($a['condition']) ? $a['condition'] : 'General Consultation'));
-                            $visit_type = esc_html(!empty($a['visit_type']) ? $a['visit_type'] : 'Video Visit (HD)');
+                            $condition = esc_html(!empty($a['condition_name']) ? $a['condition_name'] : (!empty($a['condition']) ? $a['condition'] : '—'));
+                            $visit_type = esc_html(!empty($a['visit_type']) ? $a['visit_type'] : '—');
                             $notes = esc_attr($a['notes'] ?? '');
                             $avatar = esc_url(!empty($a['avatar_url']) ? $a['avatar_url'] : (!empty($patient_id) ? get_user_meta($patient_id, 'dior_profile_image', true) : ''));
-                            $patient_uid = esc_attr(!empty($a['patient_uid']) ? $a['patient_uid'] : (!empty($patient_id) ? get_user_meta($patient_id, 'patient_id', true) : ('DM-' . (10000 + $patient_id))));
+                            $patient_uid = esc_attr(!empty($a['patient_uid']) ? $a['patient_uid'] : (!empty($patient_id) ? get_user_meta($patient_id, 'patient_id', true) : '—'));
 
                             $is_video = (stripos($visit_type, 'video') !== false || stripos($visit_type, 'telehealth') !== false);
                             $stored_join_url = !empty($a['join_url']) ? esc_url_raw($a['join_url']) : '';
@@ -473,11 +473,11 @@ $status_badges = [
                             // Doctor data resolution
                             $doc_id = (int) ($a['doctor_id'] ?? 0);
                             $doc_info = $doctor_list[$doc_id] ?? null;
-                            $doc_name = $doc_info['name'] ?? (!empty($a['doctor_name']) ? $a['doctor_name'] : 'Dr. Marcus Sterling');
+                            $doc_name = $doc_info['name'] ?? (!empty($a['doctor_name']) ? $a['doctor_name'] : '—');
                             if (stripos($doc_name, 'Dr.') !== 0 && stripos($doc_name, 'Dr ') !== 0) {
                                 $doc_name = 'Dr. ' . $doc_name;
                             }
-                            $doc_spec = $doc_info['specialty'] ?? (get_user_meta($doc_id, 'doctor_specialty', true) ?: 'General Medicine');
+                            $doc_spec = $doc_info['specialty'] ?? (get_user_meta($doc_id, 'doctor_specialty', true) ?: '—');
                             $doc_dept = $doc_info['department'] ?? (get_user_meta($doc_id, 'doctor_department', true) ?: 'Outpatient Care');
                             $doc_avatar = $doc_info['avatar'] ?? (get_user_meta($doc_id, 'dior_profile_image', true) ?: ('https://ui-avatars.com/api/?name=' . urlencode($doc_name) . '&background=00346c&color=ffffff&bold=true'));
                             $doc_email = $doc_info['email'] ?? ($a['doctor_email'] ?? 'doctor@diormedical.com');
@@ -1270,52 +1270,81 @@ $status_badges = [
                     }).then(function (result) {
                         if (!result.isConfirmed) return;
 
-                        var promises = checkedRows.map(function (row) {
-                            var uid = row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid || '';
-                            var data = new FormData();
-                            data.append('action', 'dior_doc_appointment_delete');
-                            data.append('nonce', nonce);
-                            data.append('appt_uid', uid);
-                            return fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: data })
-                                .then(function (r) { return r.json(); })
-                                .then(function (res) { return { row: row, ok: !!(res && res.success), msg: (res && res.data && res.data.message) || '' }; });
-                        });
-
-                        Promise.all(promises).then(function (results) {
+                        // Process deletions sequentially to avoid flooding admin-ajax.php with dozens of simultaneous requests.
+                        (async function () {
                             var deletedCount = 0;
-                            results.forEach(function (item) {
-                                if (item.ok) {
-                                    deletedCount++;
-                                    allRows = allRows.filter(function (r) { return r !== item.row; });
-                                    item.row.remove();
+                            var failures = [];
+
+                            for (var i = 0; i < checkedRows.length; i++) {
+                                var row = checkedRows[i];
+                                var uid = row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid || '';
+                                var data = new FormData();
+                                data.append('action', 'dior_doc_appointment_delete');
+                                data.append('nonce', nonce);
+                                data.append('appt_uid', uid);
+
+                                try {
+                                    var response = await fetch(ajaxUrl, {
+                                        method: 'POST',
+                                        credentials: 'same-origin',
+                                        body: data
+                                    });
+                                    var responseText = await response.text();
+                                    var res;
+
+                                    try {
+                                        res = JSON.parse(responseText);
+                                    } catch (parseError) {
+                                        throw new Error('Server returned an invalid response (HTTP ' + response.status + ').');
+                                    }
+
+                                    if (response.ok && res && res.success) {
+                                        deletedCount++;
+                                        allRows = allRows.filter(function (item) { return item !== row; });
+                                        row.remove();
+                                    } else {
+                                        var message = res && res.data && res.data.message
+                                            ? res.data.message
+                                            : ('Request failed (HTTP ' + response.status + ').');
+                                        failures.push(uid + ': ' + message);
+                                    }
+                                } catch (error) {
+                                    failures.push(uid + ': ' + (error.message || 'Network error.'));
                                 }
-                            });
+                            }
+
                             var masterCb = document.getElementById('va-select-all');
                             if (masterCb) masterCb.checked = false;
                             updateBulkBar();
                             updateKpiCounters();
                             renderPage(currentPage);
-                            if (deletedCount > 0) {
+
+                            if (deletedCount > 0 && failures.length === 0) {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Deleted',
-                                    text: deletedCount + ' appointment(s) removed.',
+                                    text: deletedCount + ' appointment(s) permanently removed from the active list.',
                                     toast: true,
                                     position: 'top-end',
-                                    timer: 2000,
+                                    timer: 2500,
                                     showConfirmButton: false
+                                });
+                            } else if (deletedCount > 0) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Partially Deleted',
+                                    text: deletedCount + ' deleted; ' + failures.length + ' could not be deleted. First error: ' + failures[0],
+                                    confirmButtonText: 'OK'
                                 });
                             } else {
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Delete Failed',
-                                    text: (results[0] && results[0].msg) || 'Unable to delete selected appointments.'
+                                    text: failures.length ? failures[0] : 'No appointments were deleted. Please try again.'
                                 });
                             }
-                        }).catch(function () {
-                            Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to delete selected appointments.' });
-                        });
-                    });
+                        })();
+
                 });
             }
 
