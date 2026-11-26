@@ -8,15 +8,32 @@ $nonce = wp_create_nonce('dior_doctor_nonce');
 $ajax_url = admin_url('admin-ajax.php');
 $doctor_id = get_current_user_id();
 
-// Fetch patients
-$patients = $wpdb->get_results(
-    "SELECT * FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' ORDER BY created_at DESC LIMIT 200",
-    ARRAY_A
-);
+// Fetch only patients with an appointment assigned to the logged-in doctor.
+$doctor_scope_ids = class_exists('Dior_Doctor_Resolver')
+    ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id)
+    : [$doctor_id];
+$doctor_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope_ids))));
+$assigned_patient_ids = [];
+if ($doctor_scope_ids) {
+    $doctor_placeholders = implode(',', array_fill(0, count($doctor_scope_ids), '%d'));
+    $assigned_patient_ids = $wpdb->get_col($wpdb->prepare(
+        "SELECT DISTINCT patient_id FROM {$wpdb->prefix}dior_appointments WHERE is_deleted = 0 AND doctor_id IN ($doctor_placeholders)",
+        ...$doctor_scope_ids
+    ));
+}
+$assigned_patient_ids = array_values(array_unique(array_filter(array_map('absint', (array) $assigned_patient_ids))));
+$patients = [];
+if ($assigned_patient_ids) {
+    $patient_placeholders = implode(',', array_fill(0, count($assigned_patient_ids), '%d'));
+    $patients = $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' AND user_id IN ($patient_placeholders) ORDER BY created_at DESC LIMIT 200",
+        ...$assigned_patient_ids
+    ), ARRAY_A);
+}
 
-// Fallback from wp_users if table empty
-if (empty($patients)) {
-    $users = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'number' => 100]);
+// Fallback from wp_users is still restricted to the same assigned patient IDs.
+if (empty($patients) && $assigned_patient_ids) {
+    $users = get_users(['include' => $assigned_patient_ids, 'role__in' => ['patient', 'subscriber', 'customer'], 'number' => count($assigned_patient_ids)]);
     $patients = [];
     foreach ($users as $u) {
         $patients[] = [
