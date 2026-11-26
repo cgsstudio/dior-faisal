@@ -68,6 +68,31 @@ class Dior_Auth_Service
         $doctor_id = (int) ($doctor_id ?: get_current_user_id());
         if (!$doctor_id || !self::is_doctor($doctor_id)) return [];
 
+        // One-time ownership backfill for the existing single-doctor installation.
+        // Once another active doctor exists, no global patient assignment is performed.
+        if (class_exists('Dior_Doctor_Resolver')
+            && $doctor_id === (int) Dior_Doctor_Resolver::get_default_doctor_id()
+            && !get_option('dior_doctor_patient_ownership_migrated')) {
+            $doctor_users = get_users(['role__in' => ['doctor', 'dior_doctor'], 'fields' => 'ID', 'number' => -1]);
+            $active_doctor_ids = array_values(array_filter(array_map('absint', (array) $doctor_users), static function ($id) {
+                return !get_user_meta($id, '_dior_merged_into_doctor_id', true);
+            }));
+            if (count($active_doctor_ids) === 1 && (int) $active_doctor_ids[0] === $doctor_id) {
+                global $wpdb;
+                $patient_table = $wpdb->prefix . 'dior_patients';
+                if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $patient_table)) === $patient_table) {
+                    $legacy_patient_ids = $wpdb->get_col("SELECT user_id FROM {$patient_table} WHERE status <> 'deleted'");
+                    foreach ((array) $legacy_patient_ids as $legacy_patient_id) {
+                        $assigned = get_user_meta((int) $legacy_patient_id, '_dior_assigned_doctor_ids', true);
+                        if (!is_array($assigned) || !$assigned) {
+                            update_user_meta((int) $legacy_patient_id, '_dior_assigned_doctor_ids', [$doctor_id]);
+                        }
+                    }
+                    update_option('dior_doctor_patient_ownership_migrated', 1, false);
+                }
+            }
+        }
+
         $ids = [];
         $scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
         $scope = array_values(array_unique(array_filter(array_map('absint', (array) $scope))));
