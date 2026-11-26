@@ -521,6 +521,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!invoiceElement) return;
             const invoiceHeading = invoiceElement.querySelector('.dior-invoice-header h2');
             const invoiceName = invoiceHeading ? invoiceHeading.textContent.replace(/[^a-z0-9_-]+/gi, '_') : 'Invoice';
+            if (!invoiceElement) return;
+            const invoiceHeading = invoiceElement.querySelector('.dior-invoice-header h2');
+            const invoiceName = invoiceHeading ? invoiceHeading.textContent.replace(/[^a-z0-9_-]+/gi, '_') : 'Invoice';
             
             // Generate PDF
             const opt = {
@@ -690,7 +693,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Generate PDF
             const opt = {
                 margin:       [10, 10, 10, 10], // top, left, bottom, right
-                filename:     'Invoice_345766.pdf',
+                filename:     invoiceName + '.pdf',
                 image:        { type: 'jpeg', quality: 1.0 },
                 html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
