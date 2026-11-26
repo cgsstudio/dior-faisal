@@ -242,54 +242,85 @@ $status_badges = [
         var allRows;
 
         function init() {
+            var searchInput = document.getElementById('ap-search');
+            var selectAll = document.getElementById('ap-select-all');
+            var patientsBody = document.getElementById('ap-patients-tbody');
+            var saveStatusButton = document.getElementById('ap-save-status-btn');
+            var refreshButton = document.getElementById('ap-refresh-btn');
+
             allRows = Array.from(document.querySelectorAll('#ap-patients-tbody tr[data-patient-id]'));
             renderPage(1);
-            // Search
-            document.getElementById('ap-search').addEventListener('input', applyFilters);
-            // Select all
-            document.getElementById('ap-select-all').addEventListener('change', function () {
-                document.querySelectorAll('.ap-row-check').forEach(function (cb) { cb.checked = this.checked; }, this);
-                updateBulkBtn();
-            });
-            document.getElementById('ap-patients-tbody').addEventListener('change', function (e) {
-                if (e.target.classList.contains('ap-row-check')) updateBulkBtn();
-            });
-            // Edit status
-            document.getElementById('ap-patients-tbody').addEventListener('click', function (e) {
-                var btn = e.target.closest('.ap-edit-status-btn');
-                if (!btn) return;
-                document.getElementById('ap-edit-patient-id').value = btn.dataset.id;
-                document.getElementById('ap-edit-patient-name').textContent = 'Patient: ' + btn.dataset.name;
-                document.getElementById('ap-edit-status-select').value = btn.dataset.status;
-                document.getElementById('ap-edit-status-modal').style.display = 'flex';
-            });
-            // Save status
-            document.getElementById('ap-save-status-btn').addEventListener('click', function () {
-                var btn = this;
-                btn.disabled = true;
-                var data = new FormData();
-                data.append('action', 'dior_doc_patient_status');
-                data.append('nonce', nonce);
-                data.append('patient_id', document.getElementById('ap-edit-patient-id').value);
-                data.append('status', document.getElementById('ap-edit-status-select').value);
-                fetch(ajaxUrl, { method: 'POST', body: data })
-                    .then(function (r) { return r.json(); })
-                    .then(function (res) {
-                        if (res.success) {
-                            document.getElementById('ap-edit-status-modal').style.display = 'none';
-                            location.reload();
-                        } else {
-                            Swal.fire({ icon: 'error', title: 'Update Failed', text: res.data && res.data.message ? res.data.message : 'Update failed.' });
-                        }
-                    }).finally(function () { btn.disabled = false; });
-            });
-            // Refresh
-            document.getElementById('ap-refresh-btn').addEventListener('click', function () { location.reload(); });
+
+            // Bind only controls that exist in this version of the All Patients markup.
+            if (searchInput) searchInput.addEventListener('input', applyFilters);
+
+            // Select-all is optional because this table version may not render that control.
+            if (selectAll) {
+                selectAll.addEventListener('change', function () {
+                    document.querySelectorAll('.ap-row-check').forEach(function (cb) { cb.checked = selectAll.checked; });
+                    updateBulkBtn();
+                });
+            }
+
+            if (patientsBody) {
+                patientsBody.addEventListener('change', function (e) {
+                    if (e.target && e.target.classList.contains('ap-row-check')) updateBulkBtn();
+                });
+
+                // Edit status actions are delegated from the existing table body.
+                patientsBody.addEventListener('click', function (e) {
+                    var btn = e.target.closest('.ap-edit-status-btn');
+                    if (!btn) return;
+                    var idField = document.getElementById('ap-edit-patient-id');
+                    var nameField = document.getElementById('ap-edit-patient-name');
+                    var statusField = document.getElementById('ap-edit-status-select');
+                    var modal = document.getElementById('ap-edit-status-modal');
+                    if (idField) idField.value = btn.dataset.id || '';
+                    if (nameField) nameField.textContent = 'Patient: ' + (btn.dataset.name || '');
+                    if (statusField) statusField.value = btn.dataset.status || '';
+                    if (modal) modal.style.display = 'flex';
+                });
+            }
+
+            // Save status is optional on views where the edit modal is not rendered.
+            if (saveStatusButton) {
+                saveStatusButton.addEventListener('click', function () {
+                    var btn = this;
+                    var idField = document.getElementById('ap-edit-patient-id');
+                    var statusField = document.getElementById('ap-edit-status-select');
+                    var modal = document.getElementById('ap-edit-status-modal');
+                    if (!idField || !statusField || !modal) return;
+                    btn.disabled = true;
+                    var data = new FormData();
+                    data.append('action', 'dior_doc_patient_status');
+                    data.append('nonce', nonce);
+                    data.append('patient_id', idField.value);
+                    data.append('status', statusField.value);
+                    fetch(ajaxUrl, { method: 'POST', body: data })
+                        .then(function (r) { return r.json(); })
+                        .then(function (res) {
+                            if (res.success) {
+                                modal.style.display = 'none';
+                                location.reload();
+                            } else if (window.Swal) {
+                                Swal.fire({ icon: 'error', title: 'Update Failed', text: res.data && res.data.message ? res.data.message : 'Update failed.' });
+                            }
+                        })
+                        .catch(function () {
+                            if (window.Swal) Swal.fire({ icon: 'error', title: 'Network Error', text: 'Could not update patient status.' });
+                        })
+                        .finally(function () { btn.disabled = false; });
+                });
+            }
+
+            if (refreshButton) refreshButton.addEventListener('click', function () { location.reload(); });
         }
 
         function updateBulkBtn() {
+            var bulkDeleteButton = document.getElementById('ap-bulk-delete-btn');
+            if (!bulkDeleteButton) return;
             var any = Array.from(document.querySelectorAll('.ap-row-check')).some(function (cb) { return cb.checked; });
-            document.getElementById('ap-bulk-delete-btn').style.display = any ? 'flex' : 'none';
+            bulkDeleteButton.style.display = any ? 'flex' : 'none';
         }
 
         function applyFilters() {
