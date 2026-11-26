@@ -9,7 +9,7 @@ $current_report_year = (int) current_time('Y');
 $minimum_report_year = 2026; // Do not include historical report data before 2026.
 $ir_year = isset($_GET['income_year']) ? absint($_GET['income_year']) : $current_report_year;
 if ($ir_year < $minimum_report_year || $ir_year > $current_report_year) $ir_year = $current_report_year;
-$report_doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
+$report_doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids(get_current_user_id()) : [get_current_user_id()];
 $report_doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $report_doctor_ids))));
 if ($report_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
     $report_in = implode(',', array_fill(0, count($report_doctor_ids), '%d'));
