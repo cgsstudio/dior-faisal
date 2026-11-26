@@ -296,8 +296,24 @@
                             <td><?php echo esc_html($total); ?></td>
                             <td>
                                 <div class="va-row-actions" style="justify-content:center;">
-                                    <button type="button" class="va-action-btn-sm va-btn-edit btn" title="View payment details"
-                                        onclick="alert(<?php echo wp_json_encode('Payment: ' . $method . ' | Status: ' . $st_raw); ?>);">
+                                    <button type="button" class="va-action-btn-sm va-btn-edit btn dior-view-bill-details"
+                                        title="View bill details"
+                                        aria-label="View bill details for <?php echo esc_attr($br['invoice_uid'] ?? 'invoice'); ?>"
+                                        data-bill-details="<?php echo esc_attr(wp_json_encode([
+                                            'invoice' => (string) ($br['invoice_uid'] ?? ('INV-' . ($br['id'] ?? ''))),
+                                            'patient' => (string) $p_name,
+                                            'doctor' => (string) $d_name,
+                                            'payment_method' => (string) $method,
+                                            'status' => (string) $st_raw,
+                                            'date' => (string) $b_date,
+                                            'transaction_id' => (string) ($transaction ?: '—'),
+                                            'description' => (string) ($br['description'] ?? $br['service_type'] ?? '—'),
+                                            'amount' => (string) $amount,
+                                            'tax' => (string) $tax,
+                                            'discount' => (string) $discount,
+                                            'total' => (string) $total,
+                                            'currency' => (string) $currency,
+                                        ])); ?>">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
@@ -311,7 +327,107 @@
 
     </div>
 </section>
-<script>(function(){const panel=document.getElementById("tab-doc-accounts-bill-list");if(!panel||panel.dataset.tableToolsBound)return;panel.dataset.tableToolsBound='1';const table=panel.querySelector('.va-table');document.getElementById("dior-bill-search")?.addEventListener('input',e=>{const q=e.target.value.toLowerCase();table?.querySelectorAll('tbody tr').forEach(row=>row.hidden=!row.textContent.toLowerCase().includes(q));});document.getElementById("dior-bill-export")?.addEventListener('click',()=>{if(!table)return;const csv=[...table.querySelectorAll('tr')].filter(row=>!row.hidden).map(row=>[...row.children].map(cell=>'\"'+cell.innerText.replace(/\"/g,'\"\"').trim()+'\"').join(',')).join('\\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download="patient-bills.csv";a.click();URL.revokeObjectURL(a.href);});})();</script>
+<script>
+(function () {
+    const panel = document.getElementById('tab-doc-accounts-bill-list');
+    if (!panel || panel.dataset.tableToolsBound) return;
+    panel.dataset.tableToolsBound = '1';
+
+    const table = panel.querySelector('.va-table');
+    const search = document.getElementById('dior-bill-search');
+    const exportButton = document.getElementById('dior-bill-export');
+
+    // Escape all values before inserting database content into the popup HTML.
+    function escapeHtml(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, function (char) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char];
+        });
+    }
+
+    function showBillDetails(button) {
+        let details;
+        try {
+            details = JSON.parse(button.getAttribute('data-bill-details') || '{}');
+        } catch (error) {
+            window.alert('Unable to load bill details. Please refresh and try again.');
+            return;
+        }
+
+        const rows = [
+            ['Invoice ID', details.invoice],
+            ['Patient', details.patient],
+            ['Doctor', details.doctor],
+            ['Description', details.description],
+            ['Payment Method', details.payment_method],
+            ['Payment Status', details.status],
+            ['Invoice Date', details.date],
+            ['Transaction ID', details.transaction_id],
+            ['Amount', details.amount],
+            ['Tax', details.tax],
+            ['Discount', details.discount],
+            ['Total', details.total]
+        ];
+
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            const html = '<div class="dior-bill-detail-popup"><table style="width:100%;border-collapse:collapse;text-align:left;">' +
+                rows.map(function (row) {
+                    return '<tr><th style="padding:10px 12px;border-bottom:1px solid #e8edf3;color:#52647a;width:42%;font-weight:600;">' +
+                        escapeHtml(row[0]) + '</th><td style="padding:10px 12px;border-bottom:1px solid #e8edf3;color:#12345a;">' +
+                        escapeHtml(row[1] || '—') + '</td></tr>';
+                }).join('') + '</table></div>';
+
+            window.Swal.fire({
+                title: 'Bill Details',
+                html: html,
+                width: 620,
+                confirmButtonText: 'Close',
+                confirmButtonColor: '#1A528E',
+                customClass: { popup: 'dior-bill-detail-swal' }
+            });
+            return;
+        }
+
+        // Accessible fallback when SweetAlert2 is unavailable.
+        window.alert(rows.map(function (row) {
+            return row[0] + ': ' + (row[1] || '—');
+        }).join('\n'));
+    }
+
+    // Event delegation supports all rendered bill rows.
+    panel.addEventListener('click', function (event) {
+        const button = event.target.closest('.dior-view-bill-details');
+        if (button && panel.contains(button)) showBillDetails(button);
+    });
+
+    if (search) {
+        search.addEventListener('input', function (event) {
+            const query = event.target.value.toLowerCase();
+            if (table) table.querySelectorAll('tbody tr').forEach(function (row) {
+                row.hidden = !row.textContent.toLowerCase().includes(query);
+            });
+        });
+    }
+
+    if (exportButton) {
+        exportButton.addEventListener('click', function () {
+            if (!table) return;
+            const csv = Array.from(table.querySelectorAll('tr')).filter(function (row) {
+                return !row.hidden;
+            }).map(function (row) {
+                return Array.from(row.children).map(function (cell) {
+                    return '"' + cell.innerText.replace(/"/g, '""').trim() + '"';
+                }).join(',');
+            }).join('\n');
+            const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = 'patient-bills.csv';
+            anchor.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+})();
+</script>
 <style id="dior-bill-list-patient-initials">
 
 /* Patient name initials fallback for bill-list demo rows */

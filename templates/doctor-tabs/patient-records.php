@@ -572,6 +572,77 @@ if ($pr_is_admin) {
                     .finally(function () { if (bulkButton) bulkButton.disabled = false; });
             });
         }
+<<<<<<< HEAD
+=======
+        // Keep no more than five numeric page buttons visible.
+        function addEllipsis() {
+            var dots = document.createElement('span');
+            dots.textContent = '…';
+            dots.setAttribute('aria-hidden', 'true');
+            dots.style.padding = '0 5px';
+            dots.style.color = '#64748b';
+            pagination.appendChild(dots);
+        }
+
+        if (pages <= 5) {
+            for (var p = 1; p <= pages; p++) {
+                addButton(String(p), p, false, p === currentPage);
+            }
+        } else {
+            addButton('1', 1, false, currentPage === 1);
+
+            var startPage = Math.max(2, currentPage - 1);
+            var endPage = Math.min(pages - 1, currentPage + 1);
+
+            if (startPage > 2) addEllipsis();
+
+            for (var p = startPage; p <= endPage; p++) {
+                addButton(String(p), p, false, p === currentPage);
+            }
+
+            if (endPage < pages - 1) addEllipsis();
+
+            addButton(String(pages), pages, false, currentPage === pages);
+        }
+
+        addButton('›', currentPage + 1, currentPage === pages, false);
+    }
+    function requestArchive(ids) {
+        if (!ids.length) return;
+        var confirmAction = window.Swal
+            ? Swal.fire({ icon: 'warning', title: 'Archive patient record(s)?', text: 'Records will be hidden from active lists. Patient accounts and clinical history will be retained.', showCancelButton: true, confirmButtonText: 'Yes, archive', confirmButtonColor: '#dc2626' })
+            : Promise.resolve({ isConfirmed: window.confirm('Archive selected patient record(s)? Patient accounts and clinical history will be retained.') });
+        Promise.resolve(confirmAction).then(function (answer) {
+            if (!answer || !answer.isConfirmed) return;
+            var data = new FormData();
+            data.append('nonce', nonce);
+            data.append('action', ids.length === 1 ? 'dior_doc_patient_delete' : 'dior_doc_patient_bulk_delete');
+            if (ids.length === 1) data.append('patient_id', ids[0]);
+            else ids.forEach(function (id) { data.append('patient_ids[]', id); });
+            if (bulkButton) bulkButton.disabled = true;
+            fetch(ajaxUrl, { method: 'POST', credentials: 'same-origin', body: data })
+                .then(function (response) { return response.json(); })
+                .then(function (result) {
+                    if (!result || !result.success) throw new Error(result && result.data && result.data.message ? result.data.message : 'Unable to archive patient record.');
+                    var removed = ids.map(String);
+                    rows = rows.filter(function (row) {
+                        if (removed.indexOf(String(row.dataset.patientId)) !== -1) {
+                            row.remove();
+                            return false;
+                        }
+                        return true;
+                    });
+                    renderPage(currentPage);
+                    if (window.Swal) Swal.fire({ icon: 'success', title: 'Updated', text: result.data.message || 'Patient record archived.' });
+                })
+                .catch(function (error) {
+                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Archive failed', text: error.message });
+                    else window.alert(error.message);
+                })
+                .finally(function () { if (bulkButton) bulkButton.disabled = false; });
+        });
+    }
+>>>>>>> 48186cad32881024247b5dd0b063eb512b2d7848
 
         if (selectAll) selectAll.addEventListener('change', function () {
             var visible = visibleRows();

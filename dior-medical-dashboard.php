@@ -6519,3 +6519,45 @@ if (!class_exists('Dior_HIPAAtizer_Appointment_Popup_V17')) {
  * All Phase 2 files and controller are backed up in _backup_super_admin_phase2.
  */
 
+// Keep pagination compact and consistent across both frontend dashboards.
+// DataTables uses this setting to display a maximum of five page-number buttons.
+add_action('wp_footer', function () {
+    if (is_admin() || !is_user_logged_in()) {
+        return;
+    }
+    if (
+        !class_exists('Dior_Medical_Auth') ||
+        !method_exists('Dior_Medical_Auth', 'is_portal_dashboard_request') ||
+        !Dior_Medical_Auth::is_portal_dashboard_request()
+    ) {
+        return;
+    }
+    ?>
+    <script id="dior-dashboard-pagination-settings">
+    (function () {
+        function setCompactPagination() {
+            if (!window.jQuery || !jQuery.fn || !jQuery.fn.dataTable) {
+                return;
+            }
+
+            // DataTables renders at most five numeric page buttons, with ellipses.
+            jQuery.fn.dataTable.ext.pager.numbers_length = 5;
+
+            // Redraw existing tables so the updated pager setting takes effect.
+            if (jQuery.fn.dataTable.tables) {
+                jQuery.fn.dataTable.tables({ api: true }).every(function () {
+                    this.draw(false);
+                });
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setCompactPagination, { once: true });
+        } else {
+            setCompactPagination();
+        }
+        window.addEventListener('load', setCompactPagination, { once: true });
+    })();
+    </script>
+    <?php
+}, 99999);
