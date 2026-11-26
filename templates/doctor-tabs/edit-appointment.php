@@ -13,43 +13,41 @@ $table_appts = $wpdb->prefix . 'dior_appointments';
 $table_patients = $wpdb->prefix . 'dior_patients';
 $users_table = $wpdb->users;
 
-// 1. Fetch all appointments with patient details from DB
-$db_appointments = $wpdb->get_results("
+// Resolve the logged-in doctor's own account and linked DocBooker IDs.
+$doctor_scope_ids = Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id);
+$doctor_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope_ids))));
+$doctor_scope_in = implode(',', array_fill(0, count($doctor_scope_ids), '%d'));
+$assigned_patient_ids = Dior_Auth_Service::get_doctor_patient_ids($doctor_id);
+$db_appointments = $doctor_scope_ids ? $wpdb->get_results($wpdb->prepare("
     SELECT a.*,
            COALESCE(p.first_name, u.display_name, 'Patient') as patient_first_name,
            COALESCE(p.last_name, '') as patient_last_name,
-           p.phone as patient_phone,
-           p.gender as patient_gender,
-           p.dob as patient_dob,
-           p.blood_group as patient_blood_group,
-           p.address as patient_address,
-           p.city as patient_city,
-           p.state as patient_state,
-           p.country as patient_country,
+           p.phone as patient_phone, p.gender as patient_gender, p.dob as patient_dob,
+           p.blood_group as patient_blood_group, p.address as patient_address,
+           p.city as patient_city, p.state as patient_state, p.country as patient_country,
            p.avatar_url as patient_avatar,
            COALESCE(p.patient_uid, CONCAT('DM-', (10000 + a.patient_id))) as patient_code,
            u.user_email as patient_email
     FROM $table_appts a
     LEFT JOIN $table_patients p ON p.user_id = a.patient_id
     LEFT JOIN $users_table u ON u.ID = a.patient_id
-    WHERE a.is_deleted = 0
-    ORDER BY a.appt_date DESC, a.created_at DESC
-    LIMIT 300
-", ARRAY_A);
+    WHERE a.is_deleted = 0 AND a.doctor_id IN ($doctor_scope_in)
+    ORDER BY a.appt_date DESC, a.created_at DESC LIMIT 300
+", ...$doctor_scope_ids, ), ARRAY_A) : [];
 
 // 2. Fetch doctors list for consulting doctor dropdown
-$doctor_users = get_users([
-    'role__in' => ['doctor', 'dior_doctor', 'administrator'],
-    'orderby' => 'display_name',
-    'number' => 50
-]);
+$doctor_users = [get_userdata($doctor_id)];
 
 // 3. Fetch comprehensive patient list from both dior_patients and wp_users
-$db_patients = $wpdb->get_results("
-    SELECT user_id, first_name, last_name, patient_uid, phone, email, gender, dob, blood_group, address
-    FROM {$wpdb->prefix}dior_patients
-    WHERE status <> 'deleted'
-", ARRAY_A);
+$db_patients = [];
+if ($assigned_patient_ids) {
+    $patient_in = implode(',', array_fill(0, count($assigned_patient_ids), '%d'));
+    $db_patients = $wpdb->get_results($wpdb->prepare("
+        SELECT user_id, first_name, last_name, patient_uid, phone, email, gender, dob, blood_group, address
+        FROM {$wpdb->prefix}dior_patients
+        WHERE status <> 'deleted' AND user_id IN ($patient_in)
+    ", ...$assigned_patient_ids), ARRAY_A);
+}
 
 $known_patient_uids = [];
 $all_clinic_patients = [];
@@ -64,7 +62,7 @@ if (!empty($db_patients)) {
 }
 
 // Ensure every patient who has an existing appointment is also in the patient list
-$appt_patient_ids = $wpdb->get_col("SELECT DISTINCT patient_id FROM {$wpdb->prefix}dior_appointments WHERE is_deleted = 0 AND patient_id > 0");
+$appt_patient_ids = $assigned_patient_ids;
 if (!empty($appt_patient_ids)) {
     foreach ($appt_patient_ids as $pid) {
         $pid = (int) $pid;
@@ -93,8 +91,8 @@ if (!empty($appt_patient_ids)) {
 }
 
 // Fallback to general subscribers if still empty
-if (empty($all_clinic_patients)) {
-    $raw_pat_users = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'number' => 100]);
+if (empty($all_clinic_patients) && $assigned_patient_ids) {
+    $raw_pat_users = get_users(['include' => $assigned_patient_ids, 'role__in' => ['patient', 'subscriber', 'customer'], 'number' => count($assigned_patient_ids)]);
     foreach ($raw_pat_users as $pu) {
         $all_clinic_patients[] = [
             'user_id' => $pu->ID,
