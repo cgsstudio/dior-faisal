@@ -768,11 +768,40 @@
         });
 
         var pdfButton = panel.querySelector('#download-invoice-pdf');
-        if (pdfButton) pdfButton.addEventListener('click', async function () {
+
+        // Load the PDF library on demand with CDN fallbacks if the primary CDN is blocked.
+        function ensureInvoicePdfLibrary() {
+            if (typeof window.html2pdf === 'function') return Promise.resolve();
+            var sources = [
+                'https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js',
+                'https://unpkg.com/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js'
+            ];
+            return new Promise(function (resolve, reject) {
+                var index = 0;
+                function tryNext() {
+                    if (typeof window.html2pdf === 'function') { resolve(); return; }
+                    if (index >= sources.length) { reject(new Error('PDF library could not be loaded from available CDNs.')); return; }
+                    var script = document.createElement('script');
+                    script.src = sources[index++];
+                    script.async = true;
+                    script.onload = function () {
+                        if (typeof window.html2pdf === 'function') resolve();
+                        else tryNext();
+                    };
+                    script.onerror = tryNext;
+                    document.head.appendChild(script);
+                }
+                tryNext();
+            });
+        }
+
+        if (pdfButton) pdfButton.addEventListener('click', async function (event) {
+            event.preventDefault();
+            if (pdfButton.disabled) return;
+
             var content = panel.querySelector('#invoice-pdf-content');
-            if (!content) return;
-            if (typeof window.html2pdf !== 'function') {
-                window.alert('PDF generator could not load. Please refresh the page and try again.');
+            if (!content) {
+                window.alert('Invoice content is not available. Please select an invoice and try again.');
                 return;
             }
 
@@ -783,81 +812,65 @@
             pdfButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Preparing PDF...';
 
             try {
-                /* IMPORTANT: the invoice tab is display:none when inactive.
-                   Never render the hidden live node; create a visible standalone export stage. */
+                await ensureInvoicePdfLibrary();
+
+                // Render a visible export-only copy because the live invoice tab is hidden when inactive.
                 exportStage = document.createElement('section');
-                exportStage.id = 'tab-doc-accounts-invoice';
                 exportStage.setAttribute('aria-hidden', 'true');
-                exportStage.style.cssText = 'position:fixed;inset:0 auto auto 0;width:730px;min-height:1035px;padding:0;margin:0;background:#ffffff;z-index:2147483647;overflow:visible;box-sizing:border-box;';
+                exportStage.style.cssText = 'position:fixed;left:0;top:0;width:794px;min-height:1123px;padding:0;margin:0;background:#fff;z-index:2147483647;overflow:visible;box-sizing:border-box;';
                 var exportContent = content.cloneNode(true);
-                exportContent.removeAttribute('style');
-                exportContent.style.cssText = 'display:block!important;width:730px!important;min-width:730px!important;max-width:730px!important;margin:0 auto!important;padding:28px!important;background:#fff!important;color:#172b4d!important;box-sizing:border-box!important;overflow:visible!important;font-family:Arial,Helvetica,sans-serif!important;';
+                exportContent.removeAttribute('id');
+                exportContent.style.cssText = 'display:block!important;width:778px!important;max-width:778px!important;min-width:778px!important;margin:0!important;padding:30px!important;background:#fff!important;color:#172b4d!important;box-sizing:border-box!important;font-family:Arial,Helvetica,sans-serif!important;overflow:visible!important;';
                 exportStage.appendChild(exportContent);
                 document.body.appendChild(exportStage);
 
-                /* Force desktop invoice layout inside the export-only copy. */
-                var exportTop = exportContent.querySelector('.dior-standard-invoice__top');
-                if (exportTop) Object.assign(exportTop.style, {display:'flex',flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',gap:'24px'});
-                var exportParties = exportContent.querySelector('.dior-standard-invoice__parties');
-                if (exportParties) Object.assign(exportParties.style, {display:'grid',gridTemplateColumns:'1.1fr .9fr',gap:'28px'});
-                var exportBottom = exportContent.querySelector('.dior-standard-invoice__bottom');
-                if (exportBottom) Object.assign(exportBottom.style, {display:'grid',gridTemplateColumns:'1.15fr .85fr',gap:'28px'});
-                var exportDetails = exportContent.querySelector('.dior-standard-invoice__details');
-                if (exportDetails) Object.assign(exportDetails.style, {borderLeft:'1px solid #e4ebf2',paddingLeft:'20px'});
-                var exportLogo = exportContent.querySelector('.dior-standard-invoice__brand img');
-                if (exportLogo) Object.assign(exportLogo.style, {display:'block',width:'112px',height:'92px',maxWidth:'112px',objectFit:'contain'});
-                var exportTable = exportContent.querySelector('.dior-standard-invoice__table');
-                if (exportTable) Object.assign(exportTable.style, {display:'table',width:'100%',minWidth:'0',tableLayout:'fixed',borderCollapse:'collapse'});
-                exportContent.querySelectorAll('.dior-standard-invoice__table thead').forEach(function(node){node.style.display='table-header-group';});
-                exportContent.querySelectorAll('.dior-standard-invoice__table tbody').forEach(function(node){node.style.display='table-row-group';});
-                exportContent.querySelectorAll('.dior-standard-invoice__table tr').forEach(function(node){node.style.display='table-row';node.style.breakInside='avoid';});
-                exportContent.querySelectorAll('.dior-standard-invoice__table th,.dior-standard-invoice__table td').forEach(function(node){
-                    node.style.display='table-cell';node.style.padding='10px 6px';node.style.fontSize='9px';node.style.whiteSpace='normal';node.style.overflowWrap='anywhere';
+                // Reapply the standard desktop invoice layout to the PDF copy.
+                var top = exportContent.querySelector('.dior-standard-invoice__top');
+                if (top) Object.assign(top.style, {display:'flex',flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',gap:'24px'});
+                var parties = exportContent.querySelector('.dior-standard-invoice__parties');
+                if (parties) Object.assign(parties.style, {display:'grid',gridTemplateColumns:'1.1fr .9fr',gap:'28px'});
+                var bottom = exportContent.querySelector('.dior-standard-invoice__bottom');
+                if (bottom) Object.assign(bottom.style, {display:'grid',gridTemplateColumns:'1.15fr .85fr',gap:'28px'});
+                var details = exportContent.querySelector('.dior-standard-invoice__details');
+                if (details) Object.assign(details.style, {borderLeft:'1px solid #e4ebf2',paddingLeft:'20px'});
+                var logo = exportContent.querySelector('.dior-standard-invoice__brand img');
+                if (logo) Object.assign(logo.style, {display:'block',width:'112px',height:'92px',maxWidth:'112px',objectFit:'contain'});
+                var table = exportContent.querySelector('.dior-standard-invoice__table');
+                if (table) Object.assign(table.style, {display:'table',width:'100%',minWidth:'0',tableLayout:'fixed',borderCollapse:'collapse'});
+                exportContent.querySelectorAll('.dior-standard-invoice__table thead').forEach(function (node) { node.style.display='table-header-group'; });
+                exportContent.querySelectorAll('.dior-standard-invoice__table tbody').forEach(function (node) { node.style.display='table-row-group'; });
+                exportContent.querySelectorAll('.dior-standard-invoice__table tr').forEach(function (node) { node.style.display='table-row'; node.style.breakInside='avoid'; });
+                exportContent.querySelectorAll('.dior-standard-invoice__table th,.dior-standard-invoice__table td').forEach(function (node) {
+                    node.style.display='table-cell'; node.style.padding='10px 6px'; node.style.fontSize='9px'; node.style.whiteSpace='normal'; node.style.overflowWrap='anywhere';
                 });
-                exportContent.querySelectorAll('.dior-standard-invoice__table .col-no').forEach(function(node){node.style.width='5%';});
-                exportContent.querySelectorAll('.dior-standard-invoice__table .col-qty').forEach(function(node){node.style.width='7%';});
-                exportContent.querySelectorAll('.dior-standard-invoice__table .col-money').forEach(function(node){node.style.width='14%';});
-                exportContent.querySelectorAll('.dior-standard-invoice__table .col-total').forEach(function(node){node.style.width='15%';});
-                exportContent.querySelectorAll('.dior-standard-invoice__top,.dior-standard-invoice__parties,.dior-standard-invoice__items,.dior-standard-invoice__bottom,.dior-standard-invoice__payment,.dior-standard-invoice__totals,.dior-standard-invoice__footer').forEach(function(node){
-                    node.style.breakInside='avoid';node.style.pageBreakInside='avoid';
+                exportContent.querySelectorAll('.dior-standard-invoice__top,.dior-standard-invoice__parties,.dior-standard-invoice__items,.dior-standard-invoice__bottom,.dior-standard-invoice__payment,.dior-standard-invoice__totals,.dior-standard-invoice__footer').forEach(function (node) {
+                    node.style.breakInside='avoid'; node.style.pageBreakInside='avoid';
                 });
 
-                var exportImages = Array.prototype.slice.call(exportContent.querySelectorAll('img'));
-                await Promise.all(exportImages.map(function(img){
-                    if (img.complete && img.naturalWidth > 0) return typeof img.decode === 'function' ? img.decode().catch(function(){}) : Promise.resolve();
-                    return new Promise(function(resolve){
-                        img.addEventListener('load',resolve,{once:true});
-                        img.addEventListener('error',resolve,{once:true});
-                        window.setTimeout(resolve,5000);
+                // Wait for invoice logo and web fonts before capturing the document.
+                await Promise.all(Array.prototype.slice.call(exportContent.querySelectorAll('img')).map(function (img) {
+                    if (img.complete && img.naturalWidth > 0) return typeof img.decode === 'function' ? img.decode().catch(function () {}) : Promise.resolve();
+                    return new Promise(function (resolve) {
+                        img.addEventListener('load', resolve, {once:true});
+                        img.addEventListener('error', resolve, {once:true});
+                        window.setTimeout(resolve, 5000);
                     });
                 }));
                 if (document.fonts && document.fonts.ready) await document.fonts.ready;
-                await new Promise(function(resolve){window.requestAnimationFrame(function(){window.requestAnimationFrame(resolve);});});
+                await new Promise(function (resolve) { window.requestAnimationFrame(function () { window.requestAnimationFrame(resolve); }); });
 
-                var exportHeight = Math.max(exportContent.scrollHeight, exportContent.offsetHeight);
+                var filename = ((selected && selected.uid) ? selected.uid : 'Dior-Medical-Invoice').replace(/[^a-z0-9_-]/gi, '-') + '.pdf';
                 await window.html2pdf().set({
                     margin: [8,8,8,8],
-                    filename: ((selected && selected.uid) ? selected.uid : 'Dior-Medical-Invoice') + '.pdf',
+                    filename: filename,
                     image: {type:'jpeg',quality:0.98},
-                    html2canvas: {
-                        scale: 2,
-                        useCORS: true,
-                        allowTaint: false,
-                        backgroundColor: '#ffffff',
-                        logging: false,
-                        width: 730,
-                        height: exportHeight,
-                        windowWidth: 794,
-                        windowHeight: Math.max(1123, exportHeight),
-                        scrollX: 0,
-                        scrollY: 0
-                    },
+                    html2canvas: {scale:2,useCORS:true,allowTaint:false,backgroundColor:'#ffffff',logging:false,windowWidth:794,scrollX:0,scrollY:0},
                     pagebreak: {mode:['css','legacy'],avoid:['tr','.dior-standard-invoice__top','.dior-standard-invoice__parties','.dior-standard-invoice__bottom']},
                     jsPDF: {unit:'mm',format:'a4',orientation:'portrait',compress:true}
                 }).from(exportStage).save();
             } catch (error) {
-                console.error('Dior invoice PDF export failed:', error);
-                window.alert('PDF could not be generated. Please try again. Check the browser console if the problem continues.');
+                console.error('Dior invoice PDF download failed:', error);
+                window.alert('PDF download failed. Please check your internet connection and try again. If it continues, contact the site administrator.');
             } finally {
                 if (exportStage && exportStage.parentNode) exportStage.parentNode.removeChild(exportStage);
                 pdfButton.disabled = false;
