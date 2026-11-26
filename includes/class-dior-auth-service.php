@@ -115,29 +115,34 @@ class Dior_Auth_Service
             return false;
         }
 
-        // Patients may only access their own portal data.
-        if (self::is_patient($user_id)) {
-            return $user_id === $patient_id;
-        }
-
         // Admin access is handled by admin-specific screens/endpoints, not the Doctor Dashboard.
         if (self::is_admin($user_id)) {
             return true;
         }
 
-        // Doctors may access a patient only when that patient has an appointment
-        // assigned to this doctor's own account or explicitly linked DocBooker IDs.
+        // Patients may only access their own portal data.
+        if (self::is_patient($user_id)) {
+            return $user_id === $patient_id;
+        }
+
+        // Doctors may access a patient only when explicitly assigned or linked to owned clinical records.
         if (!self::is_doctor($user_id)) {
             return false;
         }
 
+        if (in_array($patient_id, self::get_doctor_patient_ids($user_id), true)) return true;
+
         global $wpdb;
+        $doctor_ids = class_exists('Dior_Doctor_Resolver')
+            ? Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id)
+            : [$user_id];
+        $doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_ids))));
+        if (!$doctor_ids) return false;
+
         $appointment_table = $wpdb->prefix . 'dior_appointments';
         if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $appointment_table)) !== $appointment_table) {
             return false;
         }
-
-        if (in_array($patient_id, self::get_doctor_patient_ids($user_id), true)) return true;
         $doctor_ids = class_exists('Dior_Doctor_Resolver')
             ? Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id)
             : [$user_id];
