@@ -835,9 +835,15 @@ class Dior_Doctor_Dynamic {
                 'created_at' => $rx['date'] ?? ($rx['date_prescribed'] ?? ''),
             ];
         }
-        $visits = $scope_ids ? ($wpdb->get_results($wpdb->prepare(
-            "SELECT appt_date, doctor_id, condition_name, visit_type, status FROM {$wpdb->prefix}dior_appointments WHERE patient_id = %d AND doctor_id IN ($scope_in) AND is_deleted = 0 ORDER BY appt_date DESC LIMIT 50",
-            ...array_merge([$pid], $scope_ids)
+        $appointment_scope_ids = $scope_ids;
+        if (class_exists('Dior_Doctor_Resolver') && self::doctor_id() === (int) Dior_Doctor_Resolver::get_default_doctor_id()) {
+            $appointment_scope_ids = array_merge($appointment_scope_ids, [0, 1]);
+        }
+        $appointment_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $appointment_scope_ids))));
+        $appointment_scope_in = implode(',', array_fill(0, count($appointment_scope_ids), '%d'));
+        $visits = $appointment_scope_ids ? ($wpdb->get_results($wpdb->prepare(
+            "SELECT appt_date, doctor_id, condition_name, visit_type, status FROM {$wpdb->prefix}dior_appointments WHERE patient_id = %d AND doctor_id IN ($appointment_scope_in) AND is_deleted = 0 ORDER BY appt_date DESC LIMIT 50",
+            ...array_merge([$pid], $appointment_scope_ids)
         ), ARRAY_A) ?: []) : [];
         foreach ($visits as &$visit) {
             $doctor = get_userdata((int) $visit['doctor_id']);
