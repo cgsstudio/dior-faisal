@@ -86,17 +86,41 @@
                     global $wpdb;
                     $inv_table = $wpdb->prefix . 'dior_invoices';
                     $inc_rows = [];
-                    if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
-                        $inc_rows = $wpdb->get_results(
+                    $income_doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
+                    $income_doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $income_doctor_ids))));
+                    if ($income_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
+                        $income_in = implode(',', array_fill(0, count($income_doctor_ids), '%d'));
+                        $inc_rows = $wpdb->get_results($wpdb->prepare(
                             "SELECT i.*, p.first_name, p.last_name, u.display_name AS patient_display
                              FROM $inv_table i
                              LEFT JOIN {$wpdb->prefix}dior_patients p ON (p.user_id = i.patient_id OR p.id = i.patient_id)
                              LEFT JOIN {$wpdb->users} u ON u.ID = i.patient_id
-                             ORDER BY i.created_at DESC, i.id DESC
-                             LIMIT 100",
-                            ARRAY_A
-                        );
+                             WHERE i.doctor_id IN ($income_in)
+                             ORDER BY i.created_at DESC, i.id DESC LIMIT 200",
+                            ...$income_doctor_ids
+                        ), ARRAY_A);
                     }
+                    $manual_income_table = $wpdb->prefix . 'dior_doctor_bills';
+                    if ($income_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $manual_income_table)) === $manual_income_table) {
+                        $income_in = implode(',', array_fill(0, count($income_doctor_ids), '%d'));
+                        $manual_income = $wpdb->get_results($wpdb->prepare(
+                            "SELECT b.*, u.display_name AS patient_display FROM $manual_income_table b
+                             LEFT JOIN {$wpdb->users} u ON u.ID=b.patient_id
+                             WHERE b.doctor_id IN ($income_in) ORDER BY b.created_at DESC LIMIT 200",
+                            ...$income_doctor_ids
+                        ), ARRAY_A);
+                        foreach ((array) $manual_income as $bill) {
+                            $bill['id'] = $bill['bill_uid'];
+                            $bill['invoice_uid'] = $bill['bill_uid'];
+                            $bill['description'] = $bill['service_type'];
+                            $bill['status'] = $bill['status'];
+                            $inc_rows[] = $bill;
+                        }
+                    }
+                    usort($inc_rows, static function ($a, $b) {
+                        return (strtotime((string)($b['created_at'] ?? '')) ?: 0) <=> (strtotime((string)($a['created_at'] ?? '')) ?: 0);
+                    });
+                    $inc_rows = array_slice($inc_rows, 0, 200);
                     if (empty($inc_rows)): ?>
                         <tr>
                             <td colspan="11" class="dior-empty-state text-center text-muted py-5">
@@ -108,7 +132,7 @@
                         foreach ($inc_rows as $ir):
                             $p_name  = trim((string) (($ir['first_name'] ?? '') . ' ' . ($ir['last_name'] ?? ''))) ?: ($ir['patient_display'] ?? 'Patient');
                             $billed  = number_format((float) ($ir['total_amount'] ?? $ir['amount'] ?? 0), 2);
-                            $paid    = strtolower((string) ($ir['status'] ?? '')) === 'paid' ? $billed : '0.00';
+                            $paid    = in_array(strtolower((string) ($ir['status'] ?? '')), ['paid','completed','succeeded'], true) ? $billed : '0.00';
                             $st_raw  = ucfirst(strtolower((string) ($ir['status'] ?? 'Pending')));
                             $st_cls  = strtolower($st_raw) === 'paid' || strtolower($st_raw) === 'completed' ? 'va-badge-completed' : 'va-badge-pending';
                             $i_date  = !empty($ir['created_at']) ? wp_date('M j, Y', strtotime($ir['created_at'])) : '—';
