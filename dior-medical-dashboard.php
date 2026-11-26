@@ -58,9 +58,6 @@ require_once(DIOR_PORTAL_PATH . 'rest_api/hipaatizer_api_sync.php');
 if (!class_exists('Dior_Medical_Secure_Files')) {
     require_once(DIOR_PORTAL_PATH . 'includes/class-dior-secure-files.php');
 }
-if (!class_exists('Dior_Demo_Data')) {
-    require_once(DIOR_PORTAL_PATH . 'includes/class-dior-demo-data.php');
-}
 if (!class_exists('Dior_Questionnaire_Service')) {
     require_once(DIOR_PORTAL_PATH . 'includes/class-dior-questionnaire-service.php');
 }
@@ -165,9 +162,6 @@ add_action('plugins_loaded', function () {
     }
     if (class_exists('Dior_Medical_Secure_Files')) {
         Dior_Medical_Secure_Files::init();
-    }
-    if (class_exists('Dior_Demo_Data')) {
-        Dior_Demo_Data::init();
     }
 });
 
@@ -1867,12 +1861,12 @@ class Dior_Medical_Auth
                                 html += `<button type="button" class="dior-grid-btn" onclick="diorSelectTreatment(${dept.id}, '${dept.name.replace(/'/g, "\\'")}')">${dept.name}</button>`;
                     });
                 } else {
-                    html = '<button type="button" class="dior-grid-btn" onclick="diorSelectTreatment(1, \'Urgent Care Telehealth\')">Urgent Care Telehealth</button><button type="button" class="dior-grid-btn" onclick="diorSelectTreatment(2, \'Primary Care & General Medicine\')">Primary Care</button>';
+                    html = '<p class="text-muted">No treatments are currently available.</p>';
                 }
                 document.getElementById('treatments-list').innerHTML = html;
             })
             .catch(() => {
-                document.getElementById('treatments-list').innerHTML = '<button type="button" class="dior-grid-btn" onclick="diorSelectTreatment(1, \'Urgent Care Telehealth\')">Urgent Care Telehealth</button><button type="button" class="dior-grid-btn" onclick="diorSelectTreatment(2, \'Primary Care & General Medicine\')">Primary Care</button>';
+                document.getElementById('treatments-list').innerHTML = '<p class="text-danger">Unable to load treatments. Please try again.</p>';
             });
     }
 
@@ -1894,27 +1888,12 @@ class Dior_Medical_Auth
                                                                                                                         </div>`;
                     });
                 } else {
-                    html = `<div class="dior-doctor-card-select" onclick="diorSelectDoctor(1695, 'Dr. James Chen, DO')">
-                                                                                                                        <h4>Dr. James Chen, DO</h4>
-                                                                                                                        <p>Primary Care & Urgent Care</p>
-                                                                                                                    </div>
-                                                                                                                    <div class="dior-doctor-card-select" onclick="diorSelectDoctor(1693, 'Dr. Marcus Sterling, DO')">
-                                                                                                                        <h4>Dr. Marcus Sterling, DO</h4>
-                                                                                                                        <p>Urgent Care Physician</p>
-                                                                                                                    </div>`;
+                    html = '<p class="text-muted">No doctors are available for this treatment.</p>';
                 }
                 document.getElementById('doctors-list').innerHTML = html;
             })
             .catch(() => {
-                document.getElementById('doctors-list').innerHTML = `
-                                                                                                            <div class="dior-doctor-card-select" onclick="diorSelectDoctor(1695, 'Dr. James Chen, DO')">
-                                                                                                                <h4>Dr. James Chen, DO</h4>
-                                                                                                                <p>Primary Care & Urgent Care</p>
-                                                                                                            </div>
-                                                                                                            <div class="dior-doctor-card-select" onclick="diorSelectDoctor(1693, 'Dr. Marcus Sterling, DO')">
-                                                                                                                <h4>Dr. Marcus Sterling, DO</h4>
-                                                                                                                <p>Urgent Care Physician</p>
-                                                                                                            </div>`;
+                document.getElementById('doctors-list').innerHTML = '<p class="text-danger">Unable to load doctors. Please try again.</p>';
             });
     }
 
@@ -1933,20 +1912,13 @@ class Dior_Medical_Auth
         document.getElementById('time-slots-list').innerHTML = '<p>Loading availability...</p>';
         diorBookingState.date = dateStr;
 
-        function renderDefaultTimes() {
-            const defaultTimes = ['09:00 AM', '10:30 AM', '01:00 PM', '02:30 PM', '04:00 PM', '05:30 PM'];
-            let h = '<h4>Available Telehealth Slots</h4><div class="dior-time-grid">';
-            defaultTimes.forEach(t => {
-                h += `<button type="button" class="dior-time-btn" onclick="diorSelectTime(1, '${t}')">${t}</button>`;
-            });
-            h += '</div>';
-            document.getElementById('time-slots-list').innerHTML = h;
-        }
-
-        fetch(diorRestUrl + `doctor-details-booking/v1/doctors/${diorBookingState.doctorId}/availability?date=${dateStr}`, {
+        fetch(diorRestUrl + `doctor-details-booking/v1/doctors/${diorBookingState.doctorId}/availability?date=${encodeURIComponent(dateStr)}`, {
             headers: { 'X-WP-Nonce': diorRestNonce }
         })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error('Availability request failed');
+                return res.json();
+            })
             .then(data => {
                 let html = '';
                 if (data && data.clinics && data.clinics.length > 0) {
@@ -1965,14 +1937,10 @@ class Dior_Medical_Auth
                         }
                     });
                 }
-                if (html) {
-                    document.getElementById('time-slots-list').innerHTML = html;
-                } else {
-                    renderDefaultTimes();
-                }
+                document.getElementById('time-slots-list').innerHTML = html || '<p class="text-muted">No available time slots for this date.</p>';
             })
             .catch(() => {
-                renderDefaultTimes();
+                document.getElementById('time-slots-list').innerHTML = '<p class="text-danger">Unable to load availability. Please try again.</p>';
             });
     }
 
@@ -1981,11 +1949,11 @@ class Dior_Medical_Auth
         diorBookingState.time = time;
 
         document.getElementById('booking-summary').innerHTML = `
-                                                                                                    <p><strong>Treatment:</strong> ${diorBookingState.departmentName || 'Telehealth Urgent Care'}</p>
-                                                                                                    <p><strong>Doctor:</strong> ${diorBookingState.doctorName || 'Attending Physician'}</p>
+                                                                                                    <p><strong>Treatment:</strong> ${diorBookingState.departmentName || '—'}</p>
+                                                                                                    <p><strong>Doctor:</strong> ${diorBookingState.doctorName || '—'}</p>
                                                                                                     <p><strong>Date:</strong> ${diorBookingState.date}</p>
                                                                                                     <p><strong>Time:</strong> ${diorBookingState.time}</p>
-                                                                                                    <p><strong>Patient:</strong> ${diorBookingState.patient.name || 'Verified Patient'}</p>
+                                                                                                    <p><strong>Patient:</strong> ${diorBookingState.patient.name || '—'}</p>
                                                                                                 `;
         diorBookingGoToStep(4);
     }
@@ -1993,17 +1961,23 @@ class Dior_Medical_Auth
     function diorSubmitBooking() {
         let btn = document.getElementById('btn-confirm-booking');
         let msg = document.getElementById('booking-message');
+        if (!diorBookingState.departmentId || !diorBookingState.doctorId || !diorBookingState.date || !diorBookingState.time) {
+            msg.style.color = '#DC2626';
+            msg.innerText = 'Please select a valid treatment, doctor, date, and available time slot.';
+            return;
+        }
         btn.disabled = true;
         btn.innerText = 'Booking Consultation...';
 
         const formData = new FormData();
         formData.append('action', 'dior_patient_book_appointment');
         formData.append('nonce', diorPortalNonce);
-        formData.append('doctorId', diorBookingState.doctorId || 1695);
-        formData.append('doctor_name', diorBookingState.doctorName || 'Doctor');
+        formData.append('doctorId', diorBookingState.doctorId);
+        formData.append('doctor_name', diorBookingState.doctorName);
+        formData.append('clinicId', diorBookingState.clinicId);
         formData.append('date', diorBookingState.date || '');
         formData.append('time', diorBookingState.time || '');
-        formData.append('condition', diorBookingState.departmentName || 'Telehealth Consultation');
+        formData.append('condition', diorBookingState.departmentName);
         formData.append('name', diorBookingState.patient.name || '');
         formData.append('email', diorBookingState.patient.email || '');
         formData.append('phone', diorBookingState.patient.phone || '');
@@ -3320,14 +3294,17 @@ class Dior_Medical_Auth
 
         global $wpdb;
         $table = $wpdb->prefix . 'dior_appointments';
-        $patient_id = get_current_user_id() ?: 0;
-        $appt_uid = 'APT-' . ($patient_id ?: '0') . rand(100, 999);
+        $patient_id = get_current_user_id();
+        if (!$patient_id || !$doctor_id) {
+            wp_send_json_error('Please sign in and select a valid doctor before booking.', 400);
+        }
+        $appt_uid = 'APT-' . $patient_id . wp_generate_password(8, false, false);
         $now = current_time('mysql');
 
         $inserted = $wpdb->insert($table, [
             'appt_uid'       => $appt_uid,
             'patient_id'     => $patient_id,
-            'doctor_id'      => $doctor_id ?: 1957,
+            'doctor_id'      => $doctor_id,
             'condition_name' => $reason ?: 'Telehealth Consultation',
             'visit_type'     => 'Video Visit (HD)',
             'status'         => 'Pending',
@@ -4290,17 +4267,22 @@ class Dior_Medical_Auth
         }
         $existing_profile = Dior_Patient_Portal_Data::get_patient_profile($user_id);
         $user_intake = get_user_meta($user_id, 'dior_hipaa_intake', true);
+        $user_intake = is_array($user_intake) ? $user_intake : [];
         if (empty($existing_profile['dob'])) {
-            $dob_val = !empty($user_intake['dob']) ? $user_intake['dob'] : '1990-01-01';
-            update_user_meta($user_id, 'dob', $dob_val);
+            if (!empty($user_intake['dob'])) {
+                update_user_meta($user_id, 'dob', sanitize_text_field($user_intake['dob']));
+            }
         }
         if (empty($existing_profile['gender'])) {
-            $gender_val = !empty($user_intake['gender']) ? $user_intake['gender'] : 'Declined to state';
-            update_user_meta($user_id, 'gender', $gender_val);
+            if (!empty($user_intake['gender'])) {
+                update_user_meta($user_id, 'gender', sanitize_text_field($user_intake['gender']));
+            }
         }
         if (empty($existing_profile['address'])) {
-            $addr_val = !empty($user_intake['address']) ? $user_intake['address'] : 'Telehealth Patient - On File';
-            update_user_meta($user_id, 'address', $addr_val);
+            $intake_address = $user_intake['address'] ?? ($user_intake['address_line1'] ?? '');
+            if ($intake_address !== '') {
+                update_user_meta($user_id, 'address', sanitize_text_field($intake_address));
+            }
         }
 
         // Validate personal profile completion
@@ -4313,34 +4295,33 @@ class Dior_Medical_Auth
             ], 400);
         }
 
-        $condition = sanitize_text_field($_POST['condition'] ?? ($_POST['treatment'] ?? 'Urgent Care Telehealth'));
+        $condition = sanitize_text_field($_POST['condition'] ?? ($_POST['treatment'] ?? ''));
         $type = sanitize_text_field($_POST['type'] ?? ($_POST['visit_type'] ?? 'Video Visit (HD)'));
         $provider_raw = sanitize_text_field($_POST['provider'] ?? ($_POST['doctor'] ?? ($_POST['doctor_name'] ?? '')));
-        $doctor_id_raw = intval($_POST['doctorId'] ?? ($_POST['doctor_id'] ?? 1957));
-        $date = sanitize_text_field($_POST['date'] ?? ($_POST['bookingDate'] ?? current_time('Y-m-d')));
-        $time = sanitize_text_field($_POST['time'] ?? '09:00 AM - 10:00 AM');
+        $doctor_id_raw = absint($_POST['doctorId'] ?? ($_POST['doctor_id'] ?? 0));
+        $date = sanitize_text_field($_POST['date'] ?? ($_POST['bookingDate'] ?? ''));
+        $time = sanitize_text_field($_POST['time'] ?? '');
         $notes = sanitize_textarea_field($_POST['notes'] ?? ($_POST['patient_note'] ?? ''));
 
         // Resolve Doctor WP User ID & Name
         $doctor_user_id = 0;
-        $doctor_name = $provider_raw ?: 'Dr. Marcus Sterling, DO';
+        $doctor_name = $provider_raw;
 
         if (class_exists('Dior_Doctor_Resolver')) {
             $doctor_user_id = Dior_Doctor_Resolver::resolve_doctor_user_id($doctor_id_raw ?: $provider_raw);
         }
-        if (!$doctor_user_id) {
-            $doctor_user_id = 4;
-        }
-
-        if ($doctor_id_raw && is_numeric($doctor_id_raw)) {
-            $doc_post = get_post($doctor_id_raw);
-            if ($doc_post && $doc_post->post_type === 'wpddb_doctor') {
-                $doctor_name = $doc_post->post_title;
-            }
+        $doc_post = get_post($doctor_id_raw);
+        if ($doc_post && $doc_post->post_type === 'wpddb_doctor' && $doc_post->post_status === 'publish') {
+            $doctor_name = $doc_post->post_title;
         } elseif ($doctor_user_id) {
             $du = get_userdata($doctor_user_id);
-            if ($du)
+            if ($du) {
                 $doctor_name = $du->display_name;
+            }
+        }
+
+        if (!$doctor_name || (!$doctor_user_id && (!$doc_post || $doc_post->post_type !== 'wpddb_doctor' || $doc_post->post_status !== 'publish'))) {
+            wp_send_json_error(['message' => 'The selected doctor is no longer available. Please select another doctor.'], 400);
         }
 
         // DocBooker Stripe Checkout: redirect to Stripe BEFORE creating the appointment
@@ -4355,7 +4336,7 @@ class Dior_Medical_Auth
                     'patient_name' => $patient_name,
                     'patient_email' => $patient_email ?: (($u = get_userdata($user_id)) ? $u->user_email : ''),
                     'patient_phone' => $patient_phone,
-                    'doctor_id' => $doctor_id_raw ?: ($doctor_user_id ?: 1957),
+                    'doctor_id' => ($doctor_id_raw ?: $doctor_user_id),
                     'doctor_user_id' => $doctor_user_id,
                     'provider' => $doctor_name,
                     'condition' => $condition,
@@ -4381,7 +4362,7 @@ class Dior_Medical_Auth
         }
 
         if (stripos($type, 'phone') !== false) {
-            $join_url = 'tel:' . preg_replace('/[^0-9+]/', '', $patient_phone ?: '+13105550100');
+            $join_url = 'tel:' . preg_replace('/[^0-9+]/', '', $patient_phone);
         } else {
             // Create a scheduled Zoom meeting first; retain Google Meet as a safe fallback.
             $zoom_meeting_url = class_exists('Dior_Zoom_Meetings')
@@ -4395,7 +4376,7 @@ class Dior_Medical_Auth
 
         $new_apt = Dior_Appointment_Service::book_appointment([
             'patient_id' => $user_id,
-            'doctor_id' => $doctor_id_raw ?: ($doctor_user_id ?: 1957),
+            'doctor_id' => ($doctor_id_raw ?: $doctor_user_id),
             'doctor_user_id' => $doctor_user_id,
             'provider' => $doctor_name,
             'condition' => $condition,
@@ -4440,26 +4421,23 @@ class Dior_Medical_Auth
                 $wpdb->insert($table_patients, [
                     'full_name' => $user_obj->display_name,
                     'email' => $user_obj->user_email,
-                    'phone' => get_user_meta($user_id, 'phone', true) ?: '(555) 000-0000',
-                    'dob' => get_user_meta($user_id, 'dob', true) ?: '1990-01-01',
+                    'phone' => get_user_meta($user_id, 'phone', true),
+                    'dob' => get_user_meta($user_id, 'dob', true),
                     'patient_code' => 'DM-' . (10000 + ($user_id % 90000))
                 ]);
                 $docbooker_patient_id = $wpdb->insert_id;
             }
             $sync_doc_id = $doctor_id_raw;
-            if (!$sync_doc_id) {
-                $sync_doc_id = $wpdb->get_var("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpddb_doctor' AND post_status = 'publish' ORDER BY ID ASC LIMIT 1");
-                $sync_doc_id = $sync_doc_id ?: 1957;
-            }
-            $sync_clinic_id = 1970;
+            $sync_clinic_id = absint($_POST['clinicId'] ?? 0);
             $table_clinics = $wpdb->prefix . 'wpddb_clinics';
-            if ($wpdb->get_var("SHOW TABLES LIKE '$table_clinics'") == $table_clinics) {
-                $found_clinic = $wpdb->get_var("SELECT id FROM $table_clinics LIMIT 1");
-                if ($found_clinic)
-                    $sync_clinic_id = $found_clinic;
+            if ($sync_clinic_id && $wpdb->get_var($wpdb->prepare("SHOW TABLES LIKE %s", $table_clinics)) === $table_clinics) {
+                $sync_clinic_id = absint($wpdb->get_var($wpdb->prepare("SELECT id FROM $table_clinics WHERE id = %d LIMIT 1", $sync_clinic_id)));
+            } else {
+                $sync_clinic_id = 0;
             }
 
-            $wpdb->insert($table_bookings, [
+            if ($sync_doc_id && $sync_clinic_id) {
+                $wpdb->insert($table_bookings, [
                 'booking_id' => 'BK-' . rand(100000, 999999),
                 'patient_id' => $docbooker_patient_id ?: $user_id,
                 'doctor_id' => $sync_doc_id,
@@ -4473,7 +4451,8 @@ class Dior_Medical_Auth
                 'time' => $time,
                 'patient_note' => ($type . ' - ' . ($notes ?: $condition)),
                 'status' => 'approved'
-            ]);
+                ]);
+            }
         }
 
         // Multi-Channel Notifications: In-App Dashboard & Anti-Spam Luxury HTML Email (with localhost fallback)

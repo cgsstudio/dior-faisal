@@ -130,18 +130,18 @@ window.diorReopenHipaaForm = function() {
 // =========================================================================
 window.diorInBookingState = {
     step: 1,
-    doctorId: 1695,
-    doctorName: 'Dr. James Chen, DO',
-    doctorSpeciality: 'Primary Care & Urgent Care',
-    date: new Date().toISOString().split('T')[0],
-    day: new Date().toLocaleDateString('en-US', { weekday: 'long' }),
-    clinicId: 1,
+    doctorId: null,
+    doctorName: '',
+    doctorSpeciality: '',
+    date: '',
+    day: '',
+    clinicId: null,
     time: null,
     patient: {
         name: (typeof dior_vars !== 'undefined' && dior_vars.patient_profile && dior_vars.patient_profile.full_name) || '',
         email: (typeof dior_vars !== 'undefined' && dior_vars.patient_profile && dior_vars.patient_profile.email) || '',
         phone: (typeof dior_vars !== 'undefined' && dior_vars.patient_profile && dior_vars.patient_profile.phone) || '',
-        service: (typeof dior_vars !== 'undefined' && dior_vars.hipaa_intake && (dior_vars.hipaa_intake.service_condition || dior_vars.hipaa_intake.symptoms)) || 'Telehealth Medical Care',
+        service: (typeof dior_vars !== 'undefined' && dior_vars.hipaa_intake && (dior_vars.hipaa_intake.service_condition || dior_vars.hipaa_intake.symptoms)) || '',
         notes: (typeof dior_vars !== 'undefined' && dior_vars.hipaa_intake && dior_vars.hipaa_intake.symptoms) || ''
     }
 };
@@ -177,32 +177,28 @@ window.diorInBookingGoToStep = function(stepName) {
 };
 
 window.diorInSelectDoctor = function(docId, docName, spec) {
-    if (!window.diorInBookingState) {
-        window.diorInBookingState = { patient: {} };
-    }
-    window.diorInBookingState.doctorId = docId || 1695;
-    window.diorInBookingState.doctorName = docName || 'Doctor';
-    window.diorInBookingState.doctorSpeciality = spec || 'Telehealth Physician';
+    if (!docId) return;
+    window.diorInBookingState.doctorId = docId;
+    window.diorInBookingState.doctorName = docName || '';
+    window.diorInBookingState.doctorSpeciality = spec || '';
 
     const summaryPill = document.getElementById('in-selected-doctor-summary-pill');
     if (summaryPill) {
         summaryPill.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:36px; height:36px; border-radius:50%; background:#EFF6FF; color:#2C6CB1; display:flex; align-items:center; justify-content:center; font-weight:700;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;border-radius:50%;background:#EFF6FF;color:#2C6CB1;display:flex;align-items:center;justify-content:center;font-weight:700;">
                     <i class="fa-solid fa-user-md"></i>
                 </div>
                 <div>
-                    <strong style="color:#0F172A; display:block;">${docName}</strong>
-                    <span style="color:#2C6CB1; font-size:12px;">${spec}</span>
+                    <strong style="color:#0F172A;display:block;">${docName || ''}</strong>
+                    <span style="color:#2C6CB1;font-size:12px;">${spec || ''}</span>
                 </div>
-            </div>
-        `;
+            </div>`;
     }
 
-    document.querySelectorAll('.dior-doc-select-card').forEach(c => c.classList.remove('selected'));
-    const sc = document.querySelector(`.dior-doc-select-card[data-doc-id="${docId}"]`);
-    if (sc) sc.classList.add('selected');
-
+    document.querySelectorAll('.dior-doc-select-card').forEach(card => card.classList.remove('selected'));
+    const selectedCard = document.querySelector(`.dior-doc-select-card[data-doc-id="${docId}"]`);
+    if (selectedCard) selectedCard.classList.add('selected');
     window.diorInBookingGoToStep('time');
 };
 
@@ -211,55 +207,50 @@ window.diorInFetchAvailability = function() {
     const container = document.getElementById('in-time-slots-container');
     if (!container) return;
 
-    let dateVal = dateInput ? dateInput.value : (window.diorInBookingState && window.diorInBookingState.date);
-    if (!dateVal) dateVal = new Date().toISOString().split('T')[0];
-    if (window.diorInBookingState) window.diorInBookingState.date = dateVal;
-
-    const dateObj = new Date(dateVal + 'T00:00:00');
-    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-    if (window.diorInBookingState) window.diorInBookingState.day = dayName;
-
-    function renderSlots(slots, label) {
-        let html = `<div style="font-size:12.5px; font-weight:700; color:#475569; margin-bottom:8px;">${label || 'Available Consultation Slots'} (${dayName}):</div>`;
-        html += `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:8px;">`;
-        slots.forEach(slot => {
-            const timeText = typeof slot === 'object' ? slot.time : slot;
-            const isAvail = typeof slot === 'object' ? slot.is_available : true;
-            if (isAvail) {
-                html += `<button type="button" class="dior-time-btn" onclick="diorInSelectTime(1, '${timeText}')" style="padding:10px 12px; border:1.5px solid #CBD5E1; border-radius:8px; background:#FFFFFF; color:#0F172A; font-weight:700; cursor:pointer; font-size:13px; transition:all 0.15s ease;">${timeText}</button>`;
-            } else {
-                html += `<button type="button" disabled style="padding:10px 12px; border:1px solid #E2E8F0; border-radius:8px; background:#F1F5F9; color:#94A3B8; font-weight:500; cursor:not-allowed; font-size:13px;">${timeText}</button>`;
-            }
-        });
-        html += `</div>`;
-        container.innerHTML = html;
+    const state = window.diorInBookingState || {};
+    const dateVal = dateInput ? dateInput.value : state.date;
+    if (!state.doctorId || !dateVal) {
+        container.textContent = 'Select a doctor and date to view available appointment times.';
+        return;
     }
 
-    const defaultSlots = ['09:00 AM', '10:00 AM', '11:30 AM', '01:00 PM', '02:30 PM', '04:00 PM', '05:30 PM'];
-    renderSlots(defaultSlots, 'Virtual Consultation Schedule');
-
+    state.date = dateVal;
+    container.textContent = 'Loading live availability...';
     const restUrl = (typeof dior_vars !== 'undefined' && dior_vars.rest_url) || (window.location.origin + '/wp-json/');
     const restNonce = (typeof dior_vars !== 'undefined' && dior_vars.rest_nonce) || '';
-    const docId = window.diorInBookingState ? window.diorInBookingState.doctorId : 1695;
 
-    fetch(`${restUrl}doctor-details-booking/v1/doctors/${docId}/availability?date=${dateVal}`, {
+    fetch(`${restUrl}doctor-details-booking/v1/doctors/${encodeURIComponent(state.doctorId)}/availability?date=${encodeURIComponent(dateVal)}`, {
         headers: { 'X-WP-Nonce': restNonce }
     })
-    .then(r => r.json())
-    .then(data => {
-        if (data && data.clinics && data.clinics.length > 0) {
-            let clinicSlots = [];
-            data.clinics.forEach(clinic => {
-                if (!clinic.is_on_holiday && clinic.timings && clinic.timings.length > 0) {
-                    clinic.timings.forEach(t => clinicSlots.push(t));
-                }
-            });
-            if (clinicSlots.length > 0) {
-                renderSlots(clinicSlots, 'DocBooker Live Clinic Timings');
-            }
-        }
+    .then(response => {
+        if (!response.ok) throw new Error('Availability request failed');
+        return response.json();
     })
-    .catch(() => {});
+    .then(data => {
+        let html = '';
+        if (data && Array.isArray(data.clinics)) {
+            state.day = data.day || '';
+            data.clinics.forEach(clinic => {
+                if (clinic.is_on_holiday || !Array.isArray(clinic.timings) || !clinic.timings.length) return;
+                html += `<div style="font-size:12.5px;font-weight:700;color:#475569;margin-bottom:8px;">${clinic.name || 'Clinic'}:</div>`;
+                html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;">';
+                clinic.timings.forEach(slot => {
+                    const timeText = slot && slot.time ? slot.time : '';
+                    if (!timeText) return;
+                    if (slot.is_available) {
+                        html += `<button type="button" class="dior-time-btn" onclick="diorInSelectTime(${clinic.id}, '${timeText}')">${timeText}</button>`;
+                    } else {
+                        html += `<button type="button" disabled>${timeText}</button>`;
+                    }
+                });
+                html += '</div>';
+            });
+        }
+        container.innerHTML = html || '<p class="text-muted">No appointment times are currently available for this date.</p>';
+    })
+    .catch(() => {
+        container.textContent = 'Unable to load live availability. Please try again.';
+    });
 };
 
 window.diorInSelectTime = function(clinicId, timeStr) {
@@ -273,10 +264,10 @@ window.diorInSelectTime = function(clinicId, timeStr) {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
         });
 
-        const pName = (window.diorInBookingState.patient && window.diorInBookingState.patient.name) || (typeof dior_vars !== 'undefined' && dior_vars.patient_profile && dior_vars.patient_profile.full_name) || 'Patient';
+        const pName = (window.diorInBookingState.patient && window.diorInBookingState.patient.name) || (typeof dior_vars !== 'undefined' && dior_vars.patient_profile && dior_vars.patient_profile.full_name) || '—';
         const pEmail = (window.diorInBookingState.patient && window.diorInBookingState.patient.email) || (typeof dior_vars !== 'undefined' && dior_vars.patient_profile && dior_vars.patient_profile.email) || '';
         const pPhone = (window.diorInBookingState.patient && window.diorInBookingState.patient.phone) || (typeof dior_vars !== 'undefined' && dior_vars.patient_profile && dior_vars.patient_profile.phone) || '';
-        const pService = (window.diorInBookingState.patient && window.diorInBookingState.patient.service) || 'Telehealth Medical Care';
+        const pService = (window.diorInBookingState.patient && window.diorInBookingState.patient.service) || '—';
 
         confirmSummary.innerHTML = `
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
@@ -306,57 +297,58 @@ window.diorInSelectTime = function(clinicId, timeStr) {
 window.diorInSubmitBooking = function() {
     const btn = document.getElementById('btn-in-confirm-booking');
     const msg = document.getElementById('in-booking-status-msg');
+    const state = window.diorInBookingState || {};
+    const patient = state.patient || {};
+
+    if (!state.doctorId || !state.clinicId || !state.date || !state.time || !patient.service) {
+        if (msg) {
+            msg.style.display = 'block';
+            msg.textContent = 'Please select a treatment, doctor, date, and available time slot.';
+        }
+        if (btn) btn.disabled = false;
+        return;
+    }
 
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Scheduling Consultation & Syncing...';
     }
-
-    if (msg) {
-        msg.style.display = 'none';
-    }
+    if (msg) msg.style.display = 'none';
 
     const payload = {
         action: 'dior_patient_book_appointment',
         nonce: (typeof dior_vars !== 'undefined' && dior_vars.nonce) || '',
-        doctorId: (window.diorInBookingState && window.diorInBookingState.doctorId) || 1695,
-        doctor_name: (window.diorInBookingState && window.diorInBookingState.doctorName) || 'Doctor',
-        date: (window.diorInBookingState && window.diorInBookingState.date) || '',
-        time: (window.diorInBookingState && window.diorInBookingState.time) || '',
-        condition: (window.diorInBookingState && window.diorInBookingState.patient && window.diorInBookingState.patient.service) || 'Telehealth Consultation',
-        notes: (window.diorInBookingState && window.diorInBookingState.patient && window.diorInBookingState.patient.notes) || '',
-        name: (window.diorInBookingState && window.diorInBookingState.patient && window.diorInBookingState.patient.name) || '',
-        email: (window.diorInBookingState && window.diorInBookingState.patient && window.diorInBookingState.patient.email) || '',
-        phone: (window.diorInBookingState && window.diorInBookingState.patient && window.diorInBookingState.patient.phone) || ''
+        doctorId: state.doctorId,
+        clinicId: state.clinicId,
+        doctor_name: state.doctorName || '',
+        date: state.date,
+        time: state.time,
+        condition: patient.service,
+        notes: patient.notes || '',
+        name: patient.name || '',
+        email: patient.email || '',
+        phone: patient.phone || ''
     };
 
     const formData = new FormData();
-    for (let k in payload) {
-        formData.append(k, payload[k]);
-    }
+    Object.keys(payload).forEach(key => formData.append(key, payload[key]));
 
     fetch((typeof dior_vars !== 'undefined' && dior_vars.ajax_url) || '/wp-admin/admin-ajax.php', {
         method: 'POST',
         body: formData
     })
-    .then(r => r.json())
-    .then(res => {
-        if (res.success) {
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
             if (msg) {
                 msg.style.display = 'block';
                 msg.style.background = '#ECFDF5';
                 msg.style.border = '1px solid #A7F3D0';
                 msg.style.color = '#065F46';
-                msg.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + (res.data.message || 'Appointment booked successfully! Doctor & Patient notifications sent.');
+                msg.textContent = (result.data && result.data.message) || 'Appointment booked successfully.';
             }
-            if (btn) {
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Booked Successfully';
-            }
-
-            if (window.diorUpdateCountdown) {
-                window.diorUpdateCountdown(window.diorInBookingState.date, window.diorInBookingState.time);
-            }
-
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-check"></i> Booked Successfully';
+            if (window.diorUpdateCountdown) window.diorUpdateCountdown(state.date, state.time);
             setTimeout(() => {
                 window.location.hash = '#tab=appointments';
                 window.location.reload();
@@ -367,7 +359,7 @@ window.diorInSubmitBooking = function() {
                 msg.style.background = '#FEF2F2';
                 msg.style.border = '1px solid #FECACA';
                 msg.style.color = '#991B1B';
-                msg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ' + ((res.data && res.data.message) || 'Failed to book appointment.');
+                msg.textContent = (result.data && result.data.message) || 'Failed to book appointment.';
             }
             if (btn) {
                 btn.disabled = false;
@@ -375,14 +367,13 @@ window.diorInSubmitBooking = function() {
             }
         }
     })
-    .catch(err => {
-        console.error('Booking error:', err);
+    .catch(() => {
         if (msg) {
             msg.style.display = 'block';
             msg.style.background = '#FEF2F2';
             msg.style.border = '1px solid #FECACA';
             msg.style.color = '#991B1B';
-            msg.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> An error occurred while booking.';
+            msg.textContent = 'An error occurred while booking.';
         }
         if (btn) {
             btn.disabled = false;
@@ -397,7 +388,7 @@ document.addEventListener('click', function(e) {
         if (typeof e.preventDefault === 'function') e.preventDefault();
         const docId = card.getAttribute('data-doc-id');
         const docName = card.getAttribute('data-doc-name') || (card.querySelector('h5') && card.querySelector('h5').innerText) || 'Doctor';
-        const docSpec = card.getAttribute('data-doc-spec') || (card.querySelector('span') && card.querySelector('span').innerText) || 'Telehealth Physician';
+        const docSpec = card.getAttribute('data-doc-spec') || (card.querySelector('span') && card.querySelector('span').innerText) || '';
         window.diorInSelectDoctor(docId, docName, docSpec);
     }
 });
@@ -1429,7 +1420,7 @@ window.diorInitTablePagination = function(tableEl, pageSize) {
             const sumEl = document.getElementById('reminder_appt_summary');
             if (sumEl) {
                 if (apt) {
-                    const pName = apt.provider || apt.doctor_name || 'Attending Physician';
+                    const pName = apt.provider || apt.doctor_name || '';
                     const pDate = apt.date || apt.appt_date || '';
                     const pTime = apt.time || apt.appt_time || '';
                     const pCond = apt.condition || apt.condition_name || 'Telehealth Consultation';

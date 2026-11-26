@@ -588,26 +588,7 @@
                                 endforeach;
                             else:
                                 ?>
-                                <div class="dior-doc-select-card dior-ic-5c149fb4c3" data-doc-id="1695"
-                                    data-doc-name="Dr. James Chen, DO" data-doc-spec="Primary Care &amp; Urgent Care"
-                                    onclick="diorInSelectDoctor(1695, 'Dr. James Chen, DO', 'Primary Care &amp; Urgent Care')">
-                                    <div class="dior-ic-b4deef6f98">
-                                        <div class="dior-ic-7bd92c469d">
-                                            <i class="fas fa-user-md"></i>
-                                        </div>
-                                        <div>
-                                            <h5 class="dior-ic-b8390d3bcb">
-                                                Dr. James Chen, DO</h5>
-                                            <span class="dior-ic-56fdd6b556">Primary
-                                                Care &amp; Urgent Care</span>
-                                        </div>
-                                    </div>
-                                    <div class="dior-ic-181e1087c6">
-                                        <span><i class="far fa-clock"></i> Next Available:
-                                            Today</span>
-                                        <span class="dior-ic-a669b3acb9">Select &rarr;</span>
-                                    </div>
-                                </div>
+                                <p class="text-muted text-center py-3">No doctors are currently available through DocBooker.</p>
                             <?php endif; ?>
                         </div>
                     </div>

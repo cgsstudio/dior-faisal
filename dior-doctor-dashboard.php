@@ -818,7 +818,7 @@ class Dior_Doctor_Dashboard
                 "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key='_wpddb_doctor_user_id' AND meta_value=%s",
                 (string)$doctor_id
             ));
-            $allowed_ids = array_map('intval', array_merge((array)$allowed_ids, (array)$linked_post_ids, [0, 1, 1957]));
+            $allowed_ids = array_map('intval', array_merge((array)$allowed_ids, (array)$linked_post_ids, [0, 1]));
             if (!in_array((int)$row['doctor_id'], $allowed_ids, true)) {
                 wp_send_json_error(["message" => "Permission denied for this appointment."], 403);
             }
