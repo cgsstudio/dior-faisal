@@ -8,7 +8,7 @@ global $wpdb;
 
 // Fetch only patients assigned to the currently logged-in doctor.
 $doctor_id = get_current_user_id();
-$doctor_scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
+$doctor_scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($doctor_id) : [$doctor_id];
 $doctor_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope_ids))));
 $patients_query = [];
 if ($doctor_scope_ids) {
@@ -244,7 +244,7 @@ foreach ($patients_query as $pq) {
 
                     // The Doctor Dashboard never exposes administrator-wide prescription data.
                     $prescription_scope_ids = class_exists('Dior_Doctor_Resolver')
-                        ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id())
+                        ? Dior_Auth_Service::get_doctor_user_scope_ids(get_current_user_id())
                         : [get_current_user_id()];
                     $prescription_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $prescription_scope_ids))));
                     $prescriptions = [];
