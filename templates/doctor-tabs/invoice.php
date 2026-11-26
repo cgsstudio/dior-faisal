@@ -529,7 +529,7 @@
                 </div>
                 <div class="dior-invoice-table-section">
                     <div style="overflow-x:auto;">
-                        <table class="dior-invoice-table table table-hover">
+                        <table class="dior-invoice-table">
                             <thead><tr><th>#</th><th>Description</th><th class="text-center">Quantity</th><th class="text-center">Unit Price</th><th class="text-center">Charges</th><th class="text-center">Discount</th><th class="text-end">Total</th></tr></thead>
                             <tbody><tr>
                                 <td>1</td><td style="font-weight:500;color:#1e293b;" data-invoice-field="description"><?php echo esc_html($first_invoice['description']); ?></td>
@@ -723,7 +723,7 @@
                 if (document.fonts && document.fonts.ready) await document.fonts.ready;
 
                 var options = {
-                    margin: [10, 10, 12, 10],
+                    margin: [8, 8, 10, 8],
                     filename: ((selected && selected.uid) ? selected.uid : 'Dior-Medical-Invoice') + '.pdf',
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: {
@@ -734,39 +734,79 @@
                         logging: false,
                         scrollX: 0,
                         scrollY: 0,
-                        windowWidth: Math.max(content.scrollWidth, 794),
+                        windowWidth: 760,
                         onclone: function (clonedDocument) {
                             var clonedContent = clonedDocument.getElementById('invoice-pdf-content');
                             if (!clonedContent) return;
+                            /* Render a fixed A4-safe desktop layout, independent of the live responsive view. */
                             clonedContent.style.display = 'block';
-                            clonedContent.style.width = '100%';
-                            clonedContent.style.maxWidth = '100%';
-                            clonedContent.style.padding = '18px';
+                            clonedContent.style.width = '720px';
+                            clonedContent.style.minWidth = '720px';
+                            clonedContent.style.maxWidth = '720px';
+                            clonedContent.style.margin = '0 auto';
+                            clonedContent.style.padding = '24px';
                             clonedContent.style.background = '#ffffff';
                             clonedContent.style.color = '#172033';
                             clonedContent.style.boxSizing = 'border-box';
+                            clonedContent.style.overflow = 'visible';
 
                             var clonedLogo = clonedContent.querySelector('.dior-company-info img');
                             if (clonedLogo) {
+                                clonedLogo.style.display = 'block';
                                 clonedLogo.style.width = '150px';
                                 clonedLogo.style.height = '104px';
+                                clonedLogo.style.maxWidth = '150px';
                                 clonedLogo.style.objectFit = 'contain';
                                 clonedLogo.style.padding = '12px 16px';
                             }
 
-                            clonedContent.querySelectorAll('table').forEach(function (table) {
-                                table.style.width = '100%';
-                                table.style.borderCollapse = 'collapse';
-                                table.style.tableLayout = 'fixed';
+                            /* Restore semantic table layout: mobile dashboard CSS must not affect PDF output. */
+                            clonedContent.querySelectorAll('.dior-invoice-table').forEach(function (table) {
+                                table.style.setProperty('display', 'table', 'important');
+                                table.style.setProperty('width', '100%', 'important');
+                                table.style.setProperty('min-width', '0', 'important');
+                                table.style.setProperty('table-layout', 'fixed', 'important');
+                                table.style.setProperty('border-collapse', 'collapse', 'important');
                             });
-                            clonedContent.querySelectorAll('th, td').forEach(function (cell) {
-                                cell.style.padding = '10px 8px';
-                                cell.style.fontSize = '11px';
-                                cell.style.overflowWrap = 'anywhere';
+                            clonedContent.querySelectorAll('.dior-invoice-table thead').forEach(function (node) {
+                                node.style.setProperty('display', 'table-header-group', 'important');
                             });
-                            clonedContent.querySelectorAll('tr, .dior-invoice-header, .dior-invoice-info, .dior-invoice-summary-section, .dior-company-info').forEach(function (node) {
-                                node.style.breakInside = 'avoid';
-                                node.style.pageBreakInside = 'avoid';
+                            clonedContent.querySelectorAll('.dior-invoice-table tbody').forEach(function (node) {
+                                node.style.setProperty('display', 'table-row-group', 'important');
+                            });
+                            clonedContent.querySelectorAll('.dior-invoice-table tfoot').forEach(function (node) {
+                                node.style.setProperty('display', 'table-footer-group', 'important');
+                            });
+                            clonedContent.querySelectorAll('.dior-invoice-table tr').forEach(function (node) {
+                                node.style.setProperty('display', 'table-row', 'important');
+                                node.style.setProperty('break-inside', 'avoid', 'important');
+                                node.style.setProperty('page-break-inside', 'avoid', 'important');
+                            });
+                            clonedContent.querySelectorAll('.dior-invoice-table th, .dior-invoice-table td').forEach(function (cell) {
+                                cell.style.setProperty('display', 'table-cell', 'important');
+                                cell.style.setProperty('padding', '10px 7px', 'important');
+                                cell.style.setProperty('font-size', '10px', 'important');
+                                cell.style.setProperty('white-space', 'normal', 'important');
+                                cell.style.setProperty('overflow-wrap', 'break-word', 'important');
+                                cell.style.setProperty('vertical-align', 'middle', 'important');
+                            });
+                            clonedContent.querySelectorAll('.dior-invoice-table thead th').forEach(function (cell) {
+                                cell.style.setProperty('background', '#f1f5f9', 'important');
+                                cell.style.setProperty('color', '#334155', 'important');
+                            });
+                            clonedContent.querySelectorAll('.dior-invoice-table tfoot tr').forEach(function (node) {
+                                node.style.setProperty('display', 'table-row', 'important');
+                            });
+                            clonedContent.querySelectorAll('.dior-invoice-table tfoot td').forEach(function (node) {
+                                node.style.setProperty('display', 'table-cell', 'important');
+                            });
+
+                            clonedContent.querySelectorAll('.dior-invoice-header, .dior-invoice-info, .dior-invoice-summary-section, .dior-company-info, .dior-client-info, .dior-payment-info, .dior-totals-box').forEach(function (node) {
+                                node.style.setProperty('break-inside', 'avoid', 'important');
+                                node.style.setProperty('page-break-inside', 'avoid', 'important');
+                            });
+                            clonedContent.querySelectorAll('.dataTables_wrapper, .dataTables_info, .dataTables_paginate, .dataTables_length, .dataTables_filter').forEach(function (node) {
+                                node.remove();
                             });
                         }
                     },
