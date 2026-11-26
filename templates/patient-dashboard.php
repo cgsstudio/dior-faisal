@@ -355,6 +355,7 @@
                             </div>
                         </div>
                         <button type="button" class="btn btn-primary rounded-3 fw-semibold py-2 px-3 shadow-sm text-nowrap w-100 w-md-auto flex-shrink-0"
+                            style="width:auto !important; min-width:0; padding:8px 16px !important; align-self:center;"
                             onclick="diorOpenHipaaPopup()">
                             <i class="fas fa-id-card me-1"></i> Complete Profile Now
                         </button>
