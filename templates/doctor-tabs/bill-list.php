@@ -223,7 +223,7 @@
 
                     if (empty($bill_rows)): ?>
                         <tr>
-                            <td colspan="11" class="dior-empty-state text-center text-muted py-5">
+                            <td colspan="12" class="dior-empty-state text-center text-muted py-5">
                                 <i class="fas fa-receipt fs-3 d-block mb-2 text-secondary opacity-50"></i>
                                 <span class="small fw-semibold">No patient payments or bills found.</span>
                             </td>
