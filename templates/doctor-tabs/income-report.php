@@ -185,22 +185,7 @@ $ir_year_series = [['name' => 'Collected Income', 'data' => array_map(static fun
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-sm-6 col-12">
-            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white d-flex flex-column justify-content-between">
-                <div class="d-flex align-items-start justify-content-between">
-                    <div>
-                        <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Top Department</span>
-                        <div class="fs-5 fw-bold text-dark mt-1"><?php echo esc_html($ir_top_dept); ?></div>
-                    </div>
-                    <span class="badge bg-info-subtle text-info border border-info-subtle rounded-3 p-2.5">
-                        <i class="fas fa-heart-pulse fs-5"></i>
-                    </span>
-                </div>
-                <div class="mt-2 text-secondary small">
-                    <span class="text-info fw-semibold">$<?php echo esc_html(number_format($ir_top_dept_amt, 2)); ?></span> total collection
-                </div>
-            </div>
-        </div>
+        
         <div class="col-xl-3 col-sm-6 col-12">
             <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white d-flex flex-column justify-content-between">
                 <div class="d-flex align-items-start justify-content-between">
