@@ -82,7 +82,7 @@
                     // Limit billing records to the signed-in doctor's accessible scope.
                     $current_doctor_id = get_current_user_id();
                     $doctor_ids = class_exists('Dior_Doctor_Resolver')
-                        ? Dior_Doctor_Resolver::get_accessible_doctor_ids($current_doctor_id)
+                        ? Dior_Auth_Service::get_doctor_user_scope_ids($current_doctor_id)
                         : [$current_doctor_id];
                     $doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_ids))));
                     $bill_rows = [];
