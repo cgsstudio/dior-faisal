@@ -293,12 +293,6 @@ $initial_status_badge_class = $edit_status_badge_palette[$initial_status_key] ??
                 </button>
             </div>
         </div>
-        <div id="dior-edit-patient-alert" class="alert alert-info border-info-subtle py-2 px-3 mt-3 mb-0 rounded-3 small d-none align-items-center justify-content-between">
-            <div>
-                <i class="fas fa-info-circle me-1 text-primary"></i> <span id="dior-edit-patient-alert-msg"></span>
-            </div>
-            <span class="badge bg-white text-primary border border-primary-subtle rounded-pill px-2.5 py-1">Auto-loaded</span>
-        </div>
     </div>
 
     <!-- 2. Main Edit Form -->
