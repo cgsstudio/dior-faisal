@@ -560,30 +560,7 @@ class Dior_Questionnaire_Service
             ]);
             update_user_meta($user_id, 'dior_notifications', array_slice($notifications, 0, 30));
 
-            // Notify Doctors & Administrators
-            $display_patient_name = $full_name;
-            if (empty($display_patient_name)) {
-                $u_info = get_userdata($user_id);
-                $display_patient_name = $u_info ? $u_info->display_name : ('Patient #' . $user_id);
-            }
-            $doctors = get_users(['role__in' => ['doctor', 'administrator']]);
-            foreach ($doctors as $doc) {
-                $doc_notifs = get_user_meta($doc->ID, 'dior_doctor_notifications', true);
-                if (!is_array($doc_notifs)) $doc_notifs = [];
-                array_unshift($doc_notifs, [
-                    'id'         => 'DN-Q-' . time() . '-' . wp_rand(10, 99),
-                    'type'       => 'questionnaire',
-                    'icon'       => 'fa-clipboard-question',
-                    'title'      => 'Medical Questionnaire: ' . $display_patient_name,
-                    'message'    => $display_patient_name . ' submitted their clinical questionnaire (' . ($reason_for_visit ?: ($selected_service ?: 'Urgent Care')) . ').',
-                    'time'       => 'Just now',
-                    'timestamp'  => time(),
-                    'created_at' => current_time('mysql'),
-                    'is_read'    => false,
-                    'action_url' => '#tab=doc-patients-profile',
-                ]);
-                update_user_meta($doc->ID, 'dior_doctor_notifications', array_slice($doc_notifs, 0, 50));
-            }
+            // Intentionally do not notify doctors or administrators for intake/questionnaire submissions.
 
             return [
                 'success'       => true,
