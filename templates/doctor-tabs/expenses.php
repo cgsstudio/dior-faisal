@@ -114,7 +114,7 @@ if ($expense_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', 
                         <td><button type="button" class="va-action-btn-sm va-btn-delete btn dior-expense-delete" data-id="<?php echo esc_attr($expense['id']); ?>" aria-label="Delete expense"><i class="fas fa-trash"></i></button></td>
                     </tr>
                     <?php endforeach; endif; ?>
-                </tbody>        </tbody>
+                </tbody>
             </table>
         </div>
 
