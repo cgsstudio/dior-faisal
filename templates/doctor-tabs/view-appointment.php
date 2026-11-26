@@ -120,63 +120,8 @@ if ($_va_is_admin) {
     ), ARRAY_A);
 }
 
-// Fallback: build from usermeta, but only when the canonical table is empty overall.
-// A doctor who simply has no bookings must see "No appointments found", not a list
-// of every other patient's legacy rows.
-if (empty($appointments)) {
-    $va_table_rows = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}dior_appointments WHERE is_deleted = 0");
-    $va_use_legacy = $_va_is_admin || $va_table_rows === 0;
-
-    if ($va_use_legacy) {
-        $patients = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'number' => 50]);
-        $appointments = [];
-        foreach ($patients as $u) {
-            $raw = get_user_meta($u->ID, 'dior_appointments', true);
-            $list = is_array($raw) ? $raw : (is_string($raw) ? maybe_unserialize($raw) : []);
-            if (!is_array($list))
-                continue;
-            foreach ($list as $a) {
-                // Legacy usermeta often predates meeting links. Pull the canonical
-                // join_url back in so video rows keep their "Join Meeting" action.
-                $va_uid = '';
-                foreach (['appt_uid', 'appointment_uid', 'id'] as $va_key) {
-                    if (!empty($a[$va_key]) && is_scalar($a[$va_key])) {
-                        $va_uid = trim((string) $a[$va_key]);
-                        break;
-                    }
-                }
-                if ($va_uid !== '' && empty($a['join_url'])) {
-                    $va_canonical = $wpdb->get_row($wpdb->prepare(
-                        "SELECT join_url, visit_type, status FROM {$wpdb->prefix}dior_appointments WHERE appt_uid = %s AND is_deleted = 0 LIMIT 1",
-                        $va_uid
-                    ), ARRAY_A);
-                    if ($va_canonical) {
-                        if (!empty($va_canonical['join_url'])) {
-                            $a['join_url'] = $va_canonical['join_url'];
-                        }
-                        if (empty($a['type']) && empty($a['visit_type']) && !empty($va_canonical['visit_type'])) {
-                            $a['type'] = $va_canonical['visit_type'];
-                        }
-                    }
-                }
-
-                $appointments[] = array_merge($a, [
-                    'first_name' => $u->first_name ?: $u->display_name,
-                    'last_name' => $u->last_name,
-                    'phone' => get_user_meta($u->ID, 'phone', true),
-                    'gender' => get_user_meta($u->ID, 'gender', true),
-                    'avatar_url' => get_user_meta($u->ID, 'dior_profile_image', true),
-                    'patient_uid' => get_user_meta($u->ID, 'patient_id', true) ?: 'DM-' . (10000 + $u->ID),
-                    'patient_user_id' => $u->ID,
-                    'patient_id' => $u->ID,
-                    'doctor_id' => (int) ($a['doctor_id'] ?? 0),
-                    'doctor_name' => $a['doctor_name'] ?? ($a['provider'] ?? '—'),
-                    'doctor_email' => $a['doctor_email'] ?? ''
-                ]);
-            }
-        }
-    }
-}
+// Canonical source of truth: appointments are loaded only from {$wpdb->prefix}dior_appointments.
+// Do not rebuild the registry from patient usermeta; that legacy copy can resurrect deleted rows.
 
 // Compute KPI Stats dynamically
 $total_appts = count($appointments);
