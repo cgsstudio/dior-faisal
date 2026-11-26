@@ -96,20 +96,22 @@ class Dior_Auth_Service
         $ids = [];
         $scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
         $scope = array_values(array_unique(array_filter(array_map('absint', (array) $scope))));
+        $legacy_user_ids = get_user_meta($doctor_id, '_dior_merged_doctor_user_ids', true);
+        $record_scope = array_values(array_unique(array_filter(array_map('absint', array_merge([$doctor_id], is_array($legacy_user_ids) ? $legacy_user_ids : [])))));
         if ($scope) {
-            // Only appointment rows may use the legacy unassigned IDs, and only for the
-            // existing primary doctor. Never use those IDs for prescriptions/files/etc.
+            // Appointment rows may also use DocBooker IDs and legacy unassigned IDs.
+            // Other clinical tables store WordPress doctor user IDs only.
             $appointment_scope = $scope;
             if (class_exists('Dior_Doctor_Resolver') && $doctor_id === (int) Dior_Doctor_Resolver::get_default_doctor_id()) {
                 $appointment_scope = array_values(array_unique(array_merge($appointment_scope, [0, 1])));
             }
             $related_tables = [
                 [$wpdb->prefix . 'dior_appointments', 'doctor_id', 'patient_id', "is_deleted = 0", $appointment_scope],
-                [$wpdb->prefix . 'dior_prescriptions', 'doctor_id', 'patient_id', '1=1', $scope],
-                [$wpdb->prefix . 'dior_encounters', 'doctor_id', 'patient_id', 'is_deleted = 0', $scope],
-                [$wpdb->prefix . 'dior_documents', 'author_id', 'patient_id', 'is_deleted = 0', $scope],
-                [$wpdb->prefix . 'dior_reviews', 'doctor_id', 'patient_id', '1=1', $scope],
-                [$wpdb->prefix . 'dior_telemedicine', 'doctor_id', 'patient_id', '1=1', $scope],
+                [$wpdb->prefix . 'dior_prescriptions', 'doctor_id', 'patient_id', '1=1', $record_scope],
+                [$wpdb->prefix . 'dior_encounters', 'doctor_id', 'patient_id', 'is_deleted = 0', $record_scope],
+                [$wpdb->prefix . 'dior_documents', 'author_id', 'patient_id', 'is_deleted = 0', $record_scope],
+                [$wpdb->prefix . 'dior_reviews', 'doctor_id', 'patient_id', '1=1', $record_scope],
+                [$wpdb->prefix . 'dior_telemedicine', 'doctor_id', 'patient_id', '1=1', $record_scope],
             ];
             foreach ($related_tables as $table_info) {
                 [$table, $owner_column, $patient_column, $extra_where, $owner_scope] = $table_info;
@@ -125,12 +127,16 @@ class Dior_Auth_Service
 
         // Explicit doctor-patient assignments are stored as an array on the patient account.
         $meta_key = '_dior_assigned_doctor_ids';
-        $needle = 'i:' . $doctor_id . ';';
-        $assigned = $wpdb->get_col($wpdb->prepare(
-            "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s AND meta_value LIKE %s",
-            $meta_key,
-            '%' . $wpdb->esc_like($needle) . '%'
-        ));
+        $assigned = [];
+        foreach ($record_scope as $record_doctor_id) {
+            $needle = 'i:' . $record_doctor_id . ';';
+            $found = $wpdb->get_col($wpdb->prepare(
+                "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s AND meta_value LIKE %s",
+                $meta_key,
+                '%' . $wpdb->esc_like($needle) . '%'
+            ));
+            $assigned = array_merge($assigned, (array) $found);
+        }
         return array_values(array_unique(array_filter(array_map('absint', array_merge((array) $ids, (array) $assigned)))));
     }
 
