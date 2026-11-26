@@ -736,6 +736,7 @@
             setField('uid', item.uid);
             setField('status', item.status);
             setField('patient', item.patient);
+            setField('patient-email', item.patient_email || '');
             setField('date', dateLabel(item.date));
             setField('doctor', item.doctor);
             setField('description', item.description);
@@ -823,8 +824,27 @@
                             clonedContent.style.color = '#172033';
                             clonedContent.style.boxSizing = 'border-box';
                             clonedContent.style.overflow = 'visible';
+                            clonedContent.style.fontFamily = 'Arial, Helvetica, sans-serif';
 
-                            var clonedLogo = clonedContent.querySelector('.dior-company-info img');
+                            var top = clonedContent.querySelector('.dior-standard-invoice__top');
+                            if (top) { top.style.display = 'flex'; top.style.flexDirection = 'row'; top.style.justifyContent = 'space-between'; top.style.alignItems = 'flex-start'; top.style.gap = '24px'; }
+                            var parties = clonedContent.querySelector('.dior-standard-invoice__parties');
+                            if (parties) { parties.style.display = 'grid'; parties.style.gridTemplateColumns = '1.1fr .9fr'; parties.style.gap = '28px'; }
+                            var details = clonedContent.querySelector('.dior-standard-invoice__details');
+                            if (details) { details.style.borderLeft = '1px solid #e4ebf2'; details.style.paddingLeft = '20px'; }
+                            var bottom = clonedContent.querySelector('.dior-standard-invoice__bottom');
+                            if (bottom) { bottom.style.display = 'grid'; bottom.style.gridTemplateColumns = '1.15fr .85fr'; bottom.style.gap = '28px'; }
+                            var footer = clonedContent.querySelector('.dior-standard-invoice__footer');
+                            if (footer) { footer.style.display = 'flex'; footer.style.justifyContent = 'space-between'; }
+                            clonedContent.querySelectorAll('.dior-standard-invoice__top, .dior-standard-invoice__parties, .dior-standard-invoice__items, .dior-standard-invoice__bottom, .dior-standard-invoice__payment, .dior-standard-invoice__totals, .dior-standard-invoice__footer').forEach(function (node) {
+                                node.style.setProperty('break-inside', 'avoid', 'important');
+                                node.style.setProperty('page-break-inside', 'avoid', 'important');
+                            });
+                            clonedContent.querySelectorAll('.dior-standard-invoice__table th, .dior-standard-invoice__table td').forEach(function (cell) {
+                                cell.style.setProperty('display', 'table-cell', 'important');
+                            });
+
+                            var clonedLogo = clonedContent.querySelector('.dior-standard-invoice__brand img');
                             if (clonedLogo) {
                                 clonedLogo.style.display = 'block';
                                 clonedLogo.style.width = '150px';
@@ -835,28 +855,28 @@
                             }
 
                             /* Restore semantic table layout: mobile dashboard CSS must not affect PDF output. */
-                            clonedContent.querySelectorAll('.dior-invoice-table').forEach(function (table) {
+                            clonedContent.querySelectorAll('.dior-standard-invoice__table').forEach(function (table) {
                                 table.style.setProperty('display', 'table', 'important');
                                 table.style.setProperty('width', '100%', 'important');
                                 table.style.setProperty('min-width', '0', 'important');
                                 table.style.setProperty('table-layout', 'fixed', 'important');
                                 table.style.setProperty('border-collapse', 'collapse', 'important');
                             });
-                            clonedContent.querySelectorAll('.dior-invoice-table thead').forEach(function (node) {
+                            clonedContent.querySelectorAll('.dior-standard-invoice__table thead').forEach(function (node) {
                                 node.style.setProperty('display', 'table-header-group', 'important');
                             });
-                            clonedContent.querySelectorAll('.dior-invoice-table tbody').forEach(function (node) {
+                            clonedContent.querySelectorAll('.dior-standard-invoice__table tbody').forEach(function (node) {
                                 node.style.setProperty('display', 'table-row-group', 'important');
                             });
-                            clonedContent.querySelectorAll('.dior-invoice-table tfoot').forEach(function (node) {
+                            clonedContent.querySelectorAll('.dior-standard-invoice__table tfoot').forEach(function (node) {
                                 node.style.setProperty('display', 'table-footer-group', 'important');
                             });
-                            clonedContent.querySelectorAll('.dior-invoice-table tr').forEach(function (node) {
+                            clonedContent.querySelectorAll('.dior-standard-invoice__table tr').forEach(function (node) {
                                 node.style.setProperty('display', 'table-row', 'important');
                                 node.style.setProperty('break-inside', 'avoid', 'important');
                                 node.style.setProperty('page-break-inside', 'avoid', 'important');
                             });
-                            clonedContent.querySelectorAll('.dior-invoice-table th, .dior-invoice-table td').forEach(function (cell) {
+                            clonedContent.querySelectorAll('.dior-standard-invoice__table th, .dior-standard-invoice__table td').forEach(function (cell) {
                                 cell.style.setProperty('display', 'table-cell', 'important');
                                 cell.style.setProperty('padding', '10px 7px', 'important');
                                 cell.style.setProperty('font-size', '10px', 'important');
@@ -864,14 +884,14 @@
                                 cell.style.setProperty('overflow-wrap', 'break-word', 'important');
                                 cell.style.setProperty('vertical-align', 'middle', 'important');
                             });
-                            clonedContent.querySelectorAll('.dior-invoice-table thead th').forEach(function (cell) {
+                            clonedContent.querySelectorAll('.dior-standard-invoice__table thead th').forEach(function (cell) {
                                 cell.style.setProperty('background', '#f1f5f9', 'important');
                                 cell.style.setProperty('color', '#334155', 'important');
                             });
-                            clonedContent.querySelectorAll('.dior-invoice-table tfoot tr').forEach(function (node) {
+                            clonedContent.querySelectorAll('.dior-standard-invoice__table tfoot tr').forEach(function (node) {
                                 node.style.setProperty('display', 'table-row', 'important');
                             });
-                            clonedContent.querySelectorAll('.dior-invoice-table tfoot td').forEach(function (node) {
+                            clonedContent.querySelectorAll('.dior-standard-invoice__table tfoot td').forEach(function (node) {
                                 node.style.setProperty('display', 'table-cell', 'important');
                             });
 
