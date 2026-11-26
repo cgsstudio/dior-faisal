@@ -145,10 +145,9 @@ class Dior_Doctor_Dynamic {
     public static function patients($doctor_id=0) {
         global $wpdb;
         $doctor_id = $doctor_id ?: self::doctor_id();
-        $appointments = Dior_Appointment_Service::get_doctor_appointments($doctor_id);
-        $assigned_ids = array_values(array_unique(array_filter(array_map(static function ($appointment) {
-            return absint($appointment['patient_id'] ?? 0);
-        }, (array) $appointments))));
+        $assigned_ids = class_exists('Dior_Auth_Service')
+            ? Dior_Auth_Service::get_doctor_patient_ids($doctor_id)
+            : [];
         if (!$assigned_ids) return [];
         $placeholders = implode(',', array_fill(0, count($assigned_ids), '%d'));
         $rows = $wpdb->get_results($wpdb->prepare(
@@ -500,6 +499,12 @@ class Dior_Doctor_Dynamic {
         if (is_wp_error($user_id)) {
             wp_send_json_error(['message' => $user_id->get_error_message()]);
         }
+
+        // Assign this newly created patient to the logged-in doctor.
+        $assigned_doctors = get_user_meta($user_id, '_dior_assigned_doctor_ids', true);
+        if (!is_array($assigned_doctors)) $assigned_doctors = [];
+        $assigned_doctors[] = get_current_user_id();
+        update_user_meta($user_id, '_dior_assigned_doctor_ids', array_values(array_unique(array_map('absint', $assigned_doctors))));
 
         // Generate Canonical Patient ID
         $patient_uid = 'DM-' . (10000 + ($user_id % 90000));
