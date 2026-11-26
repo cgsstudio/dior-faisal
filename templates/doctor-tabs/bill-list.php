@@ -47,12 +47,12 @@
             <div class="va-actions-wrapper">
                 <div class="input-group input-group-sm dior-bs-search-group" style="width: 240px;">
 
-                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Search records...">
+                    <input type="text" class="form-control border-start-0 ps-0" id="dior-bill-search" placeholder="Search records...">
                 </div>
 
                 <div class="va-actions-group">
-                    <button class="va-icon-btn va-btn-primary btn" title="Add New Bill"><i class="fas fa-plus"></i></button>
-                    <button class="va-icon-btn va-btn-success btn" title="Export to Excel"><i class="fas fa-file-arrow-down"></i></button>
+                    <button class="va-icon-btn va-btn-primary btn" title="Add New Bill" onclick="diorDocSwitchTab(&quot;doc-accounts-add-bill&quot;)"><i class="fas fa-plus"></i></button>
+                    <button class="va-icon-btn va-btn-success btn" id="dior-bill-export" title="Export to CSV"><i class="fas fa-file-arrow-down"></i></button>
                     <button class="va-icon-btn va-btn-info btn" title="Refresh" onclick="window.location.reload()"><i class="fas fa-rotate-right"></i></button>
                 </div>
             </div>
@@ -314,6 +314,7 @@
 
     </div>
 </section>
+<script>(function(){const panel=document.getElementById("tab-doc-accounts-bill-list");if(!panel||panel.dataset.tableToolsBound)return;panel.dataset.tableToolsBound='1';const table=panel.querySelector('.va-table');document.getElementById("dior-bill-search")?.addEventListener('input',e=>{const q=e.target.value.toLowerCase();table?.querySelectorAll('tbody tr').forEach(row=>row.hidden=!row.textContent.toLowerCase().includes(q));});document.getElementById("dior-bill-export")?.addEventListener('click',()=>{if(!table)return;const csv=[...table.querySelectorAll('tr')].filter(row=>!row.hidden).map(row=>[...row.children].map(cell=>'\"'+cell.innerText.replace(/\"/g,'\"\"').trim()+'\"').join(',')).join('\\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download="patient-bills.csv";a.click();URL.revokeObjectURL(a.href);});})();</script>
 <style id="dior-bill-list-patient-initials">
 
 /* Patient name initials fallback for bill-list demo rows */
