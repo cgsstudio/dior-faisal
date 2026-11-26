@@ -325,111 +325,223 @@
         
         <?php
         global $wpdb;
+        $doctor_id = get_current_user_id();
+        $doctor_ids = class_exists('Dior_Doctor_Resolver')
+            ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id)
+            : [$doctor_id];
+        $doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_ids))));
+        $invoice_records = [];
+        $seen_invoice_ids = [];
         $inv_table = $wpdb->prefix . 'dior_invoices';
-        $latest_inv = null;
-        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
-            $latest_inv = $wpdb->get_row(
-                "SELECT i.*, p.first_name, p.last_name, u.display_name AS patient_display
-                 FROM $inv_table i
-                 LEFT JOIN {$wpdb->prefix}dior_patients p ON (p.user_id = i.patient_id OR p.id = i.patient_id)
-                 LEFT JOIN {$wpdb->users} u ON u.ID = i.patient_id
-                 ORDER BY i.created_at DESC, i.id DESC
-                 LIMIT 1",
-                ARRAY_A
-            );
+        $pay_table = $wpdb->prefix . 'dior_payments';
+        $patients_table = $wpdb->prefix . 'dior_patients';
+        $invoices_exist = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table;
+        $payments_exist = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $pay_table)) === $pay_table;
+        $doctor_placeholders = $doctor_ids ? implode(',', array_fill(0, count($doctor_ids), '%d')) : '';
+
+        // Load real invoice records belonging to the signed-in doctor's scope.
+        if ($doctor_ids && $invoices_exist) {
+            $payment_join = $payments_exist
+                ? "LEFT JOIN $pay_table pay ON pay.invoice_uid = i.invoice_uid"
+                : "LEFT JOIN (SELECT NULL AS invoice_uid, NULL AS payment_method, NULL AS transaction_id, NULL AS amount, NULL AS currency, NULL AS status, NULL AS paid_at) pay ON 1=0";
+            $sql = "SELECT i.*, p.first_name, p.last_name, p.email AS patient_email,
+                           u.display_name AS patient_display, doc.display_name AS doctor_display,
+                           pay.payment_method, pay.transaction_id, pay.amount AS paid_amount,
+                           pay.currency AS paid_currency, pay.status AS payment_status, pay.paid_at
+                    FROM $inv_table i
+                    LEFT JOIN $patients_table p ON (p.user_id = i.patient_id OR p.id = i.patient_id)
+                    LEFT JOIN {$wpdb->users} u ON u.ID = i.patient_id
+                    LEFT JOIN {$wpdb->users} doc ON doc.ID = i.doctor_id
+                    $payment_join
+                    WHERE i.doctor_id IN ($doctor_placeholders)
+                    ORDER BY i.created_at DESC, i.id DESC LIMIT 200";
+            $rows = $wpdb->get_results($wpdb->prepare($sql, ...$doctor_ids), ARRAY_A);
+            foreach ((array) $rows as $row) {
+                $uid = (string) ($row['invoice_uid'] ?? '');
+                if ($uid !== '') $seen_invoice_ids[$uid] = true;
+                $invoice_records[] = $row;
+            }
         }
+
+        // Include real payment receipts that do not already have an invoice row.
+        if ($doctor_ids && $payments_exist) {
+            $sql = "SELECT pay.*, p.first_name, p.last_name, p.email AS patient_email,
+                           u.display_name AS patient_display, doc.display_name AS doctor_display
+                    FROM $pay_table pay
+                    LEFT JOIN $patients_table p ON (p.user_id = pay.patient_id OR p.id = pay.patient_id)
+                    LEFT JOIN {$wpdb->users} u ON u.ID = pay.patient_id
+                    LEFT JOIN {$wpdb->users} doc ON doc.ID = pay.doctor_id
+                    WHERE pay.doctor_id IN ($doctor_placeholders)
+                    ORDER BY COALESCE(pay.paid_at, pay.created_at) DESC, pay.id DESC LIMIT 200";
+            $rows = $wpdb->get_results($wpdb->prepare($sql, ...$doctor_ids), ARRAY_A);
+            foreach ((array) $rows as $row) {
+                $uid = (string) ($row['invoice_uid'] ?? $row['payment_uid'] ?? ('PAY-' . ($row['id'] ?? '')));
+                if ($uid === '' || isset($seen_invoice_ids[$uid])) continue;
+                $seen_invoice_ids[$uid] = true;
+                $row['invoice_uid'] = $uid;
+                $row['description'] = $row['description'] ?? 'Medical payment';
+                $row['total_amount'] = $row['total_amount'] ?? $row['amount'] ?? 0;
+                $invoice_records[] = $row;
+            }
+        }
+
+        // Include doctor-created bills saved through the Add Bill form.
+        $manual_table = $wpdb->prefix . 'dior_doctor_bills';
+        if ($doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $manual_table)) === $manual_table) {
+            $sql = "SELECT b.*, u.display_name AS patient_display, u.user_email AS patient_email,
+                           doc.display_name AS doctor_display, b.bill_uid AS invoice_uid,
+                           b.service_type AS description, b.status AS payment_status,
+                           b.amount AS paid_amount, b.created_at AS paid_at, 'USD' AS currency
+                    FROM $manual_table b
+                    LEFT JOIN {$wpdb->users} u ON u.ID = b.patient_id
+                    LEFT JOIN {$wpdb->users} doc ON doc.ID = b.doctor_id
+                    WHERE b.doctor_id IN ($doctor_placeholders)
+                    ORDER BY b.created_at DESC LIMIT 200";
+            $rows = $wpdb->get_results($wpdb->prepare($sql, ...$doctor_ids), ARRAY_A);
+            foreach ((array) $rows as $row) {
+                $uid = (string) ($row['invoice_uid'] ?? '');
+                if ($uid === '' || isset($seen_invoice_ids[$uid])) continue;
+                $seen_invoice_ids[$uid] = true;
+                $invoice_records[] = $row;
+            }
+        }
+
+        // Include Stripe receipts saved in patient payment metadata, scoped by doctor ID.
+        if ($doctor_ids) {
+            $meta_rows = $wpdb->get_results($wpdb->prepare(
+                "SELECT pm.user_id, pm.meta_value, u.display_name AS patient_display, u.user_email AS patient_email
+                 FROM {$wpdb->usermeta} pm INNER JOIN {$wpdb->users} u ON u.ID = pm.user_id
+                 WHERE pm.meta_key = %s ORDER BY pm.umeta_id DESC LIMIT 500",
+                'dior_payments'
+            ), ARRAY_A);
+            foreach ((array) $meta_rows as $meta_row) {
+                $payments = maybe_unserialize($meta_row['meta_value']);
+                if (!is_array($payments)) continue;
+                foreach ($payments as $payment) {
+                    if (!is_array($payment) || !in_array(absint($payment['doctor_id'] ?? 0), $doctor_ids, true)) continue;
+                    $uid = sanitize_text_field($payment['invoice_uid'] ?? $payment['id'] ?? '');
+                    if ($uid === '' || isset($seen_invoice_ids[$uid])) continue;
+                    $seen_invoice_ids[$uid] = true;
+                    $doc = get_userdata(absint($payment['doctor_id']));
+                    $invoice_records[] = [
+                        'invoice_uid' => $uid, 'patient_id' => absint($meta_row['user_id']),
+                        'patient_display' => $meta_row['patient_display'] ?? 'Patient',
+                        'patient_email' => $meta_row['patient_email'] ?? '',
+                        'doctor_display' => $payment['doctor_name'] ?? ($doc ? $doc->display_name : 'Doctor'),
+                        'payment_method' => $payment['method'] ?? '—',
+                        'status' => $payment['status'] ?? 'Paid', 'payment_status' => $payment['status'] ?? 'Paid',
+                        'created_at' => $payment['date'] ?? '', 'paid_at' => $payment['date'] ?? '',
+                        'amount' => $payment['amount'] ?? $payment['total'] ?? 0,
+                        'total_amount' => $payment['total'] ?? $payment['amount'] ?? 0,
+                        'tax' => $payment['tax'] ?? 0, 'discount' => $payment['discount'] ?? 0,
+                        'description' => $payment['description'] ?? 'Medical payment',
+                        'currency' => 'USD'
+                    ];
+                }
+            }
+        }
+
+        usort($invoice_records, static function ($a, $b) {
+            return (strtotime((string) ($b['created_at'] ?? $b['paid_at'] ?? '')) ?: 0)
+                <=> (strtotime((string) ($a['created_at'] ?? $a['paid_at'] ?? '')) ?: 0);
+        });
+        $invoice_records = array_slice($invoice_records, 0, 200);
+        $invoice_json = [];
+        foreach ($invoice_records as $record) {
+            $patient_name = trim((string) (($record['first_name'] ?? '') . ' ' . ($record['last_name'] ?? '')));
+            $patient_name = $patient_name ?: ($record['patient_display'] ?? 'Patient');
+            $currency = strtoupper((string) ($record['paid_currency'] ?? $record['currency'] ?? 'USD'));
+            $amount = (float) ($record['amount'] ?? $record['total_amount'] ?? 0);
+            $tax = (float) ($record['tax'] ?? 0);
+            $discount = (float) ($record['discount'] ?? 0);
+            $total = (float) ($record['total_amount'] ?? ($amount + $tax - $discount));
+            $invoice_json[] = [
+                'uid' => (string) ($record['invoice_uid'] ?? ('INV-' . ($record['id'] ?? ''))),
+                'patient' => $patient_name,
+                'patient_email' => (string) ($record['patient_email'] ?? ''),
+                'doctor' => (string) ($record['doctor_display'] ?? 'Attending Physician'),
+                'date' => (string) ($record['created_at'] ?? $record['paid_at'] ?? ''),
+                'description' => (string) ($record['service_type'] ?? $record['description'] ?? 'Medical Consultation'),
+                'method' => (string) ($record['payment_method'] ?? $record['method'] ?? '—'),
+                'status' => ucfirst(strtolower((string) ($record['payment_status'] ?? $record['status'] ?? 'Pending'))),
+                'currency' => $currency, 'amount' => $amount, 'tax' => $tax,
+                'discount' => $discount, 'total' => $total,
+                'transaction' => (string) ($record['transaction_id'] ?? $record['stripe_session_id'] ?? '')
+            ];
+        }
+        $first_invoice = $invoice_json[0] ?? null;
         ?>
-        <?php if (empty($latest_inv)): ?>
+        <?php if (!$first_invoice): ?>
             <div class="text-center text-muted py-5">
                 <i class="fas fa-file-invoice fs-2 d-block mb-2 text-secondary opacity-50"></i>
-                <p class="mb-0 fw-semibold small">No invoice available yet.</p>
+                <p class="mb-0 fw-semibold small">No invoices, bills or payment receipts found for this doctor.</p>
+                <button type="button" class="btn btn-primary mt-3" onclick="if(typeof diorDocSwitchTab==='function')diorDocSwitchTab('doc-accounts-add-bill');">Create Bill</button>
             </div>
-        <?php else:
-            $inv_uid = $latest_inv['invoice_uid'] ?? ('INV-' . ($latest_inv['id'] ?? ''));
-            $inv_status = ucfirst(strtolower((string) ($latest_inv['status'] ?? 'Unpaid')));
-            $inv_patient = trim((string) (($latest_inv['first_name'] ?? '') . ' ' . ($latest_inv['last_name'] ?? ''))) ?: ($latest_inv['patient_display'] ?? 'Patient');
-            $inv_date = !empty($latest_inv['created_at']) ? wp_date('M j, Y', strtotime($latest_inv['created_at'])) : '—';
-            $inv_amt = (float) ($latest_inv['total_amount'] ?? $latest_inv['amount'] ?? 0);
-        ?>
-        <div id="invoice-pdf-content" style="background: #ffffff; padding-bottom: 20px;">
-            <!-- Header -->
-            <div class="dior-invoice-header">
-                <h2>INVOICE #<?php echo esc_html($inv_uid); ?></h2>
-                <span class="dior-status-paid"><?php echo esc_html($inv_status); ?></span>
-            </div>
-            
-            <!-- Info Section -->
-            <div class="dior-invoice-info">
-                <div class="dior-company-info">
-                    <img src="https://diormedical.com/wp-content/uploads/2026/08/logo.png" alt="Dior Medical Logo">
-                    <h3>Dior Medical</h3>
-                    <p class="dior-address-text">HIPAA-Compliant Healthcare Platform</p>
+        <?php else: ?>
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <div>
+                    <label for="dior-invoice-selector" class="form-label fw-semibold mb-1">Select Invoice / Bill</label>
+                    <select id="dior-invoice-selector" class="form-select" style="min-width:260px;max-width:420px;">
+                        <?php foreach ($invoice_json as $index => $invoice): ?>
+                            <option value="<?php echo esc_attr($index); ?>"><?php echo esc_html($invoice['uid'] . ' — ' . $invoice['patient'] . ' — ' . $invoice['status']); ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
-                <div class="dior-client-info">
-                    <h3 class="bill-to">BILL TO</h3>
-                    <h4><?php echo esc_html($inv_patient); ?></h4>
-                    <div class="dior-invoice-meta">
-                        <div class="meta-item"><span class="meta-label">Invoice Date:</span> <span class="meta-value"><?php echo esc_html($inv_date); ?></span></div>
+                <span class="badge bg-light text-primary border"><?php echo esc_html(count($invoice_json)); ?> record(s)</span>
+            </div>
+            <div id="invoice-pdf-content" style="background:#fff;padding-bottom:20px;">
+                <div class="dior-invoice-header">
+                    <h2>INVOICE #<span data-invoice-field="uid"><?php echo esc_html($first_invoice['uid']); ?></span></h2>
+                    <span class="dior-status-paid" data-invoice-field="status"><?php echo esc_html($first_invoice['status']); ?></span>
+                </div>
+                <div class="dior-invoice-info">
+                    <div class="dior-company-info">
+                        <img src="https://diormedical.com/wp-content/uploads/2026/08/logo.png" alt="Dior Medical Logo">
+                        <h3>Dior Medical</h3>
+                        <p class="dior-address-text">HIPAA-Compliant Healthcare Platform</p>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Table Section -->
-            <div class="dior-invoice-table-section">
-                <div style="overflow-x: auto;">
-                    <table class="dior-invoice-table table table-hover">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Description</th>
-                                <th class="text-center">Quantity</th>
-                                <th class="text-center">Unit Price</th>
-                                <th class="text-center">Charges</th>
-                                <th class="text-center">Discount</th>
-                                <th class="text-end">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td style="font-weight: 500; color: #1e293b;"><?php echo esc_html($latest_inv['service_type'] ?? ($latest_inv['description'] ?? 'Medical Consultation')); ?></td>
-                                <td class="text-center">1</td>
-                                <td class="text-center">$<?php echo esc_html(number_format($inv_amt, 2)); ?></td>
-                                <td class="text-center">$<?php echo esc_html(number_format($inv_amt, 2)); ?></td>
-                                <td class="text-center">-</td>
-                                <td class="text-end" style="font-weight: 600;">$<?php echo esc_html(number_format($inv_amt, 2)); ?></td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="6" class="text-end"><strong style="color: #1e293b;">Subtotal</strong></td>
-                                <td class="text-end"><strong style="color: #1e293b;">$<?php echo esc_html(number_format($inv_amt, 2)); ?></strong></td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- Summary & Payment -->
-            <div class="dior-invoice-summary-section">
-                <div class="dior-payment-info">
-                    <h3 class="section-title">Payment Information</h3>
-                    <div class="dior-payment-details">
-                        <div class="detail-row">
-                            <span class="label">Payment Method:</span>
-                            <span class="value"><?php echo esc_html($latest_inv['payment_method'] ?? 'Card'); ?></span>
+                    <div class="dior-client-info">
+                        <h3 class="bill-to">BILL TO</h3>
+                        <h4 data-invoice-field="patient"><?php echo esc_html($first_invoice['patient']); ?></h4>
+                        <div class="dior-invoice-meta">
+                            <div class="meta-item"><span class="meta-label">Invoice Date:</span> <span class="meta-value" data-invoice-field="date"><?php echo esc_html($first_invoice['date'] ? wp_date('M j, Y', strtotime($first_invoice['date'])) : '—'); ?></span></div>
+                            <div class="meta-item"><span class="meta-label">Doctor:</span> <span class="meta-value" data-invoice-field="doctor"><?php echo esc_html($first_invoice['doctor']); ?></span></div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="dior-totals-box">
-                    <div class="dior-totals-row total">
-                        <span>Total:</span>
-                        <span>$<?php echo esc_html(number_format($inv_amt, 2)); ?></span>
+                <div class="dior-invoice-table-section">
+                    <div style="overflow-x:auto;">
+                        <table class="dior-invoice-table table table-hover">
+                            <thead><tr><th>#</th><th>Description</th><th class="text-center">Quantity</th><th class="text-center">Unit Price</th><th class="text-center">Charges</th><th class="text-center">Discount</th><th class="text-end">Total</th></tr></thead>
+                            <tbody><tr>
+                                <td>1</td><td style="font-weight:500;color:#1e293b;" data-invoice-field="description"><?php echo esc_html($first_invoice['description']); ?></td>
+                                <td class="text-center">1</td>
+                                <td class="text-center" data-invoice-field="unit">$<?php echo esc_html(number_format($first_invoice['amount'],2)); ?></td>
+                                <td class="text-center" data-invoice-field="charges">$<?php echo esc_html(number_format($first_invoice['tax'],2)); ?></td>
+                                <td class="text-center" data-invoice-field="discount">-$<?php echo esc_html(number_format($first_invoice['discount'],2)); ?></td>
+                                <td class="text-end" style="font-weight:600;" data-invoice-field="total">$<?php echo esc_html(number_format($first_invoice['total'],2)); ?></td>
+                            </tr></tbody>
+                            <tfoot><tr><td colspan="6" class="text-end"><strong style="color:#1e293b;">Subtotal</strong></td><td class="text-end"><strong data-invoice-field="subtotal">$<?php echo esc_html(number_format($first_invoice['amount'],2)); ?></strong></td></tr></tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="dior-invoice-summary-section">
+                    <div class="dior-payment-info">
+                        <h3 class="section-title">Payment Information</h3>
+                        <div class="dior-payment-details">
+                            <div class="detail-row"><span class="label">Payment Method:</span><span class="value" data-invoice-field="method"><?php echo esc_html($first_invoice['method']); ?></span></div>
+                            <div class="detail-row"><span class="label">Transaction ID:</span><span class="value" data-invoice-field="transaction"><?php echo esc_html($first_invoice['transaction'] ?: '—'); ?></span></div>
+                        </div>
+                    </div>
+                    <div class="dior-totals-box">
+                        <div class="dior-totals-row"><span>Subtotal:</span><span data-invoice-field="subtotal-total">$<?php echo esc_html(number_format($first_invoice['amount'],2)); ?></span></div>
+                        <div class="dior-totals-row"><span>Tax:</span><span data-invoice-field="tax">$<?php echo esc_html(number_format($first_invoice['tax'],2)); ?></span></div>
+                        <div class="dior-totals-row"><span>Discount:</span><span data-invoice-field="discount-total">-$<?php echo esc_html(number_format($first_invoice['discount'],2)); ?></span></div>
+                        <div class="dior-totals-row total"><span>Total:</span><span data-invoice-field="grand-total">$<?php echo esc_html(number_format($first_invoice['total'],2)); ?></span></div>
                     </div>
                 </div>
             </div>
-        </div>
+            <script type="application/json" id="dior-invoice-data"><?php echo wp_json_encode($invoice_json); ?></script>
         <?php endif; ?>
         
         <!-- Actions -->
