@@ -83,7 +83,7 @@
                     global $wpdb;
                     $inv_table = $wpdb->prefix . 'dior_invoices';
                     $inc_rows = [];
-                    $income_doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids(get_current_user_id()) : [get_current_user_id()];
+                    $income_doctor_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
                     $income_doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $income_doctor_ids))));
                     if ($income_doctor_ids && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
                         $income_in = implode(',', array_fill(0, count($income_doctor_ids), '%d'));

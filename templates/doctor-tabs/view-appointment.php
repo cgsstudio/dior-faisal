@@ -14,19 +14,18 @@ $doctor_id = get_current_user_id();
 $nonce = wp_create_nonce('dior_doctor_nonce');
 $ajax_url = admin_url('admin-ajax.php');
 
-// Fetch only patients assigned to this doctor for the edit modal.
-$assigned_patient_ids = Dior_Auth_Service::get_doctor_patient_ids($doctor_id);
-$edit_patients = [];
-if ($assigned_patient_ids) {
-    $patient_in = implode(',', array_fill(0, count($assigned_patient_ids), '%d'));
-    $edit_patients = $wpdb->get_results($wpdb->prepare(
-        "SELECT user_id, first_name, last_name, patient_uid FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' AND user_id IN ($patient_in) ORDER BY first_name ASC LIMIT 500",
-        ...$assigned_patient_ids
-    ), ARRAY_A);
-}
+// Fetch patient list for edit modal dropdown
+$edit_patients = $wpdb->get_results(
+    "SELECT user_id, first_name, last_name, patient_uid 
+     FROM {$wpdb->prefix}dior_patients 
+     WHERE status <> 'deleted' 
+     ORDER BY first_name ASC 
+     LIMIT 500",
+    ARRAY_A
+);
 
 // Fetch doctors list for filter and edit modal
-$all_doc_users = [get_userdata($doctor_id)];
+$all_doc_users = get_users(['role__in' => ['doctor', 'dior_doctor', 'administrator'], 'orderby' => 'display_name', 'order' => 'ASC']);
 $doctor_list = [];
 foreach ($all_doc_users as $du) {
     if (in_array('administrator', (array) $du->roles, true) && !in_array('doctor', (array) $du->roles, true)) {
@@ -129,7 +128,7 @@ if (empty($appointments)) {
     $va_use_legacy = $_va_is_admin || $va_table_rows === 0;
 
     if ($va_use_legacy) {
-        $patients = $assigned_patient_ids ? get_users(['include' => $assigned_patient_ids, 'role__in' => ['patient', 'subscriber', 'customer'], 'number' => count($assigned_patient_ids)]) : [];
+        $patients = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'number' => 50]);
         $appointments = [];
         foreach ($patients as $u) {
             $raw = get_user_meta($u->ID, 'dior_appointments', true);
@@ -137,10 +136,6 @@ if (empty($appointments)) {
             if (!is_array($list))
                 continue;
             foreach ($list as $a) {
-                $legacy_doctor_id = absint($a['doctor_id'] ?? $a['doctor_user_id'] ?? 0);
-                if (!in_array($legacy_doctor_id, array_map('absint', (array) $va_allowed_ids), true)) {
-                    continue;
-                }
                 // Legacy usermeta often predates meeting links. Pull the canonical
                 // join_url back in so video rows keep their "Join Meeting" action.
                 $va_uid = '';

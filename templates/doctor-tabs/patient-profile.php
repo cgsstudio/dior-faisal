@@ -10,25 +10,25 @@ if (!defined('ABSPATH')) {
 global $wpdb;
 $pp_doctor_id = get_current_user_id();
 
-// Retrieve only patients assigned to the logged-in doctor through their appointments.
-$pp_scope_ids = class_exists('Dior_Doctor_Resolver')
-    ? Dior_Auth_Service::get_doctor_user_scope_ids($pp_doctor_id)
-    : [$pp_doctor_id];
-$pp_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $pp_scope_ids))));
-$pp_patient_ids = [];
-if ($pp_scope_ids) {
-    $pp_placeholders = implode(',', array_fill(0, count($pp_scope_ids), '%d'));
-    $pp_patient_ids = class_exists('Dior_Auth_Service')
-        ? Dior_Auth_Service::get_doctor_patient_ids($pp_doctor_id)
-        : [];
-}
-$pp_patient_ids = array_values(array_unique(array_filter(array_map('absint', (array) $pp_patient_ids))));
-$pp_patients = [];
-if ($pp_patient_ids) {
-    $pp_patient_placeholders = implode(',', array_fill(0, count($pp_patient_ids), '%d'));
+// Retrieve accessible patient list for the doctor selector
+if (current_user_can('manage_options')) {
+    $pp_patients = $wpdb->get_results(
+        "SELECT user_id, first_name, last_name, patient_uid 
+         FROM {$wpdb->prefix}dior_patients 
+         WHERE status <> 'deleted' 
+         ORDER BY first_name ASC LIMIT 500",
+        ARRAY_A
+    );
+} else {
     $pp_patients = $wpdb->get_results($wpdb->prepare(
-        "SELECT user_id, first_name, last_name, patient_uid FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' AND user_id IN ($pp_patient_placeholders) ORDER BY first_name ASC LIMIT 500",
-        ...$pp_patient_ids
+        "SELECT DISTINCT p.user_id, p.first_name, p.last_name, p.patient_uid 
+         FROM {$wpdb->prefix}dior_patients p 
+         LEFT JOIN {$wpdb->prefix}dior_appointments a ON a.patient_id = p.user_id 
+         WHERE p.status <> 'deleted' 
+           AND (a.doctor_id = %d OR p.user_id IN (SELECT DISTINCT patient_id FROM {$wpdb->prefix}dior_prescriptions WHERE doctor_id = %d))
+         ORDER BY p.first_name ASC LIMIT 500",
+        $pp_doctor_id,
+        $pp_doctor_id
     ), ARRAY_A);
 }
 

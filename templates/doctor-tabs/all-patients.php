@@ -8,26 +8,15 @@ $nonce = wp_create_nonce('dior_doctor_nonce');
 $ajax_url = admin_url('admin-ajax.php');
 $doctor_id = get_current_user_id();
 
-// Fetch only patients with an appointment assigned to the logged-in doctor.
-$doctor_scope_ids = class_exists('Dior_Doctor_Resolver')
-    ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id)
-    : [$doctor_id];
-$doctor_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope_ids))));
-$assigned_patient_ids = class_exists('Dior_Auth_Service')
-    ? Dior_Auth_Service::get_doctor_patient_ids($doctor_id)
-    : [];
-$patients = [];
-if ($assigned_patient_ids) {
-    $patient_placeholders = implode(',', array_fill(0, count($assigned_patient_ids), '%d'));
-    $patients = $wpdb->get_results($wpdb->prepare(
-        "SELECT * FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' AND user_id IN ($patient_placeholders) ORDER BY created_at DESC LIMIT 200",
-        ...$assigned_patient_ids
-    ), ARRAY_A);
-}
+// Fetch patients
+$patients = $wpdb->get_results(
+    "SELECT * FROM {$wpdb->prefix}dior_patients WHERE status <> 'deleted' ORDER BY created_at DESC LIMIT 200",
+    ARRAY_A
+);
 
-// Fallback from wp_users is still restricted to the same assigned patient IDs.
-if (empty($patients) && $assigned_patient_ids) {
-    $users = get_users(['include' => $assigned_patient_ids, 'role__in' => ['patient', 'subscriber', 'customer'], 'number' => count($assigned_patient_ids)]);
+// Fallback from wp_users if table empty
+if (empty($patients)) {
+    $users = get_users(['role__in' => ['patient', 'subscriber', 'customer'], 'number' => 100]);
     $patients = [];
     foreach ($users as $u) {
         $patients[] = [
@@ -242,85 +231,54 @@ $status_badges = [
         var allRows;
 
         function init() {
-            var searchInput = document.getElementById('ap-search');
-            var selectAll = document.getElementById('ap-select-all');
-            var patientsBody = document.getElementById('ap-patients-tbody');
-            var saveStatusButton = document.getElementById('ap-save-status-btn');
-            var refreshButton = document.getElementById('ap-refresh-btn');
-
             allRows = Array.from(document.querySelectorAll('#ap-patients-tbody tr[data-patient-id]'));
             renderPage(1);
-
-            // Bind only controls that exist in this version of the All Patients markup.
-            if (searchInput) searchInput.addEventListener('input', applyFilters);
-
-            // Select-all is optional because this table version may not render that control.
-            if (selectAll) {
-                selectAll.addEventListener('change', function () {
-                    document.querySelectorAll('.ap-row-check').forEach(function (cb) { cb.checked = selectAll.checked; });
-                    updateBulkBtn();
-                });
-            }
-
-            if (patientsBody) {
-                patientsBody.addEventListener('change', function (e) {
-                    if (e.target && e.target.classList.contains('ap-row-check')) updateBulkBtn();
-                });
-
-                // Edit status actions are delegated from the existing table body.
-                patientsBody.addEventListener('click', function (e) {
-                    var btn = e.target.closest('.ap-edit-status-btn');
-                    if (!btn) return;
-                    var idField = document.getElementById('ap-edit-patient-id');
-                    var nameField = document.getElementById('ap-edit-patient-name');
-                    var statusField = document.getElementById('ap-edit-status-select');
-                    var modal = document.getElementById('ap-edit-status-modal');
-                    if (idField) idField.value = btn.dataset.id || '';
-                    if (nameField) nameField.textContent = 'Patient: ' + (btn.dataset.name || '');
-                    if (statusField) statusField.value = btn.dataset.status || '';
-                    if (modal) modal.style.display = 'flex';
-                });
-            }
-
-            // Save status is optional on views where the edit modal is not rendered.
-            if (saveStatusButton) {
-                saveStatusButton.addEventListener('click', function () {
-                    var btn = this;
-                    var idField = document.getElementById('ap-edit-patient-id');
-                    var statusField = document.getElementById('ap-edit-status-select');
-                    var modal = document.getElementById('ap-edit-status-modal');
-                    if (!idField || !statusField || !modal) return;
-                    btn.disabled = true;
-                    var data = new FormData();
-                    data.append('action', 'dior_doc_patient_status');
-                    data.append('nonce', nonce);
-                    data.append('patient_id', idField.value);
-                    data.append('status', statusField.value);
-                    fetch(ajaxUrl, { method: 'POST', body: data })
-                        .then(function (r) { return r.json(); })
-                        .then(function (res) {
-                            if (res.success) {
-                                modal.style.display = 'none';
-                                location.reload();
-                            } else if (window.Swal) {
-                                Swal.fire({ icon: 'error', title: 'Update Failed', text: res.data && res.data.message ? res.data.message : 'Update failed.' });
-                            }
-                        })
-                        .catch(function () {
-                            if (window.Swal) Swal.fire({ icon: 'error', title: 'Network Error', text: 'Could not update patient status.' });
-                        })
-                        .finally(function () { btn.disabled = false; });
-                });
-            }
-
-            if (refreshButton) refreshButton.addEventListener('click', function () { location.reload(); });
+            // Search
+            document.getElementById('ap-search').addEventListener('input', applyFilters);
+            // Select all
+            document.getElementById('ap-select-all').addEventListener('change', function () {
+                document.querySelectorAll('.ap-row-check').forEach(function (cb) { cb.checked = this.checked; }, this);
+                updateBulkBtn();
+            });
+            document.getElementById('ap-patients-tbody').addEventListener('change', function (e) {
+                if (e.target.classList.contains('ap-row-check')) updateBulkBtn();
+            });
+            // Edit status
+            document.getElementById('ap-patients-tbody').addEventListener('click', function (e) {
+                var btn = e.target.closest('.ap-edit-status-btn');
+                if (!btn) return;
+                document.getElementById('ap-edit-patient-id').value = btn.dataset.id;
+                document.getElementById('ap-edit-patient-name').textContent = 'Patient: ' + btn.dataset.name;
+                document.getElementById('ap-edit-status-select').value = btn.dataset.status;
+                document.getElementById('ap-edit-status-modal').style.display = 'flex';
+            });
+            // Save status
+            document.getElementById('ap-save-status-btn').addEventListener('click', function () {
+                var btn = this;
+                btn.disabled = true;
+                var data = new FormData();
+                data.append('action', 'dior_doc_patient_status');
+                data.append('nonce', nonce);
+                data.append('patient_id', document.getElementById('ap-edit-patient-id').value);
+                data.append('status', document.getElementById('ap-edit-status-select').value);
+                fetch(ajaxUrl, { method: 'POST', body: data })
+                    .then(function (r) { return r.json(); })
+                    .then(function (res) {
+                        if (res.success) {
+                            document.getElementById('ap-edit-status-modal').style.display = 'none';
+                            location.reload();
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Update Failed', text: res.data && res.data.message ? res.data.message : 'Update failed.' });
+                        }
+                    }).finally(function () { btn.disabled = false; });
+            });
+            // Refresh
+            document.getElementById('ap-refresh-btn').addEventListener('click', function () { location.reload(); });
         }
 
         function updateBulkBtn() {
-            var bulkDeleteButton = document.getElementById('ap-bulk-delete-btn');
-            if (!bulkDeleteButton) return;
             var any = Array.from(document.querySelectorAll('.ap-row-check')).some(function (cb) { return cb.checked; });
-            bulkDeleteButton.style.display = any ? 'flex' : 'none';
+            document.getElementById('ap-bulk-delete-btn').style.display = any ? 'flex' : 'none';
         }
 
         function applyFilters() {

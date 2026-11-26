@@ -12,67 +12,37 @@ $doctor_doc_nonce = wp_create_nonce('dior_doctor_nonce');
 $current_doctor_user = wp_get_current_user();
 $doctor_display_name = $current_doctor_user->display_name ?: 'Doctor';
 
-// 1. Fetch documents authored by this doctor or attached to one of this doctor's assigned patients.
-$doc_scope_ids = class_exists('Dior_Doctor_Resolver')
-    ? Dior_Auth_Service::get_doctor_user_scope_ids(get_current_user_id())
-    : [get_current_user_id()];
-$doc_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doc_scope_ids))));
-$doc_patient_ids = [];
-if ($doc_scope_ids) {
-    $doc_placeholders = implode(',', array_fill(0, count($doc_scope_ids), '%d'));
-    $doc_patient_ids = class_exists('Dior_Auth_Service')
-        ? Dior_Auth_Service::get_doctor_patient_ids(get_current_user_id())
-        : [];
-}
-$doc_patient_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doc_patient_ids))));
-$doc_records = [];
-if ($doc_scope_ids) {
-    $author_placeholders = implode(',', array_fill(0, count($doc_scope_ids), '%d'));
-    $patient_condition = '';
-    $doc_args = $doc_scope_ids;
-    if ($doc_patient_ids) {
-        $patient_placeholders = implode(',', array_fill(0, count($doc_patient_ids), '%d'));
-        $patient_condition = " OR d.patient_id IN ($patient_placeholders)";
-        $doc_args = array_merge($doc_args, $doc_patient_ids);
-    }
-    $doc_records = $wpdb->get_results($wpdb->prepare("
-        SELECT d.*,
-               COALESCE(p.patient_uid, CONCAT('DM-', (10000 + d.patient_id))) AS patient_code,
-               COALESCE(NULLIF(CONCAT(p.first_name, ' ', p.last_name), ' '), u.display_name, 'Patient') AS patient_name,
-               p.avatar_url AS patient_avatar,
-               u.user_email AS patient_email,
-               COALESCE(author.display_name, 'Staff') AS author_name
-        FROM $doc_table d
-        LEFT JOIN $patients_table p ON p.user_id = d.patient_id
-        LEFT JOIN $users_table u ON u.ID = d.patient_id
-        LEFT JOIN $users_table author ON author.ID = d.author_id
-        WHERE d.is_deleted = 0 AND (d.author_id IN ($author_placeholders)$patient_condition)
-        ORDER BY d.created_at DESC LIMIT 300
-    ", ...$doc_args), ARRAY_A);
-}
+// 1. Fetch real documents from database
+$doc_records = $wpdb->get_results("
+    SELECT d.*,
+           COALESCE(p.patient_uid, CONCAT('DM-', (10000 + d.patient_id))) AS patient_code,
+           COALESCE(NULLIF(CONCAT(p.first_name, ' ', p.last_name), ' '), u.display_name, 'Patient') AS patient_name,
+           p.avatar_url AS patient_avatar,
+           u.user_email AS patient_email,
+           COALESCE(author.display_name, 'Staff') AS author_name
+    FROM $doc_table d
+    LEFT JOIN $patients_table p ON p.user_id = d.patient_id
+    LEFT JOIN $users_table u ON u.ID = d.patient_id
+    LEFT JOIN $users_table author ON author.ID = d.author_id
+    WHERE d.is_deleted = 0
+    ORDER BY d.created_at DESC
+    LIMIT 300
+", ARRAY_A);
 
 // 2. Fetch all registered patients for the upload modal dropdown
 $dp_map = [];
-$dp_list = [];
-if ($doc_patient_ids) {
-    $dp_placeholders = implode(',', array_fill(0, count($doc_patient_ids), '%d'));
-    $dp_list = $wpdb->get_results($wpdb->prepare(
-        "SELECT user_id, patient_uid, first_name, last_name, email FROM $patients_table WHERE status <> 'deleted' AND user_id IN ($dp_placeholders)",
-        ...$doc_patient_ids
-    ), ARRAY_A);
-}
+$dp_list = $wpdb->get_results("SELECT user_id, patient_uid, first_name, last_name, email FROM $patients_table WHERE status <> 'deleted'", ARRAY_A);
 if (!empty($dp_list)) {
     foreach ($dp_list as $dp) {
         $dp_map[(int)$dp['user_id']] = $dp;
     }
 }
 
-$patient_subscribers = $doc_patient_ids ? get_users([
-    'include'  => $doc_patient_ids,
+$patient_subscribers = get_users([
     'role__in' => ['patient', 'subscriber', 'customer'],
     'orderby'  => 'display_name',
     'order'    => 'ASC',
-    'number'   => count($doc_patient_ids)
+    'number'   => 500
 ]);
 
 $doctor_patient_dropdown = [];

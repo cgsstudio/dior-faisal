@@ -44,8 +44,12 @@ function initDoctorDashboard() {
         diorDocSwitchTab(firstTabBtn.getAttribute('data-tab'), false);
     }
 
-    // Sidebar tab clicks are owned by dior-doctor-navigation.js.
-    // Avoid registering a second handler here.
+    // Add click listeners to ALL nav buttons (must be inside DOMContentLoaded)
+    document.querySelectorAll('#dior-doc-sidebar .dior-nav-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            diorDocSwitchTab(this.getAttribute('data-tab'));
+        });
+    });
 
     // Close dropdowns when clicking outside
     document.addEventListener('click', function (e) {
@@ -581,7 +585,14 @@ if (document.readyState === 'loading') {
     window.setTimeout(initDoctorDashboard, 0);
 }
 
-// Sidebar click handling is centralized in dior-doctor-navigation.js.
+// Delegated navigation fallback: works even if another script has replaced a
+// direct click handler and keeps Doctor tab navigation resilient.
+document.addEventListener('click', function (event) {
+    const btn = event.target.closest('#dior-doc-sidebar .dior-nav-btn[data-tab]');
+    if (!btn || typeof window.diorDocSwitchTab !== 'function') return;
+    event.preventDefault();
+    window.diorDocSwitchTab(btn.getAttribute('data-tab'));
+}, false);
 
 
 
@@ -843,7 +854,115 @@ function diorHydrateDoctorSourceTables() {
         if (stats[2]) stats[2].textContent = String(appointments.filter(a => ['confirmed', 'scheduled', 'pending', 'in-queue'].includes(String(a.status || '').toLowerCase())).length);
     }
 }
-// Tab switching is owned by dior-doctor-navigation.js to prevent competing controllers.
+window.diorDocSwitchTab = function (tabId, updateUrl) {
+    if (!tabId) return;
+    if (tabId === 'feedback' || tabId === 'doc-feedback' || tabId === 'patient-review' || tabId === 'reviews') {
+        tabId = 'doc-patient-review';
+    }
+
+    if (updateUrl !== false) {
+        try {
+            history.replaceState(null, '', '#tab=' + encodeURIComponent(tabId));
+        } catch (e) { }
+    }
+
+    const notifDropdown = document.getElementById('dior-doc-notif-dd');
+    if (notifDropdown) {
+        notifDropdown.classList.remove('open');
+        notifDropdown.classList.remove('active');
+    }
+
+    // Update buttons
+    const btns = document.querySelectorAll('#dior-doc-sidebar .dior-nav-btn');
+    btns.forEach(b => b.classList.remove('active'));
+
+    // Sync subtab pills in in-page navigation bars
+    document.querySelectorAll('.dior-subtab-pill[data-doc-tab]').forEach(pill => {
+        if (pill.getAttribute('data-doc-tab') === tabId) {
+            pill.classList.add('active');
+        } else {
+            pill.classList.remove('active');
+        }
+    });
+
+    const activeBtn = document.querySelector(`#dior-doc-sidebar .dior-nav-btn[data-tab="${tabId}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+
+        // Strict Accordion: Expand parent submenu if active tab is inside one, close all others
+        const parentSubmenu = activeBtn.closest('.dior-nav-item.has-submenu');
+        document.querySelectorAll('#dior-doc-sidebar .dior-nav-item.has-submenu').forEach(function(sub) {
+            if (parentSubmenu && sub === parentSubmenu) {
+                sub.classList.add('active', 'open');
+                const subIcon = sub.querySelector('.submenu-icon');
+                if (subIcon) {
+                    subIcon.classList.remove('fa-plus');
+                    subIcon.classList.add('fa-minus');
+                }
+            } else {
+                sub.classList.remove('active', 'open');
+                const subIcon = sub.querySelector('.submenu-icon');
+                if (subIcon) {
+                    subIcon.classList.remove('fa-minus');
+                    subIcon.classList.add('fa-plus');
+                }
+            }
+        });
+
+        // Dynamic Badge Dismissal: Hide notification/count badge once opened
+        const badge = activeBtn.querySelector('.nav-count-badge');
+        if (badge) {
+            badge.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+            badge.style.opacity = '0';
+            badge.style.transform = 'scale(0.5)';
+            setTimeout(() => {
+                badge.style.display = 'none';
+            }, 250);
+        }
+    }
+
+    // Update panels
+    const panels = document.querySelectorAll('#dior-doc-content > .dior-tab-panel');
+    panels.forEach(p => {
+        p.classList.remove('active');
+        p.style.display = 'none';
+    });
+
+    const activePanel = document.getElementById(`tab-${tabId}`);
+    if (activePanel) {
+        activePanel.classList.add('active');
+        activePanel.removeAttribute('hidden');
+        activePanel.style.display = 'block';
+        // Refresh table pagination inside activated tab
+        activePanel.querySelectorAll('.dior-doc-table').forEach(table => {
+            if (table._diorRenderPage) {
+                table._diorRenderPage(1);
+            } else {
+                diorDoctorInitTablePagination(table, 5);
+            }
+        });
+
+        // Trigger income report chart if opened
+        if (tabId === 'doc-accounts-income-report' && typeof window.diorRenderIncomeChart === 'function') {
+            setTimeout(window.diorRenderIncomeChart, 50);
+        }
+    }
+
+    // If notifications tab opened, clear topbar bell badge and mark read in database
+    if (tabId === 'doc-notifications') {
+        document.querySelectorAll('.doc-unread-badge, .dior-notif-indicator').forEach(b => {
+            b.style.display = 'none';
+        });
+        if (window.diorDocAjax && window.diorDocNonce) {
+            const fd = new FormData();
+            fd.append('action', 'dior_doctor_mark_all_notif_read');
+            fd.append('nonce', window.diorDocNonce);
+            fetch(window.diorDocAjax, { method: 'POST', body: fd }).catch(() => { });
+        }
+    }
+
+    diorDocCloseMobile();
+};
 
 // Mobile menu toggle
 window.diorDocOpenMobile = function () {
@@ -876,31 +995,32 @@ window.diorDocCloseMobile = function () {
 
 // Search patients with pagination reset
 window.diorDocFilterPatients = function (val) {
-    const table = document.getElementById('ap-patients-table') || document.getElementById('dior-patients-table');
+    val = val.toLowerCase().trim();
+    const table = document.getElementById('dior-patients-table');
     if (!table) return;
-
-    const search = String(val || '').toLowerCase().trim();
-    const rows = table.querySelectorAll('tbody tr[data-patient-id], tbody tr.patient-row');
-    rows.forEach(function (row) {
-        const rowText = (row.getAttribute('data-search') || row.textContent || '').toLowerCase();
-        row.style.display = !search || rowText.includes(search) ? '' : 'none';
+    const rows = table.querySelectorAll('tbody tr.patient-row');
+    rows.forEach(row => {
+        const text = row.getAttribute('data-search') || '';
+        if (val === '' || text.includes(val)) {
+            row.removeAttribute('data-filter-hidden');
+        } else {
+            row.setAttribute('data-filter-hidden', 'true');
+        }
     });
-
-    if (typeof table._diorRenderPage === 'function') {
+    if (table._diorRenderPage) {
         table._diorRenderPage(1);
     }
 };
 
 window.diorDocSearch = function (val) {
-    // The actual Patients tab is doc-patients-all and uses the #ap-search input.
-    if (typeof window.diorDocSwitchTab === 'function') {
-        window.diorDocSwitchTab('doc-patients-all');
-    }
+    // If we're not on the patients tab, switch to it and search
+    diorDocSwitchTab('doc-patients');
 
-    const patientSearch = document.querySelector('#tab-doc-patients-all #ap-search');
+    // Update the actual patient search input
+    const patientSearch = document.querySelector('#tab-doc-patients .dior-search-input');
     if (patientSearch) {
-        patientSearch.value = String(val || '');
-        patientSearch.dispatchEvent(new Event('input', { bubbles: true }));
+        patientSearch.value = val;
+        diorDocFilterPatients(val);
     }
 };
 
@@ -2888,7 +3008,16 @@ document.addEventListener('DOMContentLoaded', function () {
             window.diorDocSwitchTab = fallbackSwitchTab;
         }
 
-        // Navigation clicks are bound once by dior-doctor-navigation.js.
+        app.addEventListener('click', function (event) {
+            var btn = event.target.closest('#dior-doc-sidebar .dior-nav-btn[data-tab]');
+            if (!btn) return;
+            var targetTab = btn.getAttribute('data-tab');
+            if (typeof window.diorDocSwitchTab === 'function') {
+                event.preventDefault();
+                event.stopPropagation();
+                window.diorDocSwitchTab(targetTab, true);
+            }
+        }, true);
 
         function syncTabFromUrl(updateUrl) {
             var hashMatch = window.location.hash.match(/^#tab=([^&]+)/);

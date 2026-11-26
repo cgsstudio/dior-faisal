@@ -30,9 +30,9 @@ class Dior_Encounter_Service
         }
 
         $current_user_id = Dior_Auth_Service::get_current_user_id();
-        if (!Dior_Auth_Service::can_modify_encounter($current_user_id) || !Dior_Auth_Service::can_access_patient($patient_id, $current_user_id)) {
+        if (!Dior_Auth_Service::can_modify_encounter($current_user_id)) {
             Dior_Audit_Service::log('soap_create', 'encounter', 'unauthorized', $patient_id, 'denied');
-            return new WP_Error('unauthorized', 'You are not assigned to this patient.');
+            return new WP_Error('unauthorized', 'Only authorized healthcare providers can record clinical encounters.');
         }
 
         $doctor_id = $current_user_id;
@@ -68,11 +68,6 @@ class Dior_Encounter_Service
         $existing = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE encounter_uid = %s AND is_deleted = 0", $encounter_uid));
 
         if ($existing) {
-            $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($current_user_id) : [$current_user_id];
-            if (!in_array((int) $existing->doctor_id, array_map('intval', (array) $scope_ids), true)) {
-                Dior_Audit_Service::log('soap_update', 'encounter', $encounter_uid, $patient_id, 'denied');
-                return new WP_Error('unauthorized', 'This clinical record belongs to another doctor.');
-            }
             // If already finalized, do not allow silent modification without status change to amended
             if ($existing->status === 'finalized' && $status === 'finalized') {
                 $status = 'amended';
@@ -158,23 +153,11 @@ class Dior_Encounter_Service
         $table = $wpdb->prefix . 'dior_encounters';
         $patient_id = (int)$patient_id;
 
-        $current_user_id = get_current_user_id();
-        if ($current_user_id && Dior_Auth_Service::is_doctor($current_user_id)) {
-            $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($current_user_id) : [$current_user_id];
-            $scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $scope_ids))));
-            if (!$scope_ids || !Dior_Auth_Service::can_access_patient($patient_id, $current_user_id)) return [];
-            $placeholders = implode(',', array_fill(0, count($scope_ids), '%d'));
-            $args = array_merge([$patient_id], $scope_ids);
-            $results = $wpdb->get_results($wpdb->prepare(
-                "SELECT * FROM $table WHERE patient_id = %d AND doctor_id IN ($placeholders) AND is_deleted = 0 ORDER BY created_at DESC",
-                ...$args
-            ), ARRAY_A);
-        } else {
-            $results = $wpdb->get_results($wpdb->prepare(
-                "SELECT * FROM $table WHERE patient_id = %d AND is_deleted = 0 ORDER BY created_at DESC",
-                $patient_id
-            ), ARRAY_A);
-        }
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM $table WHERE patient_id = %d AND is_deleted = 0 ORDER BY created_at DESC",
+            $patient_id
+        ), ARRAY_A);
+
         return $results ?: [];
     }
 
@@ -201,19 +184,16 @@ class Dior_Encounter_Service
         $table = $wpdb->prefix . 'dior_encounters';
 
         $current_user_id = Dior_Auth_Service::get_current_user_id();
-        if (!Dior_Auth_Service::can_modify_encounter($current_user_id) || !Dior_Auth_Service::can_access_patient($patient_id, $current_user_id)) {
+        if (!Dior_Auth_Service::can_modify_encounter($current_user_id)) {
             Dior_Audit_Service::log('soap_delete', 'encounter', $encounter_uid, $patient_id, 'denied');
             return new WP_Error('unauthorized', 'Unauthorized to delete clinical record.');
         }
-        $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($current_user_id) : [$current_user_id];
-        $scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $scope_ids))));
-        if (!$scope_ids) return new WP_Error('unauthorized', 'Doctor access scope is unavailable.');
-        $placeholders = implode(',', array_fill(0, count($scope_ids), '%d'));
-        $args = array_merge([current_time('mysql'), $encounter_uid, (int) $patient_id], $scope_ids);
-        $updated = $wpdb->query($wpdb->prepare(
-            "UPDATE $table SET is_deleted = 1, updated_at = %s WHERE encounter_uid = %s AND patient_id = %d AND doctor_id IN ($placeholders) AND is_deleted = 0",
-            ...$args
-        ));
+
+        $updated = $wpdb->update(
+            $table,
+            ['is_deleted' => 1, 'updated_at' => current_time('mysql')],
+            ['encounter_uid' => $encounter_uid, 'patient_id' => (int)$patient_id]
+        );
 
         if ($updated) {
             Dior_Audit_Service::log('soap_delete', 'encounter', $encounter_uid, $patient_id, 'success');

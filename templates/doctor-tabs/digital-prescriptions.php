@@ -6,24 +6,8 @@ if (!defined('ABSPATH')) {
 
 global $wpdb;
 
-// Fetch only patients assigned to the currently logged-in doctor.
-$doctor_id = get_current_user_id();
-$doctor_scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($doctor_id) : [$doctor_id];
-$doctor_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope_ids))));
-$patients_query = [];
-if ($doctor_scope_ids) {
-    $doctor_placeholders = implode(',', array_fill(0, count($doctor_scope_ids), '%d'));
-    $assigned_patient_ids = class_exists('Dior_Auth_Service')
-        ? Dior_Auth_Service::get_doctor_patient_ids($doctor_id)
-        : [];
-    if ($assigned_patient_ids) {
-        $patient_placeholders = implode(',', array_fill(0, count($assigned_patient_ids), '%d'));
-        $patients_query = $wpdb->get_results($wpdb->prepare(
-            "SELECT ID, display_name, user_email FROM {$wpdb->users} WHERE ID IN ($patient_placeholders) ORDER BY display_name ASC",
-            ...$assigned_patient_ids
-        ));
-    }
-}
+// Fetch patient list for prescription assignment dropdown
+$patients_query = $wpdb->get_results("SELECT ID, display_name, user_email FROM {$wpdb->users} ORDER BY display_name ASC LIMIT 100");
 $patients_list = [];
 foreach ($patients_query as $pq) {
     $puid = get_user_meta($pq->ID, 'patient_id', true) ?: ('DM-' . (10000 + $pq->ID));
@@ -242,17 +226,13 @@ foreach ($patients_query as $pq) {
                     // Remove any legacy seeded DEMO-% dummy prescriptions so only real prescriptions remain.
                     $wpdb->query("DELETE FROM {$wpdb->prefix}dior_prescriptions WHERE prescription_uid LIKE 'DEMO-%' OR prescription_id LIKE 'DEMO-%'");
 
-                    // The Doctor Dashboard never exposes administrator-wide prescription data.
-                    $prescription_scope_ids = class_exists('Dior_Doctor_Resolver')
-                        ? Dior_Auth_Service::get_doctor_user_scope_ids(get_current_user_id())
-                        : [get_current_user_id()];
-                    $prescription_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $prescription_scope_ids))));
-                    $prescriptions = [];
-                    if ($prescription_scope_ids) {
-                        $prescription_placeholders = implode(',', array_fill(0, count($prescription_scope_ids), '%d'));
+                    // Restrict prescription visibility to the current doctor's records; administrators may view all.
+                    if (current_user_can('manage_options')) {
+                        $prescriptions = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE (prescription_uid IS NULL OR prescription_uid NOT LIKE 'DEMO-%') AND (prescription_id IS NULL OR prescription_id NOT LIKE 'DEMO-%') ORDER BY id DESC");
+                    } else {
                         $prescriptions = $wpdb->get_results($wpdb->prepare(
-                            "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE doctor_id IN ($prescription_placeholders) AND (prescription_uid IS NULL OR prescription_uid NOT LIKE 'DEMO-%') AND (prescription_id IS NULL OR prescription_id NOT LIKE 'DEMO-%') ORDER BY id DESC",
-                            ...$prescription_scope_ids
+                            "SELECT * FROM {$wpdb->prefix}dior_prescriptions WHERE doctor_id = %d AND (prescription_uid IS NULL OR prescription_uid NOT LIKE 'DEMO-%') AND (prescription_id IS NULL OR prescription_id NOT LIKE 'DEMO-%') ORDER BY id DESC",
+                            get_current_user_id()
                         ));
                     }
 

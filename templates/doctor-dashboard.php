@@ -125,6 +125,9 @@
                             <button type="button" class="dior-nav-btn submenu-btn btn" data-tab="doc-accounts-income">
                                 <i class="fas fa-arrow-trend-up"></i><span class="nav-label">Income</span>
                             </button>
+                            <button type="button" class="dior-nav-btn submenu-btn btn" data-tab="doc-accounts-expenses">
+                                <i class="fas fa-arrow-trend-down"></i><span class="nav-label">Expenses</span>
+                            </button>
                             <button type="button" class="dior-nav-btn submenu-btn btn"
                                 data-tab="doc-accounts-income-report">
                                 <i class="fas fa-chart-pie"></i><span class="nav-label">Income Report</span>
@@ -415,6 +418,7 @@
                 <?php include DIOR_PORTAL_PATH . 'templates/doctor-tabs/bill-list.php'; ?>
                 <?php include DIOR_PORTAL_PATH . 'templates/doctor-tabs/add-bill.php'; ?>
                 <?php include DIOR_PORTAL_PATH . 'templates/doctor-tabs/income.php'; ?>
+                <?php include DIOR_PORTAL_PATH . 'templates/doctor-tabs/expenses.php'; ?>
                 <?php include DIOR_PORTAL_PATH . 'templates/doctor-tabs/income-report.php'; ?>
                 <?php include DIOR_PORTAL_PATH . 'templates/doctor-tabs/invoice.php'; ?>
                 <?php include DIOR_PORTAL_PATH . 'templates/doctor-tabs/consultation-notes.php'; ?>

@@ -71,24 +71,10 @@ class Dior_Medical_Secure_Files
         $table = $wpdb->prefix . 'dior_documents';
         $patient_id = (int)$patient_id;
 
-        $current_user_id = get_current_user_id();
-        if ($current_user_id && Dior_Auth_Service::is_doctor($current_user_id)) {
-            if (!Dior_Auth_Service::can_access_patient($patient_id, $current_user_id)) return [];
-            $scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($current_user_id) : [$current_user_id];
-            $scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $scope_ids))));
-            if (!$scope_ids) return [];
-            $in = implode(',', array_fill(0, count($scope_ids), '%d'));
-            $args = array_merge([$patient_id], $scope_ids, [$patient_id]);
-            $results = $wpdb->get_results($wpdb->prepare(
-                "SELECT * FROM $table WHERE patient_id = %d AND is_deleted = 0 AND (author_id IN ($in) OR author_id = %d) ORDER BY created_at DESC",
-                ...$args
-            ), ARRAY_A);
-        } else {
-            $results = $wpdb->get_results($wpdb->prepare(
-                "SELECT * FROM $table WHERE patient_id = %d AND is_deleted = 0 ORDER BY created_at DESC",
-                $patient_id
-            ), ARRAY_A);
-        }
+        $results = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM $table WHERE patient_id = %d AND is_deleted = 0 ORDER BY created_at DESC",
+            $patient_id
+        ), ARRAY_A);
 
         if (!$results) {
             return [];

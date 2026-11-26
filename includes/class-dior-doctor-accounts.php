@@ -9,7 +9,7 @@ final class Dior_Doctor_Accounts {
     private static function table($name) { global $wpdb; return $wpdb->prefix . 'dior_' . $name; }
     private static function doctor_ids() {
         $id = get_current_user_id();
-        $ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids($id) : [$id];
+        $ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($id) : [$id];
         return array_values(array_unique(array_filter(array_map('absint', (array) $ids))));
     }
     private static function auth() {
