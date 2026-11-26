@@ -67,8 +67,11 @@ class Dior_Questionnaire_Service
             ];
         }
 
-        // Normalize nested payload (some webhooks wrap under 'data' or 'fields')
+        // Normalize HIPAAtizer payloads: direct fields, {data:{...}}, or [{type, formId, data:{...}}].
         $raw = $payload;
+        if (isset($payload[0]) && is_array($payload[0]) && isset($payload[0]['data']) && is_array($payload[0]['data'])) {
+            $payload = $payload[0];
+        }
         $data = isset($payload['data']) && is_array($payload['data']) ? $payload['data'] : $payload;
         $fields = isset($data['fields']) && is_array($data['fields']) ? $data['fields'] : $data;
 
@@ -93,6 +96,16 @@ class Dior_Questionnaire_Service
         $phone_number = $get([
             'Mobile Phone Number', 'phone_number', 'phone', 'Mobile', 'mobile_phone'
         ]);
+        // New patient-profile fields from the updated registration/intake form.
+        $height = $get(['height', 'Height']);
+        $weight = $get(['weight', 'Weight']);
+        $blood_group = $get(['blood_group', 'Blood Group']);
+        $street_address = $get(['street_address', 'Street Address', 'address']);
+        $city = $get(['city', 'City']);
+        $state = $get(['state', 'State', 'State (Labels)', 'State (Values)']);
+        $zip_code = $get(['zip_code', 'ZIP / PIN Code', 'ZIP / Postal code', 'ZIP / Postal Code']);
+        $emergency_contact_name = $get(['emergency_contact_name', 'Emergency Contact Name']);
+        $emergency_contact_phone = $get(['emergency_contact_phone', 'Emergency Contact Phone']);
         $preferred_language = $get([
             'Preferred Language', 'preferred_language', 'language'
         ], 'English');
@@ -210,7 +223,7 @@ class Dior_Questionnaire_Service
         $e_signature = $get(['Type Your Full Legal Name', 'e_signature']);
         $signature_date = $get(['Date', 'signature_date']);
         $submission_id = $get(['Submission Id', 'submissionId', 'submission_id']);
-        $form_id = $get(['Form Id', 'workflowId', 'form_id']);
+        $form_id = $get(['Form Id', 'workflowId', 'form_id', 'formId'], $payload['formId'] ?? '');
         $view_submission_link = $get(['View Submission Link', 'viewSubmissionLink']);
         $download_pdf_link = $get(['Download PDF Link', 'downloadPdfLink']);
 
@@ -229,6 +242,15 @@ class Dior_Questionnaire_Service
             'dob'                   => $dob,
             'gender'                => $sex_at_birth,
             'phone'                 => $phone_number,
+            'height'                => $height,
+            'weight'                => $weight,
+            'blood_group'           => $blood_group,
+            'street_address'        => $street_address,
+            'city'                  => $city,
+            'state'                 => $state,
+            'zip_code'              => $zip_code,
+            'emergency_contact_name'=> $emergency_contact_name,
+            'emergency_contact_phone'=> $emergency_contact_phone,
             'preferred_language'    => $preferred_language,
             'is_adult'              => $is_adult,
             'is_pregnant'           => $is_pregnant,
@@ -418,7 +440,16 @@ class Dior_Questionnaire_Service
                 'drug_allergies'       => $has_drug_allergy ?: ($existing_intake['drug_allergies'] ?? ''),
                 'drug_allergies_list'  => $drug_allergy_list ?: ($existing_intake['drug_allergies_list'] ?? ''),
                 'allergies'            => $drug_allergy_list ?: ($existing_intake['allergies'] ?? ''),
-                'is_pregnant'          => $is_pregnant ?: ($existing_intake['is_pregnant'] ?? ''),
+                'is_pregnant'          => $is_pregnant !== '' ? $is_pregnant : ($existing_intake['is_pregnant'] ?? ''),
+                'height'               => $height !== '' ? $height : ($existing_intake['height'] ?? ''),
+                'weight'               => $weight !== '' ? $weight : ($existing_intake['weight'] ?? ''),
+                'blood_group'          => $blood_group !== '' ? $blood_group : ($existing_intake['blood_group'] ?? ''),
+                'address'              => $street_address !== '' ? $street_address : ($existing_intake['address'] ?? ''),
+                'city'                 => $city !== '' ? $city : ($existing_intake['city'] ?? ''),
+                'state'                => $state !== '' ? $state : ($existing_intake['state'] ?? ''),
+                'zip'                  => $zip_code !== '' ? $zip_code : ($existing_intake['zip'] ?? ''),
+                'emergency_name'       => $emergency_contact_name !== '' ? $emergency_contact_name : ($existing_intake['emergency_name'] ?? ''),
+                'emergency_phone'      => $emergency_contact_phone !== '' ? $emergency_contact_phone : ($existing_intake['emergency_phone'] ?? ''),
                 'is_18_plus'           => $is_adult ?: ($existing_intake['is_18_plus'] ?? ''),
                 'last_updated'         => current_time('mysql'),
             ]);
@@ -429,6 +460,22 @@ class Dior_Questionnaire_Service
             if (!empty($phone_number)) {
                 update_user_meta($user_id, 'phone', $phone_number);
                 update_user_meta($user_id, 'billing_phone', $phone_number);
+            }
+            // Keep the new profile fields available to Patient and Doctor dashboards.
+            foreach ([
+                'height' => $height,
+                'weight' => $weight,
+                'blood_group' => $blood_group,
+                'address' => $street_address,
+                'city' => $city,
+                'state' => $state,
+                'zip_code' => $zip_code,
+                'emergency_name' => $emergency_contact_name,
+                'emergency_phone' => $emergency_contact_phone,
+            ] as $meta_key => $meta_value) {
+                if ($meta_value !== '') {
+                    update_user_meta($user_id, $meta_key, $meta_value);
+                }
             }
             if (!empty($dob)) {
                 update_user_meta($user_id, 'dob', $dob);

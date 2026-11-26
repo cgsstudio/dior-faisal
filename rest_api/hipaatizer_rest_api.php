@@ -53,9 +53,12 @@ if (!function_exists('dior_fallback_save_hipaa_intake')) {
         if (empty($data))
             return;
 
-        // Unpack HIPAAtizer payload structure
+        // Unpack HIPAAtizer payload structure, including [{type, formId, data:{...}}].
         $raw_data = $data;
-        if (isset($data['data'])) {
+        if (isset($data[0]) && is_array($data[0]) && isset($data[0]['data']) && is_array($data[0]['data'])) {
+            $data = $data[0];
+        }
+        if (isset($data['data']) && is_array($data['data'])) {
             $data = $data['data'];
         }
         if (isset($data['fields'])) {
@@ -197,6 +200,9 @@ if (!function_exists('dior_fallback_save_hipaa_intake')) {
             'gender' => sanitize_text_field($data['gender'] ?? $data['Gender'] ?? $data['biological_sex'] ?? $data['Biological Sex'] ?? $data['Sex'] ?? $data['sex'] ?? ''),
             'email' => $email,
             'phone' => sanitize_text_field($dior_value($data, ['phone', 'Phone', 'phone_number', 'Phone Number'])),
+            'height' => sanitize_text_field($dior_value($data, ['height', 'Height'])),
+            'weight' => sanitize_text_field($dior_value($data, ['weight', 'Weight'])),
+            'blood_group' => sanitize_text_field($dior_value($data, ['blood_group', 'Blood Group'])),
             'address' => sanitize_text_field($dior_value($data, ['address', 'Address', 'street_address', 'Street Address'])),
             'city' => sanitize_text_field($dior_value($data, ['city', 'City'])),
             'state' => sanitize_text_field($dior_value($data, ['state', 'State', 'service_state', 'State (Labels)', 'State (Values)'])),
@@ -279,6 +285,12 @@ if (!function_exists('dior_fallback_save_hipaa_intake')) {
             }
             if (!empty($intake['phone'])) {
                 update_user_meta($user_id, 'phone', $intake['phone']);
+            }
+            // Save updated patient profile fields without overwriting existing values with blanks.
+            foreach (['height', 'weight', 'blood_group'] as $profile_field) {
+                if (!empty($intake[$profile_field])) {
+                    update_user_meta($user_id, $profile_field, $intake[$profile_field]);
+                }
             }
             if (!empty($intake['gender'])) {
                 update_user_meta($user_id, 'gender', $intake['gender']);
