@@ -468,7 +468,7 @@ $status_badges = [
                                 ? Dior_Zoom_Meetings::get_personalized_join_url($stored_join_url, $doctor_join_name)
                                 : $stored_join_url;
                             $join_url = $join_url ? esc_url($join_url) : '';
-                            $payment_status = esc_html($a['payment_status'] ?? 'Paid');
+                            $payment_status = esc_html($a['payment_status'] ?? '—');
 
                             // Doctor data resolution
                             $doc_id = (int) ($a['doctor_id'] ?? 0);
@@ -1417,25 +1417,25 @@ $status_badges = [
 
             var ds = row.dataset;
             var apptUid = ds.apptUid || uid;
-            var status = ds.status || 'Success';
+            var status = ds.status || 'Pending';
             var patientName = ds.patientName || (row.querySelector('.va-user-name') ? row.querySelector('.va-user-name').textContent.trim() : 'Patient');
             var patientUid = ds.patientUid || 'ID: —';
             var patientPhone = ds.patientPhone || ds.phone || '—';
             var patientEmail = ds.patientEmail || '—';
             var patientAvatar = ds.patientAvatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(patientName) + '&background=00346c&color=ffffff&bold=true';
 
-            var doctorName = ds.doctorName || 'Dr. Marcus Sterling';
-            var doctorSpec = ds.doctorSpecialty || 'General Practice';
-            var doctorDept = ds.doctorDepartment || 'Outpatient Care';
+            var doctorName = ds.doctorName || '—';
+            var doctorSpec = ds.doctorSpecialty || '—';
+            var doctorDept = ds.doctorDepartment || '—';
             var doctorAvatar = ds.doctorAvatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(doctorName) + '&background=00346c&color=ffffff&bold=true';
 
             var dateFmt = ds.dateFmt || ds.date || '—';
             var time = ds.time || '—';
-            var condition = ds.condition || 'General Consultation';
-            var visitType = ds.visitType || 'Video Visit (HD)';
+            var condition = ds.condition || '—';
+            var visitType = ds.visitType || '—';
             var joinUrl = ds.joinUrl || '';
-            var paymentStatus = ds.paymentStatus || 'Paid';
-            var notes = ds.notes || 'No pre-consultation notes provided. Standard intake questionnaire verified.';
+            var paymentStatus = ds.paymentStatus || '—';
+            var notes = ds.notes || '—';
 
             // Populate UID & Status
             var elUid = document.getElementById('dtl-appt-uid');
