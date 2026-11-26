@@ -1201,6 +1201,18 @@ $status_badges = [
                         return;
                     }
 
+                    if (!window.Swal) {
+                        window.alert('Delete confirmation is unavailable. Please reload the page and try again.');
+                        return;
+                    }
+                    var missingIds = checkedRows.filter(function (row) {
+                        return !(row.dataset.apptUid || row.dataset.appointmentId || row.dataset.appointmentUid);
+                    });
+                    if (missingIds.length) {
+                        Swal.fire({ icon: 'error', title: 'Delete Failed', text: 'Some selected appointments are missing an ID. Refresh the page and try again.' });
+                        return;
+                    }
+
                     Swal.fire({
                         title: 'Delete ' + checkedRows.length + ' Appointment(s)?',
                         text: 'Are you sure you want to delete these appointments? This cannot be undone.',
