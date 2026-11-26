@@ -803,12 +803,16 @@
                     itemRow.appendChild(td);
                 });
                 var oldTable = exportContent.querySelector('.dior-standard-invoice__table');
-                if (oldTable) oldTable.parentNode.replaceChild(cleanTable, oldTable);
+                if (oldTable) {
+                    var tableWrapper = oldTable.closest('.dataTables_wrapper,.dt-container');
+                    if (tableWrapper) tableWrapper.parentNode.replaceChild(cleanTable, tableWrapper);
+                    else oldTable.parentNode.replaceChild(cleanTable, oldTable);
+                }
                 var exportBody = exportDocument.body;
                 exportBody.appendChild(exportContent);
 
-                // Remove any inherited pagination or responsive-control remnants.
-                exportContent.querySelectorAll('.dataTables_wrapper,.dataTables_paginate,.dataTables_info,.dataTables_length,.dataTables_filter,.dt-container,.dt-layout-row,.pagination').forEach(function(node){
+                // Remove any pagination controls left outside the replaced table wrapper.
+                exportContent.querySelectorAll('.dataTables_paginate,.dataTables_info,.dataTables_length,.dataTables_filter,.dt-layout-row,.pagination').forEach(function(node){
                     node.remove();
                 });
 
