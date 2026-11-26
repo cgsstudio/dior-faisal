@@ -584,7 +584,11 @@ class Dior_Doctor_Dashboard
         foreach ($patient_ids as $patient_id) {
             $rxs = get_user_meta($patient_id, 'dior_prescriptions', true);
             if (is_array($rxs)) {
+                $doctor_user = get_userdata($doctor_user_id);
+                $doctor_name = $doctor_user ? strtolower(trim($doctor_user->display_name)) : '';
                 foreach ($rxs as $rx) {
+                    $prescriber = strtolower(trim((string) ($rx['prescribed_by'] ?? '')));
+                    if (!$prescriber || !$doctor_name || (strpos($prescriber, $doctor_name) === false && strpos($doctor_name, $prescriber) === false)) continue;
                     $rx['patient_user_id'] = $patient_id;
                     $rx['patient_name'] = self::resolve_patient_name($patient_id);
                     $prescriptions[] = $rx;
