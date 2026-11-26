@@ -142,14 +142,13 @@ class Dior_Doctor_Dashboard
 
     private static function can_access()
     {
-        if (current_user_can("administrator") || current_user_can("manage_options")) {
-            return true;
+        // Keep the Doctor Dashboard strictly separate from WordPress administrators.
+        if (!is_user_logged_in() || current_user_can('administrator') || current_user_can('manage_options')) {
+            return false;
         }
-        $user = wp_get_current_user();
-        if ($user && in_array('doctor', (array) $user->roles, true)) {
-            return true;
-        }
-        return current_user_can("doctor");
+        return class_exists('Dior_Auth_Service')
+            ? Dior_Auth_Service::is_doctor(get_current_user_id())
+            : current_user_can('doctor');
     }
 
     public static function get_doctor_profile($user_id)
