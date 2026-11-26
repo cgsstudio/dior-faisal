@@ -130,7 +130,7 @@ $recent_reports = array_slice($cr_rows, 0, 20);
     }
 </style>
 
-<section class="dior-tab-panel" id="tab-doc-analytics" style="display: none;">
+<section class="dior-tab-panel" id="tab-doc-analytics" data-clinical-nonce="<?php echo esc_attr(wp_create_nonce(Dior_Doctor_Dynamic::NONCE)); ?>" style="display: none;">
     <!-- Breadcrumb Header -->
     <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
@@ -429,7 +429,7 @@ $recent_reports = array_slice($cr_rows, 0, 20);
 
         var vars = window.dior_doctor_vars || {};
         var ajaxUrl = vars.ajax_url || window.ajaxurl || '/wp-admin/admin-ajax.php';
-        var nonce = vars.nonce || '';
+        var nonce = root.getAttribute('data-clinical-nonce') || vars.nonce || '';
 
         function request(action, data) {
             var params = new URLSearchParams(Object.assign({ action: action, nonce: nonce }, data || {}));
