@@ -824,7 +824,18 @@ class Dior_Doctor_Dashboard
                         "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wpddb_doctor_user_id' AND meta_value = %s",
                         (string) $uid
                     ));
-                    $allowed_ids = array_merge((array) $allowed_ids, (array) $linked_post_ids, [0, 1, 1957]);
+                    $allowed_ids = array_merge((array) $allowed_ids, (array) $linked_post_ids);
+
+                    // Match the same unassigned-booking rule used by the View Appointments query.
+                    // Do not grant every doctor access to hard-coded provider IDs.
+                    $default_doctor_id = class_exists('Dior_Doctor_Resolver')
+                        ? (int) Dior_Doctor_Resolver::get_default_doctor_id()
+                        : 0;
+                    if ($default_doctor_id && (int) $uid === $default_doctor_id) {
+                        $allowed_ids[] = 0;
+                        $allowed_ids[] = 1;
+                    }
+
                     if (!in_array((int) $row['doctor_id'], array_map('intval', $allowed_ids), true)) {
                         wp_send_json_error(["message" => "Permission denied for this appointment."], 403);
                     }
