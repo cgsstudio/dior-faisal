@@ -24,7 +24,7 @@ foreach ((array)$patients as $patient) {
 }
 $recent_appointments = array_slice(array_reverse((array)$appointments), 0, 5);
 
-$doctor_scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
+$doctor_scope_ids = class_exists('Dior_Doctor_Resolver') ? Dior_Auth_Service::get_doctor_user_scope_ids(get_current_user_id()) : [get_current_user_id()];
 $doctor_scope_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_scope_ids))));
 $doctor_scope_in = $doctor_scope_ids ? implode(',', array_fill(0, count($doctor_scope_ids), '%d')) : '';
 
