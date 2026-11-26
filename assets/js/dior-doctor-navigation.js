@@ -270,19 +270,7 @@
         app.__diorDoctorNavigationReady = true;
         ensureMobileCloseButton();
 
-        // Bind each tab button directly instead of relying on bubbling through
-        // other dashboard scripts that may stop or intercept click events.
-        app.querySelectorAll('#dior-doc-sidebar .dior-nav-btn[data-tab]').forEach(function (button) {
-            if (button.__diorTabClickBound) return;
-            button.__diorTabClickBound = true;
-            button.addEventListener('click', function (event) {
-                var tab = button.getAttribute('data-tab');
-                if (!tab) return;
-                event.preventDefault();
-                window.diorDocSwitchTab(tab, true);
-            });
-        });
-
+        // Sidebar tab clicks are handled by the document capture listener below.
         // Submenu parent buttons retain their existing inline toggle handler.
 
         // Sync tab from URL hash on load
@@ -311,6 +299,27 @@
     }
 })();
 
+
+/* Capture Doctor sidebar clicks before other dashboard scripts can intercept them. */
+(function () {
+    if (document.__diorDoctorNavCaptureBound) return;
+    document.__diorDoctorNavCaptureBound = true;
+
+    document.addEventListener('click', function (event) {
+        var target = event.target;
+        var button = target && target.closest
+            ? target.closest('#dior-doctor-app #dior-doc-sidebar .dior-nav-btn[data-tab]')
+            : null;
+        if (!button) return;
+
+        var tabId = button.getAttribute('data-tab');
+        if (!tabId || typeof window.diorDocSwitchTab !== 'function') return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        window.diorDocSwitchTab(tabId, true);
+    }, true);
+})();
 
 /* Dior tab visibility recovery: keeps the selected panel visible if another
    dashboard script or stale cached handler interferes with panel visibility. */
