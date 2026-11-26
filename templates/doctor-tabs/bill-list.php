@@ -369,20 +369,25 @@
         ];
 
         if (window.Swal && typeof window.Swal.fire === 'function') {
-            const html = '<div class="dior-bill-detail-popup"><table style="width:100%;border-collapse:collapse;text-align:left;">' +
+            const html = '<div class="dior-bill-detail-popup"><table class="dior-bill-detail-table"><tbody>' +
                 rows.map(function (row) {
-                    return '<tr><th style="padding:10px 12px;border-bottom:1px solid #e8edf3;color:#52647a;width:42%;font-weight:600;">' +
-                        escapeHtml(row[0]) + '</th><td style="padding:10px 12px;border-bottom:1px solid #e8edf3;color:#12345a;">' +
-                        escapeHtml(row[1] || '—') + '</td></tr>';
-                }).join('') + '</table></div>';
+                    return '<tr><th scope="row">' + escapeHtml(row[0]) +
+                        '</th><td>' + escapeHtml(row[1] || '—') + '</td></tr>';
+                }).join('') + '</tbody></table></div>';
 
             window.Swal.fire({
                 title: 'Bill Details',
                 html: html,
-                width: 620,
+                width: 'min(680px, calc(100vw - 32px))',
+                heightAuto: false,
+                buttonsStyling: true,
                 confirmButtonText: 'Close',
                 confirmButtonColor: '#1A528E',
-                customClass: { popup: 'dior-bill-detail-swal' }
+                customClass: {
+                    popup: 'dior-bill-detail-swal',
+                    htmlContainer: 'dior-bill-detail-swal-content',
+                    confirmButton: 'dior-bill-detail-swal-close'
+                }
             });
             return;
         }
@@ -487,4 +492,84 @@
 #tab-doc-accounts-bill-list .va-row-actions{display:flex!important;gap:7px!important}
 }
 
+</style>
+
+
+<style id="dior-bill-detail-popup-design">
+/* Keep the complete bill-details popup inside the viewport. */
+.swal2-popup.dior-bill-detail-swal{
+    width:min(680px,calc(100vw - 32px))!important;
+    max-width:calc(100vw - 32px)!important;
+    max-height:92vh!important;
+    padding:28px 30px 24px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+}
+.swal2-popup.dior-bill-detail-swal .swal2-title{
+    margin:0 0 18px!important;
+    color:#12345a!important;
+    font-size:22px!important;
+    font-weight:700!important;
+}
+.swal2-popup.dior-bill-detail-swal .swal2-html-container.dior-bill-detail-swal-content{
+    width:100%!important;
+    max-width:100%!important;
+    max-height:calc(92vh - 160px)!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:auto!important;
+    text-align:left!important;
+}
+.dior-bill-detail-popup{width:100%;max-width:100%;overflow-x:auto}
+.dior-bill-detail-table{
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    border:0!important;
+    border-collapse:collapse!important;
+    border-spacing:0!important;
+    background:transparent!important;
+    table-layout:fixed!important;
+}
+.dior-bill-detail-table tr,
+.dior-bill-detail-table th,
+.dior-bill-detail-table td{
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+}
+.dior-bill-detail-table tr{
+    border-bottom:1px solid #e8edf3!important;
+}
+.dior-bill-detail-table tr:last-child{border-bottom:0!important}
+.dior-bill-detail-table th,
+.dior-bill-detail-table td{
+    padding:11px 12px!important;
+    text-align:left!important;
+    vertical-align:top!important;
+    font-size:13px!important;
+    line-height:1.55!important;
+}
+.dior-bill-detail-table th{
+    width:34%!important;
+    color:#64748b!important;
+    font-weight:600!important;
+}
+.dior-bill-detail-table td{
+    color:#12345a!important;
+    font-weight:500!important;
+    overflow-wrap:anywhere!important;
+    word-break:break-word!important;
+}
+.swal2-popup.dior-bill-detail-swal .swal2-actions{margin:20px 0 0!important}
+.swal2-popup.dior-bill-detail-swal .dior-bill-detail-swal-close{
+    border-radius:8px!important;
+    padding:10px 24px!important;
+    font-weight:700!important;
+}
+@media(max-width:520px){
+    .swal2-popup.dior-bill-detail-swal{padding:22px 16px 18px!important}
+    .dior-bill-detail-table th,.dior-bill-detail-table td{padding:10px 8px!important;font-size:12px!important}
+    .dior-bill-detail-table th{width:36%!important}
+}
 </style>
