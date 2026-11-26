@@ -59,6 +59,41 @@ class Dior_Auth_Service
     }
 
     /**
+     * Return patient IDs explicitly assigned to a doctor, including appointment-linked patients.
+     * This supports patients created before their first appointment and future multi-doctor assignment.
+     */
+    public static function get_doctor_patient_ids($doctor_id = 0)
+    {
+        global $wpdb;
+        $doctor_id = (int) ($doctor_id ?: get_current_user_id());
+        if (!$doctor_id || !self::is_doctor($doctor_id)) return [];
+
+        $ids = [];
+        $appointments = $wpdb->prefix . 'dior_appointments';
+        if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $appointments)) === $appointments) {
+            $scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
+            $scope = array_values(array_unique(array_filter(array_map('absint', (array) $scope))));
+            if ($scope) {
+                $in = implode(',', array_fill(0, count($scope), '%d'));
+                $ids = $wpdb->get_col($wpdb->prepare(
+                    "SELECT DISTINCT patient_id FROM {$appointments} WHERE is_deleted = 0 AND doctor_id IN ($in)",
+                    ...$scope
+                ));
+            }
+        }
+
+        // Explicit doctor-patient assignments are stored as an array on the patient account.
+        $meta_key = '_dior_assigned_doctor_ids';
+        $needle = 'i:' . $doctor_id . ';';
+        $assigned = $wpdb->get_col($wpdb->prepare(
+            "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key = %s AND meta_value LIKE %s",
+            $meta_key,
+            '%' . $wpdb->esc_like($needle) . '%'
+        ));
+        return array_values(array_unique(array_filter(array_map('absint', array_merge((array) $ids, (array) $assigned)))));
+    }
+
+    /**
      * Anti-IDOR: Check if current user is authorized to access a patient's medical records
      */
     public static function can_access_patient($patient_id, $user_id = 0)
@@ -92,6 +127,7 @@ class Dior_Auth_Service
             return false;
         }
 
+        if (in_array($patient_id, self::get_doctor_patient_ids($user_id), true)) return true;
         $doctor_ids = class_exists('Dior_Doctor_Resolver')
             ? Dior_Doctor_Resolver::get_accessible_doctor_ids($user_id)
             : [$user_id];
