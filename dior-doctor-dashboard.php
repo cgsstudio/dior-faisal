@@ -2204,7 +2204,7 @@ class Dior_Doctor_Dashboard
         global $wpdb;
         $table_tele = $wpdb->prefix . 'dior_telemedicine';
         $rec = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_tele WHERE tele_uid = %s LIMIT 1", $tele_uid));
-        $tele_scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids(get_current_user_id()) : [get_current_user_id()];
+        $tele_scope = class_exists('Dior_Auth_Service') ? Dior_Auth_Service::get_doctor_user_scope_ids(get_current_user_id()) : [get_current_user_id()];
         if ($rec && in_array((int) $rec->doctor_id, array_map('intval', (array) $tele_scope), true)) {
             $wpdb->delete($table_tele, ['tele_uid' => $tele_uid, 'doctor_id' => (int) $rec->doctor_id], ['%s', '%d']);
             if (!empty($rec->appointment_uid)) {
