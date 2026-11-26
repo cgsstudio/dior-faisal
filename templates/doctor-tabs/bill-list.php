@@ -122,6 +122,33 @@
                         }
                     }
 
+                    // Also read canonical payment rows that may not have a matching invoice row.
+                    if ($doctor_ids && $payments_exist) {
+                        $doctor_placeholders = implode(',', array_fill(0, count($doctor_ids), '%d'));
+                        $payment_sql = "SELECT pay.*, p.first_name, p.last_name, u.display_name AS patient_display,
+                                               doc.display_name AS doctor_display
+                                        FROM $pay_table pay
+                                        LEFT JOIN $patients_table p ON (p.user_id = pay.patient_id OR p.id = pay.patient_id)
+                                        LEFT JOIN {$wpdb->users} u ON u.ID = pay.patient_id
+                                        LEFT JOIN {$wpdb->users} doc ON doc.ID = pay.doctor_id
+                                        WHERE pay.doctor_id IN ($doctor_placeholders)
+                                        ORDER BY COALESCE(pay.paid_at, pay.created_at) DESC, pay.id DESC
+                                        LIMIT 200";
+                        $payment_rows = $wpdb->get_results($wpdb->prepare($payment_sql, ...$doctor_ids), ARRAY_A);
+                        foreach ((array) $payment_rows as $payment_row) {
+                            $invoice_id = (string) ($payment_row['invoice_uid'] ?? '');
+                            if ($invoice_id !== '' && isset($seen_invoice_ids[$invoice_id])) continue;
+                            $dedupe_id = $invoice_id !== '' ? $invoice_id : (string) ($payment_row['payment_uid'] ?? '');
+                            if ($dedupe_id !== '' && isset($seen_invoice_ids[$dedupe_id])) continue;
+                            if ($dedupe_id !== '') $seen_invoice_ids[$dedupe_id] = true;
+
+                            $payment_row['invoice_uid'] = $invoice_id ?: ($payment_row['payment_uid'] ?? ('PAY-' . ($payment_row['id'] ?? '')));
+                            $payment_row['payment_status'] = $payment_row['status'] ?? 'Pending';
+                            $payment_row['paid_amount'] = $payment_row['amount'] ?? null;
+                            $bill_rows[] = $payment_row;
+                        }
+                    }
+
                     // Stripe checkout currently records patient payment receipts in the patient's dior_payments meta.
                     // Include those real receipts as well, avoiding duplicates already represented by invoice rows.
                     if ($doctor_ids) {
@@ -305,16 +332,18 @@
 #tab-doc-accounts-bill-list .va-table tbody td{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;gap:3px!important;min-width:0!important;padding:0!important;border:0!important;background:transparent!important;white-space:normal!important;overflow-wrap:anywhere!important;font-size:12px!important}
 #tab-doc-accounts-bill-list .va-table tbody td:before{content:"";font-size:9px!important;font-weight:700!important;letter-spacing:.04em!important;text-transform:uppercase!important;color:#8493A7!important}
 #tab-doc-accounts-bill-list .va-table tbody td:nth-child(1){position:absolute!important;left:12px!important;top:15px!important;display:block!important}
-#tab-doc-accounts-bill-list .va-table tbody td:nth-child(2):before{content:"Admission ID"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(2):before{content:"Invoice ID"}
 #tab-doc-accounts-bill-list .va-table tbody td:nth-child(3):before{content:"Patient"}
 #tab-doc-accounts-bill-list .va-table tbody td:nth-child(4):before{content:"Doctor"}
-#tab-doc-accounts-bill-list .va-table tbody td:nth-child(5):before{content:"Status"}
-#tab-doc-accounts-bill-list .va-table tbody td:nth-child(6):before{content:"Date"}
-#tab-doc-accounts-bill-list .va-table tbody td:nth-child(7):before{content:"Tax"}
-#tab-doc-accounts-bill-list .va-table tbody td:nth-child(8):before{content:"Discount"}
-#tab-doc-accounts-bill-list .va-table tbody td:nth-child(9):before{content:"Total"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(5):before{content:"Payment Details"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(6):before{content:"Status"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(7):before{content:"Date"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(8):before{content:"Amount"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(9):before{content:"Tax"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(10):before{content:"Discount"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(11):before{content:"Total"}
 #tab-doc-accounts-bill-list .va-table tbody td:nth-child(3){font-weight:700!important;color:#12345A!important}
-#tab-doc-accounts-bill-list .va-table tbody td:nth-child(10){grid-column:1/-1;align-items:flex-end!important;padding-top:8px!important;border-top:1px solid #EDF1F6!important}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(12){grid-column:1/-1;align-items:flex-end!important;padding-top:8px!important;border-top:1px solid #EDF1F6!important}
 #tab-doc-accounts-bill-list .va-row-actions{display:flex!important;gap:7px!important}
 }
 
