@@ -47,6 +47,30 @@ class Dior_Questionnaire_Service
                 return $val;
             }
         }
+
+        // Match HIPAAtizer keys despite capitalization, spaces, underscores or punctuation.
+        $normalize_key = static function ($value) {
+            return strtolower(preg_replace('/[^a-z0-9]/i', '', (string) $value));
+        };
+        $normalized_data = [];
+        foreach ($data as $source_key => $source_value) {
+            if (is_scalar($source_value) && $source_value !== '') {
+                $normalized_data[$normalize_key($source_key)] = (string) $source_value;
+            } elseif (is_array($source_value)) {
+                $normalized_data[$normalize_key($source_key)] = implode(', ', array_map('sanitize_text_field', $source_value));
+            }
+        }
+        foreach ($ordered_keys as $key) {
+            $normalized_key = $normalize_key($key);
+            if (isset($normalized_data[$normalized_key])) {
+                $val = sanitize_text_field($normalized_data[$normalized_key]);
+                if ($is_boolean) {
+                    if ($val === '1') $val = 'Yes';
+                    elseif ($val === '2') $val = 'No';
+                }
+                return $val;
+            }
+        }
         return $default;
     }
 
@@ -67,13 +91,27 @@ class Dior_Questionnaire_Service
             ];
         }
 
-        // Normalize HIPAAtizer payloads: direct fields, {data:{...}}, or [{type, formId, data:{...}}].
+        // Preserve original request and recursively flatten HIPAAtizer wrappers.
         $raw = $payload;
-        if (isset($payload[0]) && is_array($payload[0]) && isset($payload[0]['data']) && is_array($payload[0]['data'])) {
-            $payload = $payload[0];
-        }
-        $data = isset($payload['data']) && is_array($payload['data']) ? $payload['data'] : $payload;
-        $fields = isset($data['fields']) && is_array($data['fields']) ? $data['fields'] : $data;
+        $flattened = [];
+        $flatten_payload = static function ($node) use (&$flatten_payload, &$flattened) {
+            if (!is_array($node)) {
+                return;
+            }
+            foreach ($node as $key => $value) {
+                if (is_array($value)) {
+                    $flatten_payload($value);
+                } elseif (is_string($key) && $value !== null && $value !== '') {
+                    $flattened[$key] = $value;
+                }
+            }
+        };
+        $flatten_payload($raw);
+
+        $payload_data = isset($payload['data']) && is_array($payload['data']) ? $payload['data'] : $payload;
+        $fields = isset($payload_data['fields']) && is_array($payload_data['fields'])
+            ? array_merge($payload_data, $payload_data['fields'], $flattened)
+            : array_merge($payload_data, $flattened);
 
         // Helper shorthand
         $get = function(array $keys, $default = '', $is_bool = false) use ($fields) {
@@ -424,6 +462,8 @@ class Dior_Questionnaire_Service
             $conditions_str = implode(', ', $conds);
 
             $merged_intake = array_merge($existing_intake, [
+                // Keep the full original webhook/API submission for audit and troubleshooting.
+                'raw_data'             => $raw,
                 'service_condition'    => $selected_service ?: ($existing_intake['service_condition'] ?? ''),
                 'consultation_type'    => $consultation_type ?: ($existing_intake['consultation_type'] ?? ''),
                 'referral_source'      => $referral_source ?: ($existing_intake['referral_source'] ?? ''),
