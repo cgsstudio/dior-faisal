@@ -1,0 +1,652 @@
+<?php
+/**
+ * Dior Medical - DocBooker Stripe Checkout Booking Service
+ *
+ * Reads consultation fee & Stripe configuration from DocBooker (wpddb)
+ * and redirects patients to Stripe Checkout before finalizing the booking.
+ */
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class Dior_Stripe_Booking
+{
+    /** @var array|null */
+    private static $last_notice = null;
+
+    /**
+     * Initialize hooks
+     */
+    public static function init()
+    {
+        add_action('template_redirect', [__CLASS__, 'handle_stripe_return'], 5);
+    }
+
+    /**
+     * Get the latest Stripe return notice (success / cancelled / error) for rendering in the booking form.
+     *
+     * @return array|null
+     */
+    public static function get_last_notice()
+    {
+        return self::$last_notice;
+    }
+
+    /**
+     * Read consultation fee set in DocBooker for a given doctor CPT ID (or global DocBooker settings).
+     *
+     * @param int $doctor_id
+     * @return float
+     */
+    public static function get_docbooker_doctor_price($doctor_id = 0)
+    {
+        $doctor_id = (int) $doctor_id;
+
+        if ($doctor_id > 0) {
+            $candidate_keys = [
+                'wpddb_doctor_fees',
+                'wpddb_doctor_fee',
+                '_wpddb_doctor_fees',
+                '_wpddb_doctor_fee',
+                'wpddb_consultation_fee',
+                'wpddb_fee',
+                'wpddb_price',
+                '_wpddb_price',
+                'doctor_fees',
+                'doctor_fee',
+                'consultation_fee',
+                'fees',
+                'fee',
+                'price',
+            ];
+
+            foreach ($candidate_keys as $key) {
+                $val = get_post_meta($doctor_id, $key, true);
+                $num = self::parse_positive_amount($val);
+                if ($num > 0) {
+                    return $num;
+                }
+            }
+
+            // Fallback: scan all meta on this wpddb_doctor post for any fee/price key
+            $all_meta = get_post_meta($doctor_id);
+            if (is_array($all_meta)) {
+                foreach ($all_meta as $meta_key => $vals) {
+                    if (preg_match('/(fee|price|amount|charge|cost)/i', (string) $meta_key)) {
+                        $raw = is_array($vals) ? ($vals[0] ?? '') : $vals;
+                        $num = self::parse_positive_amount($raw);
+                        if ($num > 0) {
+                            return $num;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Global DocBooker options fallback
+        $options = self::collect_docbooker_options();
+        foreach ($options as $opt_val) {
+            $num = self::find_numeric_in_array($opt_val, ['fee', 'fees', 'price', 'consultation_fee', 'appointment_fee', 'booking_fee', 'amount']);
+            if ($num > 0) {
+                return $num;
+            }
+        }
+
+        return 0.0;
+    }
+
+    /**
+     * Read Stripe configuration from DocBooker (wpddb) options or Dior fallback constants/options.
+     *
+     * @return array{enabled:bool,secret_key:string,publishable_key:string,currency:string}
+     */
+    public static function get_stripe_config()
+    {
+        $config = [
+            'enabled' => false,
+            'secret_key' => '',
+            'publishable_key' => '',
+            'currency' => 'usd',
+        ];
+
+        $options = self::collect_docbooker_options();
+        $flat = [];
+        foreach ($options as $opt_name => $opt_val) {
+            if (is_array($opt_val)) {
+                foreach ($opt_val as $k => $v) {
+                    if (is_scalar($v)) {
+                        $flat[strtolower((string) $k)] = (string) $v;
+                    }
+                }
+            } elseif (is_scalar($opt_val)) {
+                $flat[strtolower((string) $opt_name)] = (string) $opt_val;
+            }
+        }
+
+        // Determine test vs live mode if DocBooker has a mode flag
+        $is_test_mode = null;
+        foreach (['stripe_test_mode', 'wpddb_stripe_test_mode', 'test_mode', 'stripe_mode', 'mode'] as $mode_key) {
+            if (isset($flat[$mode_key]) && $flat[$mode_key] !== '') {
+                $val = strtolower(trim($flat[$mode_key]));
+                if (in_array($val, ['1', 'true', 'yes', 'on', 'test', 'sandbox'], true)) {
+                    $is_test_mode = true;
+                } elseif (in_array($val, ['0', 'false', 'no', 'off', 'live', 'production'], true)) {
+                    $is_test_mode = false;
+                }
+                break;
+            }
+        }
+
+        // Secret key priority depending on mode
+        $secret_candidates = $is_test_mode === false
+            ? ['live_secret_key', 'stripe_live_secret_key', 'stripe_secret_key', 'wpddb_stripe_secret_key', 'secret_key', 'test_secret_key', 'stripe_test_secret_key']
+            : ['test_secret_key', 'stripe_test_secret_key', 'stripe_secret_key', 'wpddb_stripe_secret_key', 'secret_key', 'live_secret_key', 'stripe_live_secret_key'];
+
+        foreach ($secret_candidates as $k) {
+            if (!empty($flat[$k]) && strpos($flat[$k], 'sk_') === 0) {
+                $config['secret_key'] = trim($flat[$k]);
+                break;
+            }
+        }
+
+        // Scan any value in flat options that starts with sk_test_ or sk_live_
+        if ($config['secret_key'] === '') {
+            foreach ($flat as $k => $v) {
+                $v = trim($v);
+                if (strpos($v, 'sk_test_') === 0 || strpos($v, 'sk_live_') === 0) {
+                    $config['secret_key'] = $v;
+                    break;
+                }
+            }
+        }
+
+        // Publishable key
+        $pub_candidates = $is_test_mode === false
+            ? ['live_publishable_key', 'stripe_live_publishable_key', 'stripe_publishable_key', 'wpddb_stripe_publishable_key', 'publishable_key', 'test_publishable_key', 'stripe_test_publishable_key']
+            : ['test_publishable_key', 'stripe_test_publishable_key', 'stripe_publishable_key', 'wpddb_stripe_publishable_key', 'publishable_key', 'live_publishable_key', 'stripe_live_publishable_key'];
+
+        foreach ($pub_candidates as $k) {
+            if (!empty($flat[$k]) && strpos($flat[$k], 'pk_') === 0) {
+                $config['publishable_key'] = trim($flat[$k]);
+                break;
+            }
+        }
+
+        if ($config['publishable_key'] === '') {
+            foreach ($flat as $v) {
+                $v = trim($v);
+                if (strpos($v, 'pk_test_') === 0 || strpos($v, 'pk_live_') === 0) {
+                    $config['publishable_key'] = $v;
+                    break;
+                }
+            }
+        }
+
+        // Currency
+        foreach (['currency', 'wpddb_currency', 'stripe_currency', 'payment_currency'] as $ck) {
+            if (!empty($flat[$ck]) && preg_match('/^[a-z]{3}$/i', trim($flat[$ck]))) {
+                $config['currency'] = strtolower(trim($flat[$ck]));
+                break;
+            }
+        }
+
+        // Fallback to Dior constants/options if DocBooker keys were stored there
+        if ($config['secret_key'] === '') {
+            if (defined('DIOR_STRIPE_SECRET_KEY') && DIOR_STRIPE_SECRET_KEY) {
+                $config['secret_key'] = DIOR_STRIPE_SECRET_KEY;
+            } else {
+                $opt_sk = get_option('dior_stripe_secret_key', '');
+                if ($opt_sk) {
+                    $config['secret_key'] = trim((string) $opt_sk);
+                }
+            }
+        }
+
+        $config['enabled'] = ($config['secret_key'] !== '');
+
+        return $config;
+    }
+
+    /**
+     * Create a Stripe Checkout Session and store the pending booking payload in a transient.
+     *
+     * @param array  $booking_payload
+     * @param string $return_base_url
+     * @return array|WP_Error
+     */
+    public static function create_checkout_session(array $booking_payload, $return_base_url = '')
+    {
+        $stripe = self::get_stripe_config();
+        if (empty($stripe['secret_key'])) {
+            return new WP_Error('stripe_not_configured', 'Stripe secret key is not configured in DocBooker payment settings.');
+        }
+
+        $amount = (float) ($booking_payload['amount'] ?? 0);
+        if ($amount <= 0) {
+            return new WP_Error('invalid_amount', 'Consultation fee must be greater than zero.');
+        }
+
+        $currency = !empty($booking_payload['currency']) ? strtolower((string) $booking_payload['currency']) : $stripe['currency'];
+        $token = wp_generate_password(24, false, false);
+        $booking_payload['token'] = $token;
+        $booking_payload['currency'] = $currency;
+        $booking_payload['created_at'] = time();
+
+        set_transient('dior_pending_stripe_booking_' . $token, $booking_payload, 2 * HOUR_IN_SECONDS);
+
+        if (!$return_base_url) {
+            $return_base_url = home_url('/patient-dashboard/');
+        }
+
+        // Remove any previous Stripe query args from base URL
+        $clean_base = remove_query_arg(['dior_stripe_status', 'dior_booking_token', 'session_id'], $return_base_url);
+        $success_url = add_query_arg([
+            'dior_stripe_status' => 'success',
+            'dior_booking_token' => $token,
+        ], $clean_base) . '&session_id={CHECKOUT_SESSION_ID}#tab=appointments&subtab=upcoming';
+
+        $cancel_url = add_query_arg([
+            'dior_stripe_status' => 'cancelled',
+            'dior_booking_token' => $token,
+        ], $clean_base) . '#tab=appointments&subtab=schedule';
+
+        $doctor_name = $booking_payload['provider'] ?? 'Telehealth Physician';
+        $visit_type = $booking_payload['visit_type'] ?? 'Video Visit (HD)';
+        $appt_date = $booking_payload['appt_date'] ?? '';
+        $appt_time = $booking_payload['appt_time'] ?? '';
+
+        $body = [
+            'mode' => 'payment',
+            'payment_method_types[0]' => 'card',
+            'success_url' => $success_url,
+            'cancel_url' => $cancel_url,
+            'line_items[0][price_data][currency]' => $currency,
+            'line_items[0][price_data][unit_amount]' => (string) ((int) round($amount * 100)),
+            'line_items[0][price_data][product_data][name]' => 'Telehealth Appointment - ' . $doctor_name,
+            'line_items[0][price_data][product_data][description]' => trim($visit_type . ' | ' . $appt_date . ' at ' . $appt_time . ' | Payment is non-refundable'),
+            'line_items[0][quantity]' => '1',
+            'custom_text[submit][message]' => 'Note: Payment is non-refundable once completed.',
+            'metadata[dior_booking_token]' => $token,
+            'metadata[patient_id]' => (string) ($booking_payload['patient_id'] ?? 0),
+            'metadata[doctor_id]' => (string) ($booking_payload['doctor_id'] ?? 0),
+        ];
+
+        if (!empty($booking_payload['patient_email']) && is_email($booking_payload['patient_email'])) {
+            $body['customer_email'] = $booking_payload['patient_email'];
+        }
+
+        $response = wp_remote_post('https://api.stripe.com/v1/checkout/sessions', [
+            'timeout' => 25,
+            'headers' => [
+                'Authorization' => 'Bearer ' . $stripe['secret_key'],
+                'Content-Type' => 'application/x-www-form-urlencoded',
+            ],
+            'body' => $body,
+        ]);
+
+        if (is_wp_error($response)) {
+            return new WP_Error('stripe_http_error', 'Unable to connect to Stripe: ' . $response->get_error_message());
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        $data = json_decode(wp_remote_retrieve_body($response), true);
+
+        if ($code < 200 || $code >= 300 || empty($data['url']) || empty($data['id'])) {
+            $err_msg = $data['error']['message'] ?? 'Stripe rejected the checkout session request.';
+            return new WP_Error('stripe_api_error', $err_msg);
+        }
+
+        return [
+            'checkout_url' => $data['url'],
+            'session_id' => $data['id'],
+            'token' => $token,
+        ];
+    }
+
+    /**
+     * Handle Stripe redirect return on template_redirect.
+     * Books the appointment ONLY after verifying Stripe session payment_status === 'paid'.
+     */
+    public static function handle_stripe_return()
+    {
+        if (empty($_GET['dior_stripe_status'])) {
+            return;
+        }
+
+        $status = sanitize_text_field(wp_unslash($_GET['dior_stripe_status']));
+        $token = sanitize_text_field(wp_unslash($_GET['dior_booking_token'] ?? ''));
+
+        if ($status === 'cancelled') {
+            self::$last_notice = [
+                'status' => 'cancelled',
+                'message' => 'Stripe payment was cancelled. Your appointment has not been booked. Please complete payment to confirm your slot.',
+            ];
+            return;
+        }
+
+        if ($status !== 'success') {
+            return;
+        }
+
+        $session_id = sanitize_text_field(wp_unslash($_GET['session_id'] ?? ''));
+        if (!$token || !$session_id) {
+            self::$last_notice = [
+                'status' => 'error',
+                'message' => 'Missing Stripe payment verification details. Please contact support if you were charged.',
+            ];
+            return;
+        }
+
+        // Idempotency guard: if this Stripe session was already finalized, return cached confirmation
+        $already_done = get_transient('dior_completed_stripe_booking_' . md5($session_id));
+        if (is_array($already_done) && !empty($already_done['appointment'])) {
+            self::$last_notice = $already_done;
+            return;
+        }
+
+        $pending = get_transient('dior_pending_stripe_booking_' . $token);
+        if (!is_array($pending) || empty($pending['patient_id'])) {
+            self::$last_notice = [
+                'status' => 'error',
+                'message' => 'Your booking session expired or was already processed. Please check your Appointments tab.',
+            ];
+            return;
+        }
+
+        $stripe = self::get_stripe_config();
+        if (empty($stripe['secret_key'])) {
+            self::$last_notice = [
+                'status' => 'error',
+                'message' => 'Stripe configuration is missing on the server.',
+            ];
+            return;
+        }
+
+        // Verify payment directly with Stripe API
+        $verify_resp = wp_remote_get('https://api.stripe.com/v1/checkout/sessions/' . rawurlencode($session_id), [
+            'timeout' => 25,
+            'headers' => [
+                'Authorization' => 'Bearer ' . $stripe['secret_key'],
+            ],
+        ]);
+
+        if (is_wp_error($verify_resp)) {
+            self::$last_notice = [
+                'status' => 'error',
+                'message' => 'Could not verify Stripe payment: ' . $verify_resp->get_error_message(),
+            ];
+            return;
+        }
+
+        $session_data = json_decode(wp_remote_retrieve_body($verify_resp), true);
+        $payment_status = $session_data['payment_status'] ?? '';
+        $session_status = $session_data['status'] ?? '';
+
+        if ($payment_status !== 'paid' && $session_status !== 'complete') {
+            self::$last_notice = [
+                'status' => 'error',
+                'message' => 'Payment has not been completed yet. Appointment was not booked.',
+            ];
+            return;
+        }
+
+        // Payment verified -> Now finalize the appointment!
+        $result = self::finalize_paid_appointment($pending, $session_id, $session_data);
+        if (is_wp_error($result)) {
+            self::$last_notice = [
+                'status' => 'error',
+                'message' => $result->get_error_message(),
+            ];
+            return;
+        }
+
+        delete_transient('dior_pending_stripe_booking_' . $token);
+
+        $notice = [
+            'status' => 'success',
+            'appointment' => $result,
+            'amount' => $pending['amount'],
+            'currency' => $pending['currency'] ?? 'usd',
+            'session_id' => $session_id,
+            'message' => 'Payment verified via Stripe and your appointment is confirmed!',
+        ];
+
+        set_transient('dior_completed_stripe_booking_' . md5($session_id), $notice, DAY_IN_SECONDS);
+        self::$last_notice = $notice;
+    }
+
+    /**
+     * Finalize appointment booking in Dior_Appointment_Service, wp_wpddb_bookings,
+     * patient payments ledger, and notifications after Stripe payment succeeds.
+     *
+     * @param array  $pending
+     * @param string $session_id
+     * @param array  $session_data
+     * @return array|WP_Error
+     */
+    private static function finalize_paid_appointment(array $pending, $session_id, array $session_data = [])
+    {
+        $user_id = (int) $pending['patient_id'];
+        $doctor_id_raw = (int) ($pending['doctor_id'] ?? 1957);
+        $doctor_user_id = (int) ($pending['doctor_user_id'] ?? 4);
+        $doctor_name = (string) ($pending['provider'] ?? 'Dr. Marcus Sterling, DO');
+        $condition = (string) ($pending['condition'] ?? 'Telehealth Consultation');
+        $type = (string) ($pending['visit_type'] ?? 'Video Visit (HD)');
+        $date = (string) ($pending['appt_date'] ?? current_time('Y-m-d'));
+        $time = (string) ($pending['appt_time'] ?? '09:00 AM - 10:00 AM');
+        $notes = (string) ($pending['notes'] ?? '');
+        $patient_phone = (string) ($pending['patient_phone'] ?? '');
+        $amount = (float) ($pending['amount'] ?? 0);
+
+        if (stripos($type, 'phone') !== false) {
+            $join_url = 'tel:' . preg_replace('/[^0-9+]/', '', $patient_phone ?: '+13105550100');
+        } else {
+            $zoom_meeting_url = class_exists('Dior_Zoom_Meetings')
+                ? Dior_Zoom_Meetings::create_meeting_link($date, $time, $doctor_name)
+                : false;
+            $google_meet_url = (!$zoom_meeting_url && class_exists('Dior_Google_Meet'))
+                ? Dior_Google_Meet::create_meeting_link()
+                : false;
+            $join_url = $zoom_meeting_url ?: ($google_meet_url ?: '');
+        }
+
+        $new_apt = Dior_Appointment_Service::book_appointment([
+            'patient_id' => $user_id,
+            'doctor_id' => $doctor_user_id ?: $doctor_id_raw,
+            'doctor_user_id' => $doctor_user_id,
+            'provider' => $doctor_name,
+            'condition' => $condition,
+            'visit_type' => $type,
+            'appt_date' => $date,
+            'appt_time' => $time,
+            'status' => 'Pending',
+            'join_url' => $join_url,
+            'payment_status' => 'Paid',
+            'notes' => $notes,
+        ]);
+
+        if (is_wp_error($new_apt)) {
+            return $new_apt;
+        }
+
+        // Synchronize with DocBooker database tables if present
+        global $wpdb;
+        $table_bookings = $wpdb->prefix . 'wpddb_bookings';
+        $table_patients = $wpdb->prefix . 'wpddb_patients';
+        if ($wpdb->get_var("SHOW TABLES LIKE '$table_bookings'") === $table_bookings) {
+            $user_obj = get_userdata($user_id);
+            $patient_email = $user_obj ? $user_obj->user_email : ($pending['patient_email'] ?? '');
+            $patient_row = $wpdb->get_row($wpdb->prepare("SELECT id FROM $table_patients WHERE email = %s LIMIT 1", $patient_email));
+            $docbooker_patient_id = $patient_row ? $patient_row->id : 0;
+
+            if (!$docbooker_patient_id && $wpdb->get_var("SHOW TABLES LIKE '$table_patients'") === $table_patients) {
+                $wpdb->insert($table_patients, [
+                    'full_name' => $user_obj ? $user_obj->display_name : ($pending['patient_name'] ?? 'Patient'),
+                    'email' => $patient_email,
+                    'phone' => $patient_phone ?: (get_user_meta($user_id, 'phone', true) ?: '(555) 000-0000'),
+                    'dob' => get_user_meta($user_id, 'dob', true) ?: '1990-01-01',
+                    'patient_code' => 'DM-' . (10000 + ($user_id % 90000)),
+                ]);
+                $docbooker_patient_id = $wpdb->insert_id;
+            }
+
+            $sync_doc_id = $doctor_id_raw;
+            if (!$sync_doc_id) {
+                $sync_doc_id = $wpdb->get_var("SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpddb_doctor' AND post_status = 'publish' ORDER BY ID ASC LIMIT 1");
+                $sync_doc_id = $sync_doc_id ?: 1957;
+            }
+            $sync_clinic_id = 1970;
+            $table_clinics = $wpdb->prefix . 'wpddb_clinics';
+            if ($wpdb->get_var("SHOW TABLES LIKE '$table_clinics'") === $table_clinics) {
+                $found_clinic = $wpdb->get_var("SELECT id FROM $table_clinics LIMIT 1");
+                if ($found_clinic) {
+                    $sync_clinic_id = $found_clinic;
+                }
+            }
+
+            $wpdb->insert($table_bookings, [
+                'booking_id' => 'BK-' . rand(100000, 999999),
+                'patient_id' => $docbooker_patient_id ?: $user_id,
+                'doctor_id' => $sync_doc_id,
+                'clinic_id' => $sync_clinic_id,
+                'amount_paid' => $amount,
+                'payment_status' => 'Paid',
+                'payment_by' => 'Stripe',
+                'booking_present_status' => 'upcoming',
+                'booking_date' => $date,
+                'day' => date('l', strtotime($date)),
+                'time' => $time,
+                'patient_note' => trim($type . ' - ' . ($notes ?: $condition) . ' [Stripe: ' . $session_id . ']'),
+                'status' => 'approved',
+            ]);
+        }
+
+        // Record invoice/payment in patient's payments meta
+        $inv_id = 'INV-' . strtoupper(substr(md5($session_id), 0, 8));
+        $payments = class_exists('Dior_Patient_Portal_Data')
+            ? Dior_Patient_Portal_Data::get_patient_payments($user_id)
+            : (get_user_meta($user_id, 'dior_payments', true) ?: []);
+        if (!is_array($payments)) {
+            $payments = [];
+        }
+        $formatted_amount = '$' . number_format($amount, 2);
+        array_unshift($payments, [
+            'id' => $inv_id,
+            'invoice_uid' => $inv_id,
+            'doctor_id' => $doctor_user_id,
+            'doctor_name' => $doctor_name,
+            'date' => current_time('Y-m-d'),
+            'amount' => $formatted_amount,
+            'tax' => '$0.00',
+            'discount' => '$0.00',
+            'total' => $formatted_amount,
+            'status' => 'Paid',
+            'status_class' => 'status-paid',
+            'method' => 'Stripe',
+            'stripe_session_id' => $session_id,
+            'description' => 'Telehealth Appointment (' . $type . ')',
+        ]);
+        update_user_meta($user_id, 'dior_payments', $payments);
+
+        // Send Appointment & Payment Confirmation notifications
+        if (class_exists('Dior_Notification_Service')) {
+            if (!empty($new_apt['appt_uid'])) {
+                Dior_Notification_Service::send_appointment_confirmation($new_apt['appt_uid']);
+            }
+            Dior_Notification_Service::send_payment_confirmation($user_id, [
+                'id' => $inv_id,
+                'amount' => $formatted_amount,
+                'description' => 'Telehealth Appointment with ' . $doctor_name,
+            ]);
+        }
+
+        return $new_apt;
+    }
+
+    /**
+     * Collect DocBooker-related options from wp_options.
+     *
+     * @return array
+     */
+    private static function collect_docbooker_options()
+    {
+        global $wpdb;
+        $options = [];
+
+        $known_names = [
+            'wpddb_settings',
+            'wpddb_general_settings',
+            'wpddb_payment_settings',
+            'wpddb_stripe_settings',
+            'doctor_details_booking_settings',
+            'wpddb_stripe_secret_key',
+            'wpddb_stripe_publishable_key',
+            'wpddb_stripe_test_mode',
+            'wpddb_currency',
+        ];
+
+        foreach ($known_names as $name) {
+            $val = get_option($name, null);
+            if ($val !== null && $val !== false) {
+                $options[$name] = $val;
+            }
+        }
+
+        $rows = $wpdb->get_results(
+            "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE 'wpddb%' OR option_name LIKE '%docbooker%' LIMIT 50",
+            ARRAY_A
+        );
+
+        if (is_array($rows)) {
+            foreach ($rows as $row) {
+                $name = $row['option_name'];
+                if (!isset($options[$name])) {
+                    $options[$name] = maybe_unserialize($row['option_value']);
+                }
+            }
+        }
+
+        return $options;
+    }
+
+    /**
+     * Parse positive float from string/numeric value.
+     */
+    private static function parse_positive_amount($val)
+    {
+        if (is_numeric($val)) {
+            $num = (float) $val;
+            return $num > 0 ? round($num, 2) : 0.0;
+        }
+        if (is_string($val) && preg_match('/([0-9]+(?:\.[0-9]{1,2})?)/', $val, $m)) {
+            $num = (float) $m[1];
+            return $num > 0 ? round($num, 2) : 0.0;
+        }
+        return 0.0;
+    }
+
+    /**
+     * Find a positive numeric value in an option array for matching keys.
+     */
+    private static function find_numeric_in_array($data, array $keys)
+    {
+        if (!is_array($data)) {
+            return 0.0;
+        }
+        foreach ($data as $k => $v) {
+            $lk = strtolower((string) $k);
+            if (in_array($lk, $keys, true)) {
+                $num = self::parse_positive_amount($v);
+                if ($num > 0) {
+                    return $num;
+                }
+            } elseif (is_array($v)) {
+                $nested = self::find_numeric_in_array($v, $keys);
+                if ($nested > 0) {
+                    return $nested;
+                }
+            }
+        }
+        return 0.0;
+    }
+}

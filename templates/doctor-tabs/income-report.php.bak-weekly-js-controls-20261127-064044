@@ -1,0 +1,695 @@
+<?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+global $wpdb;
+$inv_table = $wpdb->prefix . 'dior_invoices';
+$ir_rows = [];
+$doctor_id = get_current_user_id();
+if (user_can($doctor_id, 'manage_options')) { $accounts = get_users(['role'=>'doctor','number'=>1,'fields'=>'ID']); if ($accounts) $doctor_id = (int)$accounts[0]; }
+$doctor_scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
+$doctor_scope = array_values(array_unique(array_filter(array_map('absint',(array)$doctor_scope))));
+if ($doctor_scope && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table) {
+    $ph = implode(',', array_fill(0, count($doctor_scope), '%d'));
+    $ir_rows = $wpdb->get_results($wpdb->prepare("SELECT * FROM $inv_table WHERE doctor_id IN ($ph) ORDER BY created_at DESC LIMIT 500", ...$doctor_scope), ARRAY_A);
+}
+
+// Include legacy Stripe receipts that predate the invoice-table sync.
+if (empty($ir_rows)) {
+    $doctor_id = get_current_user_id();
+    if (user_can($doctor_id, 'manage_options')) {
+        $accounts = get_users(['role' => 'doctor', 'number' => 1, 'fields' => 'ID']);
+        if ($accounts) $doctor_id = (int) $accounts[0];
+    }
+    $scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
+    $meta_rows = $wpdb->get_results($wpdb->prepare("SELECT user_id, meta_value FROM {$wpdb->usermeta} WHERE meta_key = %s", 'dior_payments'), ARRAY_A);
+    foreach ($meta_rows as $mr) {
+        $items = maybe_unserialize($mr['meta_value']); if (!is_array($items)) continue;
+        foreach ($items as $item) {
+            if (!in_array(absint($item['doctor_id'] ?? 0), array_map('absint', (array) $scope), true)) continue;
+            $uid = $item['invoice_uid'] ?? $item['id'] ?? ''; if (!$uid) continue;
+            $ir_rows[] = ['invoice_uid'=>$uid,'doctor_id'=>absint($item['doctor_id']),'amount'=>(float) preg_replace('/[^0-9.\\-]/','',(string)($item['total'] ?? $item['amount'] ?? 0)),'status'=>$item['status'] ?? 'Paid','description'=>$item['description'] ?? 'Appointment Payment','service_type'=>'Appointment','created_at'=>$item['date'] ?? current_time('mysql')];
+        }
+    }
+}
+$ir_total_revenue = 0.0;
+$ir_monthly = array_fill(0, 12, 0.0);
+$ir_dept_totals = [];
+$ir_dept_monthly = [];
+$ir_year = (int) current_time('Y');
+
+foreach ($ir_rows as $row) {
+    $amt = (float) ($row['total_amount'] ?? $row['amount'] ?? 0);
+    $ir_total_revenue += $amt;
+    $dept = trim((string) ($row['department'] ?? $row['service_type'] ?? 'General'));
+    if ($dept === '') $dept = 'General';
+    $ir_dept_totals[$dept] = ($ir_dept_totals[$dept] ?? 0.0) + $amt;
+    if (!isset($ir_dept_monthly[$dept])) {
+        $ir_dept_monthly[$dept] = array_fill(0, 12, 0.0);
+    }
+    $ts = !empty($row['created_at']) ? strtotime($row['created_at']) : false;
+    if ($ts && (int) date('Y', $ts) === $ir_year) {
+        $m = (int) date('n', $ts) - 1;
+        $ir_monthly[$m] += $amt;
+        $ir_dept_monthly[$dept][$m] += $amt;
+    }
+}
+arsort($ir_dept_totals);
+$ir_top_dept = !empty($ir_dept_totals) ? array_key_first($ir_dept_totals) : '—';
+$ir_top_dept_amt = !empty($ir_dept_totals) ? $ir_dept_totals[$ir_top_dept] : 0.0;
+$ir_monthly_avg = $ir_total_revenue > 0 ? ($ir_total_revenue / 12) : 0.0;
+
+$ir_chart_series = [];
+foreach (array_slice($ir_dept_monthly, 0, 5, true) as $d_name => $d_vals) {
+    $ir_chart_series[] = ['name' => $d_name, 'data' => array_map(static function ($v) { return round($v, 2); }, $d_vals)];
+}
+?>
+// Weekly and daily chart data is grouped by the actual payment date.
+$ir_chart_departments = array_slice(array_keys($ir_dept_totals), 0, 5);
+$ir_week_start = strtotime('monday this week', current_time('timestamp'));
+$ir_week_categories = array(); $ir_week_buckets = array();
+for ($i = 11; $i >= 0; $i--) { $start = strtotime('-'.$i.' weeks', $ir_week_start); $key = wp_date('o-W', $start); $ir_week_categories[] = wp_date('M j', $start).' – '.wp_date('M j', strtotime('+6 days', $start)); foreach ($ir_chart_departments as $dept) $ir_week_buckets[$dept][$key] = 0.0; }
+$ir_day_categories = array(); $ir_day_buckets = array();
+for ($i = 13; $i >= 0; $i--) { $day = strtotime('-'.$i.' days', current_time('timestamp')); $key = wp_date('Y-m-d', $day); $ir_day_categories[] = wp_date('M j', $day); foreach ($ir_chart_departments as $dept) $ir_day_buckets[$dept][$key] = 0.0; }
+foreach ($ir_rows as $chart_row) { $ts = !empty($chart_row['created_at']) ? strtotime($chart_row['created_at']) : false; if (!$ts) continue; $dept = trim((string)($chart_row['department'] ?? $chart_row['service_type'] ?? 'General')) ?: 'General'; if (!in_array($dept, $ir_chart_departments, true)) continue; $week_key = wp_date('o-W', $ts); $day_key = wp_date('Y-m-d', $ts); $amount = (float)($chart_row['total_amount'] ?? $chart_row['amount'] ?? 0); if (isset($ir_week_buckets[$dept][$week_key])) $ir_week_buckets[$dept][$week_key] += $amount; if (isset($ir_day_buckets[$dept][$day_key])) $ir_day_buckets[$dept][$day_key] += $amount; }
+$ir_week_series = array(); $ir_day_series = array();
+foreach ($ir_chart_departments as $dept) { $ir_week_series[] = array('name'=>$dept,'data'=>array_map(static function($v){return round($v,2);},array_values($ir_week_buckets[$dept]))); $ir_day_series[] = array('name'=>$dept,'data'=>array_map(static function($v){return round($v,2);},array_values($ir_day_buckets[$dept]))); }
+<section class="dior-tab-panel" id="tab-doc-accounts-income-report" style="display: none;">
+    <!-- Breadcrumb Header -->
+    <div class="mb-4" style="display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
+        <div>
+            <h4 class="mb-0 text-dark" style="font-size: 20px; font-weight: 700;">Income Report</h4>
+        </div>
+        <div>
+            <ul class="va-breadcrumb-list">
+                <li><a href="#"><i class="fas fa-house"></i></a></li>
+                <li>/</li>
+                <li><a href="#">Accounts</a></li>
+                <li>/</li>
+                <li class="active"><span>Income Report</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Subtab Navigation Bar -->
+    <div class="dior-subtab-nav-bar px-1 mb-4">
+        <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-accounts-bill-list" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-bill-list');">
+            <i class="fas fa-receipt"></i> Bill List
+        </button>
+        <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-accounts-income" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-income');">
+            <i class="fas fa-arrow-trend-up"></i> Income
+        </button>
+        <button type="button" class="dior-subtab-pill btn active" data-doc-tab="doc-accounts-income-report" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-income-report');">
+            <i class="fas fa-chart-pie"></i> Income Report
+        </button>
+        <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-accounts-invoice" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-invoice');">
+            <i class="fas fa-file-invoice"></i> Invoice
+        </button>
+    </div>
+
+    <!-- 4 KPI Stat Cards for Income Highlights (100% Native Bootstrap 5) -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Total Annual Revenue</span>
+                        <div class="fs-2 fw-bold text-dark mt-1">$<?php echo esc_html(number_format($ir_total_revenue, 2)); ?></div>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-3 p-2.5">
+                        <i class="fas fa-wallet fs-5"></i>
+                    </span>
+                </div>
+                <div class="mt-2 text-secondary small">
+                    <span class="text-success fw-semibold"><i class="fas fa-database me-1"></i>Live</span> current year
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Monthly Average</span>
+                        <div class="fs-2 fw-bold text-dark mt-1">$<?php echo esc_html(number_format($ir_monthly_avg, 2)); ?></div>
+                    </div>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-3 p-2.5">
+                        <i class="fas fa-chart-line fs-5"></i>
+                    </span>
+                </div>
+                <div class="mt-2 text-secondary small">
+                    <span class="text-primary fw-semibold"><i class="fas fa-calendar-check me-1"></i>12 Months</span> average
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Top Department</span>
+                        <div class="fs-2 fw-bold text-dark mt-1"><?php echo esc_html($ir_top_dept); ?></div>
+                    </div>
+                    <span class="badge bg-info-subtle text-info border border-info-subtle rounded-3 p-2.5">
+                        <i class="fas fa-heart-pulse fs-5"></i>
+                    </span>
+                </div>
+                <div class="mt-2 text-secondary small">
+                    <span class="text-info fw-semibold">$<?php echo esc_html(number_format($ir_top_dept_amt, 2)); ?></span> total collection
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6 col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white d-flex flex-column justify-content-between">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <span class="text-secondary small fw-semibold text-uppercase" style="letter-spacing: 0.5px; font-size: 11px;">Total Invoices</span>
+                        <div class="fs-2 fw-bold text-success mt-1"><?php echo esc_html(count($ir_rows)); ?></div>
+                    </div>
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-3 p-2.5">
+                        <i class="fas fa-arrow-trend-up fs-5"></i>
+                    </span>
+                </div>
+                <div class="mt-2 text-secondary small">
+                    <span class="text-success fw-semibold"><i class="fas fa-circle-check me-1"></i>High Efficacy</span> clinical billing
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income Chart Card (Interactive ApexCharts) -->
+    <div class="card border-0 shadow-sm rounded-4 p-3 p-md-4 bg-white mb-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3 border-bottom pb-3">
+            <div>
+                <h5 class="fw-bold text-dark mb-1 fs-5 d-flex align-items-center gap-2">
+                    <i class="fas fa-chart-line text-primary"></i> Income &amp; Revenue Trends
+                </h5>
+                <p class="text-secondary small mb-0">Track clinical collections, departmental distributions, and periodic growth rates.</p>
+            </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap flex-shrink-0" style="min-width:0;">
+                <span class="text-secondary small fw-semibold d-none d-sm-inline">Period:</span>
+                <select id="dior-income-chart-filter" class="form-select form-select-sm rounded-3 py-1.5 fw-semibold" style="width: 168px; min-width: 168px; max-width: 100%;">
+                    <option value="Monthly" selected>Monthly (Jan - Dec)</option>
+                    <option value="Daily">Daily (Last 14 Days)</option>
+                    <option value="Yearly">Yearly (5 Years)</option>
+                </select>
+                <button type="button" class="btn btn-outline-secondary btn-sm rounded-3 px-2.5 shadow-none" id="dior-income-chart-refresh" title="Reset Chart Zoom">
+                    <i class="fas fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-0">
+            <div id="dior-income-report-apex-chart" style="min-height: 360px; width: 100%;"></div>
+        </div>
+    </div>
+
+    <!-- Income Table Card -->
+    <div class="view-appointment-card">
+        <div class="va-header-container">
+            <div class="va-title-box">
+                <h2><i class="fas fa-table-list text-primary me-2"></i>Departmental Income Breakdown</h2>
+                <div class="va-title-line"></div>
+            </div>
+            <div class="va-actions-wrapper">
+                <span class="text-secondary small fw-semibold d-none d-sm-inline">Fiscal Year:</span>
+                <?php $ir_current_year = (int) current_time('Y'); ?>
+                <select id="dior-income-table-year" class="form-select form-select-sm rounded-3 py-1.5 fw-semibold" style="width: auto;">
+                    <?php for ($year = $ir_current_year; $year >= $ir_current_year - 5; $year--): ?>
+                        <option value="<?php echo esc_attr((string) $year); ?>" <?php selected($year, $ir_current_year); ?>>
+                            <?php echo esc_html((string) $year); ?>
+                        </option>
+                    <?php endfor; ?>
+                </select>
+                <div class="va-actions-group">
+                    <button type="button" class="va-icon-btn va-btn-info btn" title="Refresh" onclick="window.location.reload()"><i class="fas fa-rotate-right"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="va-table-wrapper">
+            <table class="va-table table table-hover" id="dior-income-report-table">
+                <thead>
+                    <tr>
+                        <th class="ps-3">DEPARTMENT <i class="fas fa-sort"></i></th>
+                        <th style="text-align: right;">JAN</th>
+                        <th style="text-align: right;">FEB</th>
+                        <th style="text-align: right;">MAR</th>
+                        <th style="text-align: right;">APR</th>
+                        <th style="text-align: right;">MAY</th>
+                        <th style="text-align: right;">JUN</th>
+                        <th style="text-align: right;">JUL</th>
+                        <th style="text-align: right;">AUG</th>
+                        <th style="text-align: right;">SEP</th>
+                        <th style="text-align: right;">OCT</th>
+                        <th style="text-align: right;">NOV</th>
+                        <th style="text-align: right;">DEC</th>
+                        <th style="text-align: right;" class="pe-3">YEARLY TOTAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($ir_dept_monthly)): ?>
+                        <tr>
+                            <td colspan="14" class="text-center text-muted py-5">
+                                <i class="fas fa-chart-pie fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                <span class="small fw-semibold">No departmental income data available yet.</span>
+                            </td>
+                        </tr>
+                    <?php else:
+                        foreach ($ir_dept_monthly as $d_name => $months):
+                            $row_sum = array_sum($months);
+                    ?>
+                        <tr>
+                            <td class="ps-3 fw-bold text-dark"><?php echo esc_html($d_name); ?></td>
+                            <?php foreach ($months as $m_val): ?>
+                                <td class="text-end">$<?php echo esc_html(number_format($m_val, 2)); ?></td>
+                            <?php endforeach; ?>
+                            <td class="text-end pe-3 fw-bold text-dark">$<?php echo esc_html(number_format($row_sum, 2)); ?></td>
+                        </tr>
+                    <?php endforeach; endif; ?>
+                </tbody>
+                <tfoot class="table-light border-top">
+                    <tr class="fw-bold">
+                        <td class="dior-income-report-select-spacer" aria-hidden="true"></td>
+                        <td class="ps-3 text-dark">Combined Clinic Revenue</td>
+                        <?php foreach ($ir_monthly as $m_tot): ?>
+                            <td class="text-end text-primary">$<?php echo esc_html(number_format($m_tot, 2)); ?></td>
+                        <?php endforeach; ?>
+                        <td class="text-end pe-3 text-success fs-6">$<?php echo esc_html(number_format($ir_total_revenue, 2)); ?></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</section>
+
+<style id="dior-income-report-chart-overlap-fix">
+#tab-doc-accounts-income-report #dior-income-chart-filter{
+    width:168px!important;
+    min-width:168px!important;
+    max-width:100%!important;
+    flex:0 1 168px!important;
+    white-space:nowrap!important;
+}
+#tab-doc-accounts-income-report #dior-income-report-apex-chart{
+    min-width:0!important;
+    overflow:hidden!important;
+}
+#tab-doc-accounts-income-report #dior-income-report-apex-chart .apexcharts-legend{
+    padding-top:8px!important;
+}
+#tab-doc-accounts-income-report #dior-income-report-apex-chart .apexcharts-toolbar{
+    z-index:5!important;
+}
+@media(max-width:767.98px){
+    #tab-doc-accounts-income-report .card.border-0.shadow-sm.rounded-4>.d-flex.flex-wrap{
+        align-items:flex-start!important;
+    }
+    #tab-doc-accounts-income-report .card.border-0.shadow-sm.rounded-4>.d-flex.flex-wrap>div:last-child{
+        width:100%!important;
+        justify-content:flex-start!important;
+    }
+    #tab-doc-accounts-income-report #dior-income-chart-filter{
+        width:auto!important;
+        min-width:0!important;
+        flex:1 1 150px!important;
+    }
+    #tab-doc-accounts-income-report #dior-income-report-apex-chart .apexcharts-legend{
+        justify-content:center!important;
+        gap:4px 8px!important;
+    }
+}
+</style>
+
+<style id="dior-income-report-color-unification">
+/* Keep all Income Report accents within Dior Medical's blue palette */
+#tab-doc-accounts-income-report .text-success,
+#tab-doc-accounts-income-report .text-info,
+#tab-doc-accounts-income-report .text-warning,
+#tab-doc-accounts-income-report .text-danger,
+#tab-doc-accounts-income-report .text-primary,
+#tab-doc-accounts-income-report .text-success *,
+#tab-doc-accounts-income-report .text-info *,
+#tab-doc-accounts-income-report .text-warning *,
+#tab-doc-accounts-income-report .text-danger *,
+#tab-doc-accounts-income-report .text-primary *{
+    color:#1A528E!important;
+}
+#tab-doc-accounts-income-report .bg-success,
+#tab-doc-accounts-income-report .bg-info,
+#tab-doc-accounts-income-report .bg-warning,
+#tab-doc-accounts-income-report .bg-danger{
+    background-color:#EAF2FB!important;
+}
+#tab-doc-accounts-income-report .border-success,
+#tab-doc-accounts-income-report .border-info,
+#tab-doc-accounts-income-report .border-warning,
+#tab-doc-accounts-income-report .border-danger{
+    border-color:#D5E4F5!important;
+}
+/* KPI icon badges and icon glyphs */
+#tab-doc-accounts-income-report>.row.g-3.mb-4 .badge,
+#tab-doc-accounts-income-report>.row.g-3.mb-4 .badge i{
+    color:#1A528E!important;
+    background:#EAF2FB!important;
+    border-color:#D5E4F5!important;
+}
+/* Department icons use one consistent brand accent */
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:first-child i{
+    color:#1A528E!important;
+}
+/* Combined revenue footer should not introduce a separate green accent */
+#tab-doc-accounts-income-report #dior-income-report-table tfoot td,
+#tab-doc-accounts-income-report #dior-income-report-table tfoot td:last-child{
+    color:#1A528E!important;
+}
+/* Keep success-style labels/icons visually consistent as well */
+#tab-doc-accounts-income-report .fa-circle-check,
+#tab-doc-accounts-income-report .fa-arrow-trend-up,
+#tab-doc-accounts-income-report .fa-calendar-check{
+    color:#1A528E!important;
+}
+</style>
+
+
+<style id="dior-income-report-theme-colors">
+/* Dior Medical theme: navy + clinical blue */
+#tab-doc-accounts-income-report{
+    --dior-primary:#1A528E;
+    --dior-primary-dark:#0B3768;
+    --dior-primary-soft:#EAF2FB;
+    --dior-border:#DCE6F1;
+    --dior-text:#1E293B;
+}
+#tab-doc-accounts-income-report .dior-subtab-pill{
+    background:#1A528E!important;
+    border-color:#1A528E!important;
+    color:#fff!important;
+}
+#tab-doc-accounts-income-report .dior-subtab-pill:hover,
+#tab-doc-accounts-income-report .dior-subtab-pill.active{
+    background:#0B3768!important;
+    border-color:#0B3768!important;
+    color:#fff!important;
+}
+#tab-doc-accounts-income-report>.row.g-3.mb-4>.col-xl-3>.card{
+    border:1px solid var(--dior-border)!important;
+    border-top:3px solid var(--dior-primary)!important;
+    border-radius:12px!important;
+    box-shadow:0 3px 12px rgba(11,55,104,.06)!important;
+}
+#tab-doc-accounts-income-report>.row.g-3.mb-4>.col-xl-3:nth-child(2)>.card,
+#tab-doc-accounts-income-report>.row.g-3.mb-4>.col-xl-3:nth-child(3)>.card,
+#tab-doc-accounts-income-report>.row.g-3.mb-4>.col-xl-3:nth-child(4)>.card{
+    border-top-color:#3B82B8!important;
+}
+#tab-doc-accounts-income-report>.row.g-3.mb-4 .badge{
+    background:var(--dior-primary-soft)!important;
+    color:var(--dior-primary)!important;
+    border:1px solid #D5E4F5!important;
+}
+#tab-doc-accounts-income-report>.row.g-3.mb-4 .text-primary,
+#tab-doc-accounts-income-report>.row.g-3.mb-4 .text-info{
+    color:var(--dior-primary)!important;
+}
+#tab-doc-accounts-income-report>.row.g-3.mb-4 .text-success{
+    color:#16845B!important;
+}
+#tab-doc-accounts-income-report>.card.border-0.shadow-sm.rounded-4{
+    border:1px solid var(--dior-border)!important;
+    border-radius:14px!important;
+    box-shadow:0 3px 14px rgba(11,55,104,.055)!important;
+}
+#tab-doc-accounts-income-report h5 .text-primary,
+#tab-doc-accounts-income-report .va-title-box h2 .text-primary{
+    color:var(--dior-primary)!important;
+}
+#tab-doc-accounts-income-report #dior-income-chart-filter,
+#tab-doc-accounts-income-report #dior-income-table-year{
+    border-color:#C9D8E9!important;
+    color:var(--dior-primary-dark)!important;
+}
+#tab-doc-accounts-income-report #dior-income-chart-refresh{
+    background:var(--dior-primary)!important;
+    border-color:var(--dior-primary)!important;
+    color:#fff!important;
+}
+#tab-doc-accounts-income-report #dior-income-chart-refresh:hover{
+    background:var(--dior-primary-dark)!important;
+}
+#tab-doc-accounts-income-report .view-appointment-card{
+    border:1px solid var(--dior-border)!important;
+    border-radius:14px!important;
+    box-shadow:0 3px 14px rgba(11,55,104,.055)!important;
+}
+#tab-doc-accounts-income-report .va-title-box h2{
+    color:var(--dior-primary-dark)!important;
+}
+#tab-doc-accounts-income-report .va-title-line{
+    background:var(--dior-primary)!important;
+}
+#tab-doc-accounts-income-report #dior-income-report-table thead th{
+    background:#F0F5FA!important;
+    color:#496783!important;
+    border-color:#DCE6F1!important;
+}
+#tab-doc-accounts-income-report #dior-income-report-table tbody tr:hover{
+    background:#F5F9FE!important;
+}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:first-child{
+    color:var(--dior-primary-dark)!important;
+}
+#tab-doc-accounts-income-report #dior-income-report-table tfoot{
+    background:#EAF2FB!important;
+}
+#tab-doc-accounts-income-report #dior-income-report-table tfoot td{
+    color:var(--dior-primary)!important;
+    border-color:#C9D8E9!important;
+}
+#tab-doc-accounts-income-report #dior-income-report-table tfoot td:last-child{
+    color:#16845B!important;
+}
+@media(max-width:767.98px){
+    #tab-doc-accounts-income-report #dior-income-report-table tbody tr{
+        border-color:#DCE6F1!important;
+    }
+    #tab-doc-accounts-income-report #dior-income-report-table tbody td:first-child{
+        color:#0B3768!important;
+    }
+}
+</style>
+
+<style id="dior-accounts-mobile-income-report">
+/* Accounts mobile responsive layout, aligned with Patient Records */
+
+@media(max-width:767.98px){
+#dior-doctor-app #dior-doc-content #tab-doc-accounts-income-report{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:14px 0 24px!important;overflow-x:clip;box-sizing:border-box!important}
+#tab-doc-accounts-income-report>.mb-4:first-child{align-items:flex-start!important}
+#tab-doc-accounts-income-report>.mb-4:first-child .va-breadcrumb-list{display:none!important}
+#tab-doc-accounts-income-report .dior-subtab-nav-bar{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;padding:0!important;margin:0 0 16px!important}
+#tab-doc-accounts-income-report .dior-subtab-pill{width:100%!important;min-width:0!important;min-height:40px!important;margin:0!important;padding:8px 5px!important;font-size:12px!important;white-space:normal!important}
+#tab-doc-accounts-income-report>.card,#tab-doc-accounts-income-report .view-appointment-card{width:100%!important;max-width:100%!important;min-width:0!important;margin-left:0!important;margin-right:0!important;box-sizing:border-box!important}
+#tab-doc-accounts-income-report>.card{padding:12px!important;margin-bottom:14px!important}
+#tab-doc-accounts-income-report .view-appointment-card{padding:0!important;overflow:hidden!important}
+#tab-doc-accounts-income-report .va-header-container{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px!important;padding:12px!important}
+#tab-doc-accounts-income-report .va-actions-wrapper{width:100%!important;display:flex!important;flex-wrap:wrap!important}
+#tab-doc-accounts-income-report .va-table-wrapper{width:100%!important;max-width:100%!important;overflow:hidden!important;padding:0 10px 12px!important;box-sizing:border-box!important}
+#tab-doc-accounts-income-report #dior-income-report-table{display:block!important;width:100%!important;min-width:0!important;table-layout:fixed!important}
+#tab-doc-accounts-income-report #dior-income-report-table thead{display:none!important}
+#tab-doc-accounts-income-report #dior-income-report-table tbody{display:grid!important;gap:10px!important;width:100%!important}
+#tab-doc-accounts-income-report #dior-income-report-table tbody tr{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px 12px!important;width:100%!important;min-width:0!important;margin:0!important;padding:14px 12px!important;border:1px solid #E2E8F0!important;border-radius:14px!important;background:#fff!important;box-shadow:0 1px 3px rgba(15,23,42,.06)!important;box-sizing:border-box!important}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:3px!important;min-width:0!important;padding:0!important;border:0!important;background:transparent!important;white-space:normal!important;overflow-wrap:anywhere!important;font-size:11px!important;text-align:left!important}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:before{font-size:9px!important;font-weight:700!important;letter-spacing:.04em!important;text-transform:uppercase!important;color:#8493A7!important}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:first-child{grid-column:1/-1!important;padding-bottom:8px!important;border-bottom:1px solid #EDF1F6!important;font-size:14px!important;font-weight:700!important;color:#12345A!important}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(2):before{content:"January"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(3):before{content:"February"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(4):before{content:"March"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(5):before{content:"April"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(6):before{content:"May"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(7):before{content:"June"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(8):before{content:"July"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(9):before{content:"August"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(10):before{content:"September"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(11):before{content:"October"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(12):before{content:"November"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(13):before{content:"December"}
+#tab-doc-accounts-income-report #dior-income-report-table tbody td:nth-child(14):before{content:"Yearly Total"}
+#tab-doc-accounts-income-report #dior-income-report-table tfoot{display:block!important;width:100%!important;margin-top:10px!important}
+#tab-doc-accounts-income-report #dior-income-report-table tfoot tr{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;padding:12px!important;border:1px solid #E2E8F0!important;border-radius:12px!important;background:#fff!important}
+#tab-doc-accounts-income-report #dior-income-report-table tfoot td{display:block!important;min-width:0!important;padding:4px!important;border:0!important;white-space:normal!important;overflow-wrap:anywhere!important}
+}
+
+</style>
+
+
+<script>
+(function() {
+    var incomeChartInstance = null;
+
+    var incomeChartData = {
+        Monthly: {
+            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            series: <?php echo wp_json_encode($ir_chart_series); ?>
+        },
+        Daily: {
+            categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            series: <?php echo wp_json_encode($ir_chart_series); ?>
+        },
+        Yearly: {
+            categories: ['<?php echo esc_js((string) $ir_year); ?>'],
+            series: <?php echo wp_json_encode(array_map(static function ($k, $v) { return ['name' => $k, 'data' => [round($v, 2)]]; }, array_keys(array_slice($ir_dept_totals, 0, 5, true)), array_values(array_slice($ir_dept_totals, 0, 5, true)))); ?>
+        }
+    };
+
+    function renderIncomeChart() {
+        var el = document.getElementById('dior-income-report-apex-chart');
+        var panel = document.getElementById('tab-doc-accounts-income-report');
+        if (!el || !panel) return;
+
+        if (typeof ApexCharts === 'undefined') {
+            setTimeout(renderIncomeChart, 100);
+            return;
+        }
+
+        if (window.getComputedStyle(panel).display === 'none') {
+            return;
+        }
+
+        if (incomeChartInstance) {
+            incomeChartInstance.destroy();
+            incomeChartInstance = null;
+        }
+
+        var filterEl = document.getElementById('dior-income-chart-filter');
+        var period = (filterEl ? filterEl.value : 'Monthly') || 'Monthly';
+        var d = incomeChartData[period] || incomeChartData.Monthly;
+
+        var options = {
+            series: d.series,
+            chart: {
+                type: 'area',
+                height: 390,
+                fontFamily: 'inherit',
+                toolbar: {
+                    show: true,
+                    offsetX: -4,
+                    offsetY: -6,
+                    tools: {
+                        download: true,
+                        selection: true,
+                        zoom: true,
+                        zoomin: true,
+                        zoomout: true,
+                        pan: true,
+                        reset: true
+                    }
+                },
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 650
+                }
+            },
+            colors: ['#0B3768', '#1A528E', '#3B82B8', '#62A6C8', '#8AB8D6'],
+            dataLabels: { enabled: false },
+            stroke: {
+                curve: 'smooth',
+                width: 2.5
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.45,
+                    opacityTo: 0.05,
+                    stops: [0, 90, 100]
+                }
+            },
+            xaxis: {
+                categories: d.categories,
+                labels: {
+                    style: { colors: '#64748b', fontSize: '12px', fontWeight: 500 }
+                },
+                axisBorder: { color: '#e2e8f0' },
+                axisTicks: { color: '#e2e8f0' }
+            },
+            yaxis: {
+                labels: {
+                    formatter: function(val) {
+                        return '$' + Number(val).toLocaleString();
+                    },
+                    style: { colors: '#64748b', fontSize: '12px' }
+                }
+            },
+            tooltip: {
+                shared: true,
+                intersect: false,
+                y: {
+                    formatter: function(val) {
+                        return '$' + Number(val).toLocaleString() + '.00';
+                    }
+                }
+            },
+            grid: {
+                borderColor: '#E6EEF6',
+                strokeDashArray: 4
+            },
+            legend: {
+                position: 'bottom',
+                horizontalAlign: 'center',
+                offsetY: 8,
+                fontSize: '13px',
+                fontWeight: 600,
+                labels: { colors: '#334155' },
+                markers: { width: 10, height: 10, radius: 10 }
+            }
+        };
+
+        incomeChartInstance = new ApexCharts(el, options);
+        incomeChartInstance.render();
+    }
+
+    window.diorRenderIncomeChart = renderIncomeChart;
+
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'dior-income-chart-filter') {
+            renderIncomeChart();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.closest('#dior-income-chart-refresh')) {
+            renderIncomeChart();
+        }
+    });
+
+    var panel = document.getElementById('tab-doc-accounts-income-report');
+    if (panel) {
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style' && panel.style.display !== 'none') {
+                    setTimeout(renderIncomeChart, 50);
+                }
+            });
+        });
+        observer.observe(panel, { attributes: true });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderIncomeChart);
+    } else {
+        renderIncomeChart();
+    }
+})();
+</script>
+
+
+<style id="dior-income-report-table-alignment-fix">
+#tab-doc-accounts-income-report #dior-income-report-table{width:100%!important;min-width:1320px!important;table-layout:fixed!important;border-collapse:separate!important;border-spacing:0!important;}
+#tab-doc-accounts-income-report #dior-income-report-table th,#tab-doc-accounts-income-report #dior-income-report-table td{box-sizing:border-box!important;vertical-align:middle!important;white-space:nowrap!important;}
+#tab-doc-accounts-income-report #dior-income-report-table th:first-child,#tab-doc-accounts-income-report #dior-income-report-table td.dior-income-report-select-spacer{width:48px!important;min-width:48px!important;max-width:48px!important;}
+#tab-doc-accounts-income-report #dior-income-report-table th:nth-child(2),#tab-doc-accounts-income-report #dior-income-report-table tbody td:first-child,#tab-doc-accounts-income-report #dior-income-report-table tfoot td:nth-child(2){width:220px!important;min-width:220px!important;}
+#tab-doc-accounts-income-report #dior-income-report-table th:nth-child(n+3),#tab-doc-accounts-income-report #dior-income-report-table td:nth-child(n+3){width:88px!important;}
+#tab-doc-accounts-income-report #dior-income-report-table tfoot td{padding:14px 10px!important;font-weight:700!important;background:#F5F8FC!important;border-top:2px solid #D5E4F5!important;}
+#tab-doc-accounts-income-report #dior-income-report-table tfoot td:nth-child(n+3){text-align:right!important;}
+#tab-doc-accounts-income-report #dior-income-report-table tfoot td:nth-child(2){white-space:normal!important;line-height:1.45!important;}
+#tab-doc-accounts-income-report .va-table-wrapper{width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch;}
+@media(max-width:767.98px){#tab-doc-accounts-income-report #dior-income-report-table{min-width:1320px!important;}}
+</style>

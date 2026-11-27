@@ -1,0 +1,382 @@
+<section class="dior-tab-panel" id="tab-doc-accounts-bill-list" style="display: none;">
+    <!-- Breadcrumb Header -->
+    <div class="mb-4" style="display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
+        <div>
+            <h4 class="mb-0 text-dark" style="font-size: 20px; font-weight: 700;">Bill List</h4>
+        </div>
+        <div>
+            <ul class="va-breadcrumb-list">
+                <li><a href="#"><i class="fas fa-house"></i></a></li>
+                <li>/</li>
+                <li><a href="javascript:void(0)">Accounts</a></li>
+                <li>/</li>
+                <li class="active"><span>Bill List</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Subtab Navigation Bar -->
+    <div class="dior-subtab-nav-bar px-1 mb-4">
+        <button type="button" class="dior-subtab-pill btn active" data-doc-tab="doc-accounts-bill-list" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-bill-list');">
+            <i class="fas fa-receipt"></i> Bill List
+        </button>
+        <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-accounts-income" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-income');">
+            <i class="fas fa-arrow-trend-up"></i> Income
+        </button>
+        <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-accounts-income-report" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-income-report');">
+            <i class="fas fa-chart-pie"></i> Income Report
+        </button>
+        <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-accounts-invoice" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-invoice');">
+            <i class="fas fa-file-invoice"></i> Invoice
+        </button>
+    </div>
+
+    <div class="view-appointment-card">
+        <div class="va-header-container">
+            <div class="va-title-box">
+                <h2><i class="fas fa-receipt text-primary me-2"></i>Bill List</h2>
+                <div class="va-title-line"></div>
+            </div>
+
+            <div class="va-actions-wrapper">
+                <div class="input-group input-group-sm dior-bs-search-group" style="width: 240px;">
+
+                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Search records...">
+                </div>
+
+                <div class="va-actions-group">
+                    <button class="va-icon-btn va-btn-primary btn" title="Add New Bill"><i class="fas fa-plus"></i></button>
+                    <button class="va-icon-btn va-btn-success btn" title="Export to Excel"><i class="fas fa-file-arrow-down"></i></button>
+                    <button class="va-icon-btn va-btn-info btn" title="Refresh" onclick="window.location.reload()"><i class="fas fa-rotate-right"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="va-table-wrapper">
+            <table class="va-table table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 50px; text-align: center;">
+                            <input type="checkbox" class="va-checkbox form-check-input">
+                        </th>
+                        <th>Invoice ID <i class="fas fa-sort"></i></th>
+                        <th>Patient Name <i class="fas fa-sort"></i></th>
+                        <th>Doctor <i class="fas fa-sort"></i></th>
+                        <th>Payment Details</th>
+                        <th>Status <i class="fas fa-sort"></i></th>
+                        <th>Date <i class="fas fa-sort"></i></th>
+                        <th>Amount <i class="fas fa-sort"></i></th>
+                        <th>Tax</th>
+                        <th>Discount</th>
+                        <th>Total <i class="fas fa-sort"></i></th>
+                        <th style="text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    global $wpdb;
+
+                    // Limit billing records to the signed-in doctor's accessible scope.
+                    $current_doctor_id = get_current_user_id();
+                    // Admin preview uses the active doctor account, not the administrator user ID.
+                    if (user_can($current_doctor_id, 'manage_options')) {
+                        $doctor_accounts = get_users(['role' => 'doctor', 'number' => 1, 'orderby' => 'ID', 'order' => 'ASC', 'fields' => 'ID']);
+                        if (!empty($doctor_accounts)) {
+                            $current_doctor_id = (int) $doctor_accounts[0];
+                        }
+                    }
+                    $doctor_ids = class_exists('Dior_Doctor_Resolver')
+                        ? Dior_Doctor_Resolver::get_accessible_doctor_ids($current_doctor_id)
+                        : [$current_doctor_id];
+                    $doctor_ids = array_values(array_unique(array_filter(array_map('absint', (array) $doctor_ids))));
+                    $bill_rows = [];
+                    $seen_invoice_ids = [];
+
+                    $inv_table = $wpdb->prefix . 'dior_invoices';
+                    $pay_table = $wpdb->prefix . 'dior_payments';
+                    $patients_table = $wpdb->prefix . 'dior_patients';
+                    $invoices_exist = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $inv_table)) === $inv_table;
+                    $payments_exist = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $pay_table)) === $pay_table;
+
+                    if ($doctor_ids && $invoices_exist) {
+                        $doctor_placeholders = implode(',', array_fill(0, count($doctor_ids), '%d'));
+                        $payment_join = $payments_exist
+                            ? "LEFT JOIN $pay_table pay ON pay.invoice_uid = i.invoice_uid"
+                            : "LEFT JOIN (SELECT NULL AS invoice_uid, NULL AS payment_method, NULL AS transaction_id, NULL AS amount, NULL AS currency, NULL AS status, NULL AS paid_at) pay ON 1=0";
+                        $invoice_sql = "SELECT i.*, p.first_name, p.last_name, u.display_name AS patient_display,
+                                               doc.display_name AS doctor_display,
+                                               pay.payment_method, pay.transaction_id, pay.amount AS paid_amount,
+                                               pay.currency AS paid_currency, pay.status AS payment_status, pay.paid_at
+                                        FROM $inv_table i
+                                        LEFT JOIN $patients_table p ON (p.user_id = i.patient_id OR p.id = i.patient_id)
+                                        LEFT JOIN {$wpdb->users} u ON u.ID = i.patient_id
+                                        LEFT JOIN {$wpdb->users} doc ON doc.ID = i.doctor_id
+                                        $payment_join
+                                        WHERE i.doctor_id IN ($doctor_placeholders)
+                                        ORDER BY COALESCE(pay.paid_at, i.created_at) DESC, i.id DESC
+                                        LIMIT 200";
+                        $invoice_rows = $wpdb->get_results($wpdb->prepare($invoice_sql, ...$doctor_ids), ARRAY_A);
+                        foreach ((array) $invoice_rows as $invoice) {
+                            $invoice_id = (string) ($invoice['invoice_uid'] ?? '');
+                            if ($invoice_id !== '') $seen_invoice_ids[$invoice_id] = true;
+                            $bill_rows[] = $invoice;
+                        }
+                    }
+
+                    // Also read canonical payment rows that may not have a matching invoice row.
+                    if ($doctor_ids && $payments_exist) {
+                        $doctor_placeholders = implode(',', array_fill(0, count($doctor_ids), '%d'));
+                        $payment_sql = "SELECT pay.*, p.first_name, p.last_name, u.display_name AS patient_display,
+                                               doc.display_name AS doctor_display
+                                        FROM $pay_table pay
+                                        LEFT JOIN $patients_table p ON (p.user_id = pay.patient_id OR p.id = pay.patient_id)
+                                        LEFT JOIN {$wpdb->users} u ON u.ID = pay.patient_id
+                                        LEFT JOIN {$wpdb->users} doc ON doc.ID = pay.doctor_id
+                                        WHERE pay.doctor_id IN ($doctor_placeholders)
+                                        ORDER BY COALESCE(pay.paid_at, pay.created_at) DESC, pay.id DESC
+                                        LIMIT 200";
+                        $payment_rows = $wpdb->get_results($wpdb->prepare($payment_sql, ...$doctor_ids), ARRAY_A);
+                        foreach ((array) $payment_rows as $payment_row) {
+                            $invoice_id = (string) ($payment_row['invoice_uid'] ?? '');
+                            if ($invoice_id !== '' && isset($seen_invoice_ids[$invoice_id])) continue;
+                            $dedupe_id = $invoice_id !== '' ? $invoice_id : (string) ($payment_row['payment_uid'] ?? '');
+                            if ($dedupe_id !== '' && isset($seen_invoice_ids[$dedupe_id])) continue;
+                            if ($dedupe_id !== '') $seen_invoice_ids[$dedupe_id] = true;
+
+                            $payment_row['invoice_uid'] = $invoice_id ?: ($payment_row['payment_uid'] ?? ('PAY-' . ($payment_row['id'] ?? '')));
+                            $payment_row['payment_status'] = $payment_row['status'] ?? 'Pending';
+                            $payment_row['paid_amount'] = $payment_row['amount'] ?? null;
+                            $bill_rows[] = $payment_row;
+                        }
+                    }
+
+                    // Stripe checkout currently records patient payment receipts in the patient's dior_payments meta.
+                    // Include those real receipts as well, avoiding duplicates already represented by invoice rows.
+                    if ($doctor_ids) {
+                        $meta_rows = $wpdb->get_results(
+                            $wpdb->prepare(
+                                "SELECT pm.user_id, pm.meta_value, u.display_name AS patient_display
+                                 FROM {$wpdb->usermeta} pm
+                                 INNER JOIN {$wpdb->users} u ON u.ID = pm.user_id
+                                 WHERE pm.meta_key = %s
+                                 ORDER BY pm.umeta_id DESC
+                                 LIMIT 500",
+                                'dior_payments'
+                            ),
+                            ARRAY_A
+                        );
+
+                        foreach ((array) $meta_rows as $meta_row) {
+                            $patient_payments = maybe_unserialize($meta_row['meta_value']);
+                            if (!is_array($patient_payments)) continue;
+
+                            foreach ($patient_payments as $payment) {
+                                if (!is_array($payment)) continue;
+                                $payment_doctor_id = absint($payment['doctor_id'] ?? 0);
+                                if (!$payment_doctor_id || !in_array($payment_doctor_id, $doctor_ids, true)) continue;
+
+                                $invoice_id = sanitize_text_field($payment['invoice_uid'] ?? $payment['id'] ?? '');
+                                if ($invoice_id !== '' && isset($seen_invoice_ids[$invoice_id])) continue;
+                                if ($invoice_id !== '') $seen_invoice_ids[$invoice_id] = true;
+
+                                $doctor_user = get_userdata($payment_doctor_id);
+                                $bill_rows[] = [
+                                    'invoice_uid' => $invoice_id ?: 'PAY-' . absint($meta_row['user_id']),
+                                    'patient_id' => absint($meta_row['user_id']),
+                                    'doctor_id' => $payment_doctor_id,
+                                    'patient_display' => $meta_row['patient_display'] ?? 'Patient',
+                                    'doctor_display' => $payment['doctor_name'] ?? ($doctor_user ? $doctor_user->display_name : 'Attending Physician'),
+                                    'payment_method' => $payment['method'] ?? '—',
+                                    'transaction_id' => $payment['stripe_session_id'] ?? '',
+                                    'status' => $payment['status'] ?? 'Paid',
+                                    'payment_status' => $payment['status'] ?? 'Paid',
+                                    'created_at' => $payment['date'] ?? '',
+                                    'paid_at' => $payment['date'] ?? '',
+                                    'amount' => $payment['amount'] ?? $payment['total'] ?? 0,
+                                    'paid_amount' => $payment['amount'] ?? $payment['total'] ?? 0,
+                                    'currency' => 'USD',
+                                    'tax' => $payment['tax'] ?? null,
+                                    'discount' => $payment['discount'] ?? null,
+                                    'total_amount' => $payment['total'] ?? $payment['amount'] ?? 0,
+                                    'description' => $payment['description'] ?? '',
+                                ];
+                            }
+                        }
+                    }
+
+                    usort($bill_rows, static function ($left, $right) {
+                        $left_date = strtotime((string) ($left['paid_at'] ?? $left['created_at'] ?? '')) ?: 0;
+                        $right_date = strtotime((string) ($right['paid_at'] ?? $right['created_at'] ?? '')) ?: 0;
+                        return $right_date <=> $left_date;
+                    });
+                    $bill_rows = array_slice($bill_rows, 0, 200);
+
+                    $format_bill_amount = static function ($value, $currency = 'USD') {
+                        if ($value === null || $value === '') return '—';
+                        if (is_string($value)) {
+                            $numeric = preg_replace('/[^0-9.\\-]/', '', $value);
+                            if ($numeric === '' || !is_numeric($numeric)) return esc_html($value);
+                            $value = (float) $numeric;
+                        }
+                        $symbol = strtoupper((string) $currency) === 'USD' ? '$' : strtoupper((string) $currency) . ' ';
+                        return $symbol . number_format((float) $value, 2);
+                    };
+
+                    if (empty($bill_rows)): ?>
+                        <tr>
+                            <td colspan="12" class="dior-empty-state text-center text-muted py-5">
+                                <i class="fas fa-receipt fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                <span class="small fw-semibold">No patient payments or bills found.</span>
+                            </td>
+                        </tr>
+                    <?php else:
+                        foreach ($bill_rows as $br):
+                            $p_name = trim((string) (($br['first_name'] ?? '') . ' ' . ($br['last_name'] ?? ''))) ?: ($br['patient_display'] ?? 'Patient');
+                            $parts = preg_split('/\\s+/', $p_name);
+                            $init = strtoupper(substr($parts[0] ?? 'P', 0, 1) . substr($parts[1] ?? '', 0, 1));
+                            $d_name = $br['doctor_display'] ?? 'Attending Physician';
+                            $st_raw = ucfirst(strtolower((string) ($br['payment_status'] ?? $br['status'] ?? 'Pending')));
+                            $st_cls = in_array(strtolower($st_raw), ['paid', 'completed', 'succeeded'], true)
+                                ? 'va-badge-completed'
+                                : (in_array(strtolower($st_raw), ['failed', 'cancelled', 'canceled'], true) ? 'va-badge-cancelled' : 'va-badge-pending');
+                            $raw_date = $br['paid_at'] ?? $br['issued_at'] ?? $br['created_at'] ?? '';
+                            $b_date = $raw_date && strtotime((string) $raw_date) ? wp_date('M j, Y', strtotime((string) $raw_date)) : '—';
+                            $currency = $br['paid_currency'] ?? $br['currency'] ?? 'USD';
+                            $method = $br['payment_method'] ?? $br['method'] ?? '—';
+                            $transaction = $br['transaction_id'] ?? $br['stripe_session_id'] ?? '';
+                            $amount = $format_bill_amount($br['paid_amount'] ?? $br['amount'] ?? null, $currency);
+                            $tax = $format_bill_amount($br['tax'] ?? null, $currency);
+                            $discount = $format_bill_amount($br['discount'] ?? null, $currency);
+                            $total = $format_bill_amount($br['total_amount'] ?? $br['total'] ?? $br['amount'] ?? null, $currency);
+                    ?>
+                        <tr>
+                            <td style="text-align:center;"><input type="checkbox" class="va-checkbox form-check-input" value="<?php echo esc_attr($br['invoice_uid'] ?? ''); ?>"></td>
+                            <td>
+                                <strong><?php echo esc_html($br['invoice_uid'] ?? ('INV-' . ($br['id'] ?? ''))); ?></strong>
+
+                            </td>
+                            <td>
+                                <div class="va-user-profile">
+                                    <span class="va-user-avatar va-user-initials" aria-hidden="true"><?php echo esc_html($init); ?></span>
+                                    <span class="va-user-name"><?php echo esc_html($p_name); ?></span>
+                                </div>
+                            </td>
+                            <td><?php echo esc_html($d_name); ?></td>
+                            <td>
+                                <strong><?php echo esc_html($method); ?></strong>
+
+                            </td>
+                            <td><span class="va-badge <?php echo esc_attr($st_cls); ?>"><?php echo esc_html($st_raw); ?></span></td>
+                            <td><i class="far fa-calendar va-icon-blue"></i> <?php echo esc_html($b_date); ?></td>
+                            <td><?php echo esc_html($amount); ?></td>
+                            <td><?php echo esc_html($tax); ?></td>
+                            <td><?php echo esc_html($discount); ?></td>
+                            <td><?php echo esc_html($total); ?></td>
+                            <td>
+                                <div class="va-row-actions" style="justify-content:center;">
+                                    <button type="button" class="va-action-btn-sm va-btn-edit btn" title="View payment details"
+                                        onclick="alert(<?php echo wp_json_encode('Payment: ' . $method . ($transaction ? ' | Transaction: ' . $transaction : '') . ' | Status: ' . $st_raw); ?>);">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; endif; ?>
+                </tbody>        </tbody>
+            </table>
+        </div>
+
+
+    </div>
+</section>
+<style id="dior-bill-list-patient-initials">
+
+/* Patient name initials fallback for bill-list demo rows */
+#tab-doc-accounts-bill-list .va-user-initials{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    flex:0 0 36px!important;
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    border-radius:50%!important;
+    background:#1A528E!important;
+    color:#fff!important;
+    font-size:12px!important;
+    font-weight:700!important;
+    line-height:1!important;
+    letter-spacing:.02em!important;
+    text-transform:uppercase!important;
+}
+</style>
+<style id="dior-accounts-mobile-bill-list">
+/* Accounts mobile responsive layout, aligned with Patient Records */
+
+@media(max-width:767.98px){
+#dior-doctor-app #dior-doc-content #tab-doc-accounts-bill-list{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:14px 0 24px!important;overflow-x:clip;box-sizing:border-box!important}
+#tab-doc-accounts-bill-list>.mb-4:first-child{align-items:flex-start!important}
+#tab-doc-accounts-bill-list>.mb-4:first-child .va-breadcrumb-list{display:none!important}
+#tab-doc-accounts-bill-list .dior-subtab-nav-bar{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;padding:0!important;margin:0 0 16px!important}
+#tab-doc-accounts-bill-list .dior-subtab-pill{width:100%!important;min-width:0!important;min-height:40px!important;margin:0!important;padding:8px 5px!important;font-size:12px!important;white-space:normal!important}
+#tab-doc-accounts-bill-list .view-appointment-card{width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;box-sizing:border-box!important}
+#tab-doc-accounts-bill-list .va-header-container{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px!important;padding:12px!important}
+#tab-doc-accounts-bill-list .va-actions-wrapper,#tab-doc-accounts-bill-list .dior-bs-search-group{width:100%!important;max-width:100%!important}
+#tab-doc-accounts-bill-list .va-actions-wrapper{display:flex!important;flex-wrap:wrap!important}
+#tab-doc-accounts-bill-list .va-actions-group{width:100%!important;display:flex!important;gap:8px!important}
+#tab-doc-accounts-bill-list .va-actions-group .va-icon-btn{flex:1!important}
+#tab-doc-accounts-bill-list .va-table-wrapper{width:100%!important;max-width:100%!important;overflow:hidden!important;padding:0 10px 12px!important;box-sizing:border-box!important}
+#tab-doc-accounts-bill-list .va-table{display:block!important;width:100%!important;min-width:0!important;table-layout:fixed!important}
+#tab-doc-accounts-bill-list .va-table thead{display:none!important}
+#tab-doc-accounts-bill-list .va-table tbody{display:grid!important;gap:10px!important;width:100%!important}
+#tab-doc-accounts-bill-list .va-table tbody tr{position:relative!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px 12px!important;width:100%!important;min-width:0!important;margin:0!important;padding:14px 12px 12px 42px!important;border:1px solid #E2E8F0!important;border-radius:14px!important;background:#fff!important;box-shadow:0 1px 3px rgba(15,23,42,.06)!important;box-sizing:border-box!important}
+#tab-doc-accounts-bill-list .va-table tbody td{display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:flex-start!important;gap:3px!important;min-width:0!important;padding:0!important;border:0!important;background:transparent!important;white-space:normal!important;overflow-wrap:anywhere!important;font-size:12px!important}
+#tab-doc-accounts-bill-list .va-table tbody td:before{content:"";font-size:9px!important;font-weight:700!important;letter-spacing:.04em!important;text-transform:uppercase!important;color:#8493A7!important}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(1){position:absolute!important;left:12px!important;top:15px!important;display:block!important}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(2):before{content:"Invoice ID"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(3):before{content:"Patient"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(4):before{content:"Doctor"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(5):before{content:"Payment Details"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(6):before{content:"Status"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(7):before{content:"Date"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(8):before{content:"Amount"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(9):before{content:"Tax"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(10):before{content:"Discount"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(11):before{content:"Total"}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(3){font-weight:700!important;color:#12345A!important}
+#tab-doc-accounts-bill-list .va-table tbody td:nth-child(12){grid-column:1/-1;align-items:flex-end!important;padding-top:8px!important;border-top:1px solid #EDF1F6!important}
+#tab-doc-accounts-bill-list .va-row-actions{display:flex!important;gap:7px!important}
+}
+
+</style>
+
+<style id="dior-bill-list-exact-1280">
+/* Bill List only: compact desktop proportions at a 1280px viewport. */
+@media (min-width:1279px) and (max-width:1281px){
+    #tab-doc-accounts-bill-list{width:100%;max-width:100%;min-width:0;overflow-x:clip;}
+    #tab-doc-accounts-bill-list > .mb-4:first-child{margin-bottom:12px!important;padding:0 3px!important;gap:8px!important;}
+    #tab-doc-accounts-bill-list > .mb-4:first-child h4{font-size:19px!important;line-height:1.25!important;}
+    #tab-doc-accounts-bill-list .va-breadcrumb-list{font-size:11px!important;}
+    #tab-doc-accounts-bill-list > .dior-subtab-nav-bar{gap:8px!important;margin-bottom:14px!important;padding-bottom:10px!important;}
+    #tab-doc-accounts-bill-list .dior-subtab-pill{padding:7px 13px!important;font-size:12px!important;line-height:1.25!important;gap:6px!important;border-radius:8px!important;}
+    #tab-doc-accounts-bill-list .view-appointment-card{margin-bottom:14px!important;border-radius:12px!important;min-width:0;}
+    #tab-doc-accounts-bill-list .va-header-container{padding:14px 16px!important;gap:10px!important;align-items:center!important;}
+    #tab-doc-accounts-bill-list .va-title-box h2{font-size:17px!important;line-height:1.25!important;}
+    #tab-doc-accounts-bill-list .va-title-line{margin-top:5px!important;width:28px!important;height:2px!important;}
+    #tab-doc-accounts-bill-list .va-actions-wrapper{gap:8px!important;flex-wrap:nowrap!important;min-width:0;}
+    #tab-doc-accounts-bill-list .dior-bs-search-group{width:205px!important;min-width:160px!important;}
+    #tab-doc-accounts-bill-list .dior-bs-search-group .form-control{height:34px!important;min-height:34px!important;font-size:11px!important;padding-top:5px!important;padding-bottom:5px!important;}
+    #tab-doc-accounts-bill-list .va-actions-group{gap:6px!important;display:flex!important;align-items:center!important;}
+    #tab-doc-accounts-bill-list .va-icon-btn{width:34px!important;height:34px!important;min-width:34px!important;padding:0!important;font-size:12px!important;}
+    #tab-doc-accounts-bill-list .va-table-wrapper{width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:hidden!important;}
+    #tab-doc-accounts-bill-list .va-table{width:100%!important;min-width:0!important;margin-bottom:0!important;table-layout:auto!important;}
+    #tab-doc-accounts-bill-list .va-table thead th{font-size:10px!important;line-height:1.25!important;padding:9px 7px!important;white-space:nowrap!important;letter-spacing:.02em!important;}
+    #tab-doc-accounts-bill-list .va-table tbody td{font-size:11px!important;line-height:1.35!important;padding:9px 7px!important;vertical-align:middle!important;}
+    #tab-doc-accounts-bill-list .va-user-profile{gap:7px!important;min-width:0;}
+    #tab-doc-accounts-bill-list .va-user-initials{width:30px!important;height:30px!important;min-width:30px!important;flex-basis:30px!important;font-size:10px!important;}
+    #tab-doc-accounts-bill-list .va-user-name{font-size:11px!important;line-height:1.3!important;}
+    #tab-doc-accounts-bill-list .va-badge{font-size:10px!important;padding:4px 7px!important;line-height:1.2!important;}
+    #tab-doc-accounts-bill-list .va-row-actions{gap:5px!important;}
+    #tab-doc-accounts-bill-list .va-action-btn-sm{width:28px!important;height:28px!important;min-width:28px!important;padding:0!important;font-size:11px!important;}
+}
+</style>
