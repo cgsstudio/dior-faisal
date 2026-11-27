@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Documents &amp; Consent — Upload / Templates / Signed (Task 5)</title>
+    <style>
+        :root {
+            --ink: #0F172A;
+            --muted: #64748B;
+            --line: #E2E8F0;
+            --navy: #00346C;
+            --bg: #F8FAFC;
+            --ok: #0F7B47;
+            --bad: #B91C1C;
+            --warn: #B45309;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 32px 20px 64px;
+            background: var(--bg);
+            color: var(--ink);
+            font: 15px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .wrap { max-width: 1080px; margin: 0 auto; }
+
+        h1 { font-size: 26px; line-height: 1.25; margin: 0 0 6px; color: var(--navy); }
+        h2 { font-size: 18px; margin: 38px 0 12px; color: var(--navy); }
+        h3 { font-size: 15px; margin: 22px 0 10px; color: var(--navy); }
+        .sub { color: var(--muted); margin: 0 0 26px; }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin: 0 0 18px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+        }
+
+        .shot { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); }
+
+        ul { margin: 8px 0 0; padding-left: 20px; }
+        li { margin: 0 0 8px; }
+
+        code {
+            background: #F1F5F9;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            padding: 1px 5px;
+            font-size: 12.5px;
+            word-break: break-word;
+        }
+
+        .pill {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            padding: 3px 9px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        .pill.bad { background: #FEE2E2; color: var(--bad); }
+        .pill.ok { background: #DCFCE7; color: var(--ok); }
+        .pill.warn { background: #FEF3C7; color: var(--warn); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+        th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+        td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+        .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+        .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 8px; }
+        .label.bad { color: var(--bad); }
+        .label.ok { color: var(--ok); }
+
+        .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+        .toc a {
+            font-size: 13px; font-weight: 600; color: var(--navy); text-decoration: none;
+            border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px;
+        }
+        .toc a:hover { border-color: var(--navy); }
+
+        .note { background: #F8FAFC; border-left: 3px solid var(--navy); padding: 10px 14px; margin: 14px 0 0; border-radius: 0 8px 8px 0; }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <h1>Documents &amp; Consent — Upload / Manage Templates / Consent Forms</h1>
+        <p class="sub">Task 5: teen sub-tabs ke dead buttons real banaye, Consent Templates ko hardcoded markup se nikaal
+            kar DB-backed CRUD diya, aur teeno pages desktop / tablet / phone par fit kiye. Sab kuch existing dashboard
+            tokens par — koi naya theme nahi.</p>
+
+        <div class="toc">
+            <a href="#before">Pehle kya toota tha</a>
+            <a href="#fix">Ab kya badla</a>
+            <a href="#popup">"+" popup fix</a>
+            <a href="#upload-sync">Upload → table sync</a>
+            <a href="#data">Data model</a>
+            <a href="#screens">Screens</a>
+            <a href="#mobile">Mobile / tablet</a>
+            <a href="#files">Files / deploy</a>
+        </div>
+
+        <h2 id="before">1. Root cause (browser me verify kiya)</h2>
+        <div class="card">
+            <table>
+                <tr>
+                    <th>Control</th>
+                    <th>Pehle</th>
+                    <th>Ab</th>
+                </tr>
+                <tr>
+                    <td><strong>Add new record</strong> (Upload Documents toolbar)</td>
+                    <td><span class="pill bad">dead</span> Button ek undefined global
+                        (<code>diorOpenDoctorDocUploadModal()</code>) call karta tha → console error, kuch nahi hota
+                        tha.</td>
+                    <td><span class="pill ok">working</span> Handler bound hai; function na mile to Bootstrap modal ka
+                        <code>getOrCreateInstance().show()</code> fallback chalta hai.</td>
+                </tr>
+                <tr>
+                    <td><strong>Consent Templates</strong> (pura page)</td>
+                    <td><span class="pill bad">fake</span> 8 rows seedha HTML me hardcoded thi. Add/Edit/Delete par sirf
+                        DOM badalta tha — reload par sab wapas. Koi AJAX, koi table nahi.</td>
+                    <td><span class="pill ok">working</span> Naya table <code>wp_dior_consent_templates</code>, PHP se
+                        render, aur overlay editor + save/delete/bulk-delete AJAX.</td>
+                </tr>
+                <tr>
+                    <td><strong>Export / Refresh</strong> (teeno tabs)</td>
+                    <td><span class="pill bad">dead</span> Koi handler nahi — click par kuch nahi.</td>
+                    <td><span class="pill ok">working</span> CSV download (Excel-friendly BOM) aur server refresh; icon
+                        spin + button disabled.</td>
+                </tr>
+                <tr>
+                    <td><strong>Toolbar trash</strong> (teeno tabs)</td>
+                    <td><span class="pill warn">half</span> Checkboxes ka koi sync nahi tha, kuch bhi select na ho to bhi
+                        delete chal jaata tha, aur delete sirf DOM row hatata tha.</td>
+                    <td><span class="pill ok">working</span> Select na ho to button disabled; selected IDs
+                        <code>dior_doc_*_bulk_delete</code> par jaate hain, reload ke baad bhi row nahi aati.</td>
+                </tr>
+                <tr>
+                    <td><strong>Search</strong></td>
+                    <td><span class="pill warn">stale</span> Filter sirf ek jagah likha tha; templates / signed par
+                        rows add hone ke baad naya row filter se bach nikalta tha.</td>
+                    <td><span class="pill ok">working</span> Shared <code>diorFilterConsentRows()</code> + counter
+                        sync; add/delete ke baad count turant update.</td>
+                </tr>
+                <tr>
+                    <td><strong>Table layout</strong> (desktop)</td>
+                    <td><span class="pill bad">clipped</span> <code>min-width: 1000px !important</code> ki wajah se
+                        table card se bahar nikal jaata tha — ACTIONS column kat jaata tha.</td>
+                    <td><span class="pill ok">fixed</span> Media-query scoped sizing: headers wrap, 8px padding,
+                        actions column 96px. Table card ke andar exactly fit.</td>
+                </tr>
+                <tr>
+                    <td><strong>Pills</strong></td>
+                    <td><span class="pill bad">confusing</span> Inactive aur active dono solid navy — current page
+                        pata hi nahi chalta tha. Labels bhi page title se repeat ho rahe the.</td>
+                    <td><span class="pill ok">working</span> Outline vs. filled + active dot, aur labels ab
+                        <em>Upload Documents / Manage Templates / Consent Forms</em>.</td>
+                </tr>
+            </table>
+            <p class="note"><strong>Layout bug jo measure hua:</strong> 1440px par card 1052px tha, par table 1313–1419px
+                tak phail raha tha (signed consent me ~56px overflow). Mobile par <code>min-width:1000px</code>
+                media query ke bahar tha isliye wahan bhi leak ho raha tha.</p>
+        </div>
+
+        <h2 id="fix">2. Ab kya badla — design decisions</h2>
+        <div class="card">
+            <ul>
+                <li><strong>Pills = navigation, page title = page.</strong> Inactive pill white + navy text + grey
+                    border; active pill filled navy + white dot (greyscale me bhi farq dikhe). Isi liye labels rename
+                    kiye taaki title aur pill repeat na hon: <em>Manage Templates</em>, <em>Consent Forms</em>.</li>
+                <li><strong>Consent Templates ab real data hai.</strong> Table
+                    <code>wp_dior_consent_templates</code> pehli load par <code>dbDelta</code> se banti hai aur 8 demo
+                    rows ek baar seed hoti hain — page pehle jaisa bhara dikhta hai, blank empty-state nahi. Seed sirf
+                    tab chalti hai jab table khaali ho, isliye live data kabhi overwrite nahi hota.</li>
+                <li><strong>Editor = overlay, page ke andar hi.</strong> Add aur Edit dono ek hi modal use karte hain
+                    (Template Name*, Consent Category*, Department, Version, Status). Phone par wahi overlay bottom
+                    sheet ban jaata hai, primary action upar.</li>
+                <li><strong>Destructive actions confirm karte hain.</strong> Single delete aur bulk delete dono par
+                    SweetAlert confirm; count confirm text me actual selected count.</li>
+                <li><strong>Koi silent fake save nahi.</strong> Backend na mile (ya nonce expire) to error toast aata
+                    hai — UI par row add nahi hoti.</li>
+                <li><strong>Empty states</strong> teeno tabs par: icon + one-line explanation + agli step. Upload par
+                    CTA seedha upload modal kholta hai.</li>
+            </ul>
+        </div>
+
+        <h2 id="popup">3. "+" par sirf overlay dikhta tha — consent forms / templates tab se</h2>
+        <div class="card">
+            <p><strong>Report:</strong> Consent Forms tab par toolbar ke <strong>+</strong> par click karne se sirf
+                screen grey (overlay) ho jaati thi — koi popup nahi khulta tha.</p>
+            <table>
+                <tr>
+                    <th>Step</th>
+                    <th>Kya ho raha tha</th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>Upload modal (<code>#diorDoctorDocUploadModal</code>) ka markup
+                        <code>&lt;section id="tab-doc-documents-upload"&gt;</code> ke <em>andar</em> render ho raha
+                        tha.</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Consent Forms / Manage Templates par JS baaki panels ko <code>display:none</code> karta hai —
+                        isliye modal bhi hidden ho jaata tha.</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Bootstrap backdrop ko <code>&lt;body&gt;</code> me daalta hai, par dialog apni jagah hi rehta
+                        hai. Net result: grey backdrop, dialog <strong>0×0</strong> (measured — reproduced in
+                        browser).</td>
+                </tr>
+            </table>
+            <div class="grid" style="margin:16px 0">
+                <div>
+                    <p class="label ok">Consent Forms se "+" → popup ab khulta hai (desktop)</p>
+                    <img class="shot" src="screenshots/docs_upload_popup_from_signed.png" alt="Upload popup from signed consent tab">
+                </div>
+                <div>
+                    <p class="label ok">Wahi popup mobile par (bottom sheet)</p>
+                    <img class="shot" src="screenshots/docs_upload_popup_mobile.png" alt="Upload popup mobile">
+                </div>
+            </div>
+            <p class="note"><strong>Fix:</strong> modal ab teeno panels ke <em>bahar</em>, template ke end me render
+                hota hai — kisi bhi sub-tab se "+" kaam karta hai. Sath hi ek defensive guard: agar purana
+                template cache se aa jaye (modal ab bhi panel ke andar ho), to click par modal ko
+                <code>&lt;body&gt;</code> me hoist kar diya jaata hai — dono versions par popup khulta hai.</p>
+        </div>
+
+        <h2 id="upload-sync">4. "Upload kiya par table me kuch nahi aaya"</h2>
+        <div class="card">
+            <p><strong>Report:</strong> popup me form bharke Save karne par success toast aata tha, par
+                Signed Consent list khaali hi rehti thi.</p>
+            <table>
+                <tr>
+                    <th>Step</th>
+                    <th>Kya ho raha tha</th>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>Data DB me save ho raha tha (list page reload par aati thi) — toast bhi aata tha. Par ab
+                        dashboard reload nahi hota, isliye table ko khud update karna padta hai.</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Upload handler naya row sirf <strong>Upload Documents</strong> table me daalta tha. Signed
+                        Consent panel ka table refresh hi nahi hota tha — usme sirf page-load par aane wale rows
+                        the.</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Naya row me <code>data-label</code> attributes aur inline delete handler bhi nahi the, isliye
+                        mobile par card layout tootta tha aur delete button dead tha.</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>Footer counter (<em>0 consent forms total</em>) static tha — insert ke baad bhi 0 hi
+                        dikhta tha.</td>
+                </tr>
+            </table>
+            <p class="note"><strong>Fix:</strong> upload response me ab patient ka naam / ID / avatar bhi aata hai,
+                isliye client wahi 10-cell row banata hai jo PHP render karta hai (data-labels + working delete).
+                Category me "Consent" hone par row <strong>Signed Consent</strong> table me bhi turant insert hoti
+                hai, empty-state hat jaata hai, aur dono counters update ho jaate hain. Delete par dono tables se row
+                hatti hai. Verified: upload → 4 → 5 rows, counter "4 consent forms total" → "5 consent forms
+                total", desktop + mobile card dono sahi, zero console errors.</p>
+            <p class="label ok" style="margin-top:14px">Upload ke turant baad Signed Consent (desktop)</p>
+            <img class="shot" src="screenshots/docs_signed_after_upload.png" alt="Signed consent after upload">
+        </div>
+
+        <h2 id="data">5. Data model aur endpoints</h2>
+        <div class="card">
+            <table>
+                <tr>
+                    <th>Item</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Table</td>
+                    <td><code>wp_dior_consent_templates</code></td>
+                </tr>
+                <tr>
+                    <td>Columns</td>
+                    <td><code>id, template_uid, doctor_id, template_name, template_category, department, version,
+                            status, created_at, updated_at</code></td>
+                </tr>
+                <tr>
+                    <td>Keys</td>
+                    <td><code>PRIMARY (id)</code>, <code>UNIQUE (template_uid)</code>, index on
+                        <code>doctor_id</code> / <code>template_category</code> / <code>status</code></td>
+                </tr>
+                <tr>
+                    <td>Scoping</td>
+                    <td>Har query <code>doctor_id</code> par scoped — ek doctor doosre ka template nahi dekh sakta.</td>
+                </tr>
+                <tr>
+                    <td>AJAX</td>
+                    <td><code>dior_doc_consent_template_save</code>, <code>_delete</code>,
+                        <code>_bulk_delete</code> (array param <code>ids[]</code>), plus existing
+                        <code>dior_doc_document_update_meta</code> / <code>delete_document</code>. Sab nonce-checked.</td>
+                </tr>
+            </table>
+        </div>
+
+        <h2 id="screens">6. Screens — desktop</h2>
+        <div class="grid">
+            <div>
+                <p class="label ok">Upload Documents</p>
+                <img class="shot" src="screenshots/docs_upload_desktop.png" alt="Upload documents desktop">
+            </div>
+            <div>
+                <p class="label ok">Manage Templates</p>
+                <img class="shot" src="screenshots/docs_templates_desktop.png" alt="Consent templates desktop">
+            </div>
+            <div>
+                <p class="label ok">Consent Forms</p>
+                <img class="shot" src="screenshots/docs_signed_desktop.png" alt="Signed consent desktop">
+            </div>
+            <div>
+                <p class="label ok">Add / Edit template — overlay</p>
+                <img class="shot" src="screenshots/docs_add_template_desktop.png" alt="Add template overlay">
+            </div>
+        </div>
+
+        <h2 id="mobile">7. Mobile (390px) aur tablet (820px)</h2>
+        <div class="grid">
+            <div>
+                <p class="label ok">Upload Documents — cards</p>
+                <img class="shot" src="screenshots/docs_upload_mobile.png" alt="Upload documents mobile">
+            </div>
+            <div>
+                <p class="label ok">Manage Templates — cards</p>
+                <img class="shot" src="screenshots/docs_templates_mobile.png" alt="Consent templates mobile">
+            </div>
+            <div>
+                <p class="label ok">Consent Forms — cards</p>
+                <img class="shot" src="screenshots/docs_signed_mobile.png" alt="Signed consent mobile">
+            </div>
+            <div>
+                <p class="label ok">Add template — bottom sheet</p>
+                <img class="shot" src="screenshots/docs_add_template_mobile.png" alt="Add template mobile sheet">
+            </div>
+        </div>
+        <div class="card">
+            <ul>
+                <li><strong>991px se neeche</strong> table ki har row ek labelled card ban jaati hai
+                    (<code>data-label</code> + <code>::before</code>) — wahi treatment jo pharmacy aur prescriptions
+                    par hai, koi side-scroll nahi.</li>
+                <li><strong>Toolbar</strong> 420px se neeche do rows me: poora-width search upar, icon buttons
+                    right-aligned neeche. Isse pehle search field 80px par sikud jaata tha aur icons uske upar chadh
+                    rahe the (Bootstrap <code>form-control</code> ka 160px min-width).</li>
+                <li><strong>Pills</strong> 2-column grid (teesra pill full-width), active state filled navy.</li>
+                <li><strong>iOS zoom guard:</strong> search input aur overlay inputs <code>16px</code> — focus par
+                    Safari zoom nahi karta.</li>
+                <li><strong>Bottom sheet:</strong> overlay <code>92vh</code> max height ke saath scroll karta hai,
+                    buttons full-width, primary sabse upar.</li>
+                <li><strong>Verified widths</strong> (table vs. card): desktop 1050 / 1052, tablet 726 / 752,
+                    mobile 332 / 358. Teeno breakpoints par <code>documentElement.scrollWidth === clientWidth</code> —
+                    zero horizontal overflow.</li>
+            </ul>
+        </div>
+
+        <h2 id="files">8. Files aur deploy</h2>
+        <div class="card">
+            <table>
+                <tr>
+                    <th>File</th>
+                    <th>Role</th>
+                </tr>
+                <tr>
+                    <td><code>templates/doctor-tabs/documents.php</code></td>
+                    <td>Teeno panels PHP-driven; templates list <code>wp_dior_consent_templates</code> se render hoti
+                        hai. Footer nesting fix, <code>data-label</code> attributes, pills rename, aur upload modal
+                        ab teeno panels ke bahar (popup fix).</td>
+                </tr>
+                <tr>
+                    <td><code>assets/js/dior-documents.js</code> <span class="pill ok">naya</span></td>
+                    <td>Shared overlay editor, template CRUD + bulk delete, upload/signed binders, CSV export,
+                        refresh, search filter, counter sync. Nonce + <code>credentials:'same-origin'</code>.</td>
+                </tr>
+                <tr>
+                    <td><code>includes/class-dior-doctor-dynamic.php</code></td>
+                    <td>Consent-template schema, one-time seed, admin-ajax registrations aur
+                        render/owner/can-touch/save/delete methods.</td>
+                </tr>
+                <tr>
+                    <td><code>includes/class-dior-secure-files.php</code></td>
+                    <td>Upload response me ab patient ka <code>patient_name</code> / <code>patient_code</code> /
+                        <code>patient_avatar</code> bhi jaata hai, taaki naya row server-rendered row jaisa hi bane.</td>
+                </tr>
+                <tr>
+                    <td><code>dior-medical-dashboard.php</code></td>
+                    <td><code>dior-documents.js</code> enqueue (pharmacy JS ke saath, filemtime versioning).</td>
+                </tr>
+                <tr>
+                    <td><code>assets/css/dior-custom.css</code></td>
+                    <td>End me scoped TASK 5 blocks: pills/badges/empty states/overlay, 992px se neeche responsive
+                        cards + bottom sheet, 992px se upar table sizing, 420px se neeche toolbar stacking.</td>
+                </tr>
+            </table>
+            <p class="note"><strong>Note:</strong> table pehli page load par <code>dbDelta</code> se ban jaati hai.
+                Seed rows tabhi insert hote hain jab table khaali ho — live site ka existing data safe rehta hai.</p>
+        </div>
+
+        <h2>9. Test kaise karein</h2>
+        <div class="card">
+            <ul>
+                <li><strong>Teeno tabs</strong> se toolbar <strong>+</strong> dabaein — Signed Consent / Manage
+                    Templates se bhi "Upload Patient Document" popup poora khule (sirf backdrop nahi).</li>
+                <li>Upload Documents → toolbar <strong>+</strong> par upload modal khule; file upload karne par row
+                    list me aaye aur reload ke baad bhi rahe.</li>
+                <li><strong>Consent Forms tab se upload</strong>: Category "Consent Form" rakh kar save karein —
+                    naya row turant Signed Consent list me (aur counter me) dikhe, reload ke baad bhi rahe. Delete
+                    karne par dono tables se hate.</li>
+                <li>Manage Templates → <strong>+</strong> par overlay khule; Template Name aur Category bharke
+                    <strong>Create Template</strong> par row add ho aur counter badhe.</li>
+                <li>Row ka pen icon → values prefill hon; save par row update ho. Trash → confirm → row DB se hate.</li>
+                <li>Checkbox se 2 rows select karke toolbar trash → confirm text me "2" aaye, dono rows hate.</li>
+                <li>Export icon → CSV download khule; Refresh icon → icon ghoome aur list server se aaye.</li>
+                <li>Phone par: cards, 2-column pills, search apni row me, overlay bottom sheet, koi horizontal scroll
+                    nahi.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>

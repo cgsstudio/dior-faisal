@@ -1,0 +1,415 @@
+<section class="dior-tab-panel" id="tab-doc-accounts-income" style="display: none;">
+    <!-- Breadcrumb Header -->
+    <div class="mb-4" style="display: flex; justify-content: space-between; align-items: center; padding: 0 5px;">
+        <div>
+            <h4 class="mb-0 text-dark" style="font-size: 20px; font-weight: 700;">Income</h4>
+        </div>
+        <div>
+            <ul class="va-breadcrumb-list">
+                <li><a href="#"><i class="fas fa-house"></i></a></li>
+                <li>/</li>
+                <li><a href="#">Accounts</a></li>
+                <li>/</li>
+                <li class="active"><span>Income</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Subtab Navigation Bar -->
+    <div class="dior-subtab-nav-bar px-1 mb-4">
+        <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-accounts-bill-list" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-bill-list');">
+            <i class="fas fa-receipt"></i> Bill List
+        </button>
+        <button type="button" class="dior-subtab-pill btn active" data-doc-tab="doc-accounts-income" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-income');">
+            <i class="fas fa-arrow-trend-up"></i> Income
+        </button>
+        <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-accounts-income-report" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-income-report');">
+            <i class="fas fa-chart-pie"></i> Income Report
+        </button>
+        <button type="button" class="dior-subtab-pill btn" data-doc-tab="doc-accounts-invoice" onclick="if(typeof diorDocSwitchTab==='function') diorDocSwitchTab('doc-accounts-invoice');">
+            <i class="fas fa-file-invoice"></i> Invoice
+        </button>
+    </div>
+
+    <div class="view-appointment-card">
+        <div class="va-header-container">
+            <div class="va-title-box">
+                <h2><i class="fas fa-arrow-trend-up text-primary me-2"></i>Income</h2>
+                <div class="va-title-line"></div>
+            </div>
+
+            <div class="va-actions-box">
+                <div class="input-group input-group-sm dior-bs-search-group" style="width: 240px;">
+
+                    <input type="text" class="va-search-input form-control border-start-0 ps-0"
+                        placeholder="Search records...">
+                </div>
+
+                <button class="va-action-btn va-btn-primary btn" aria-label="Add new record">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="va-action-btn va-btn-success btn" aria-label="Export to Excel">
+                    <i class="fas fa-file-arrow-down"></i>
+                </button>
+                <button class="va-action-btn va-btn-info btn" aria-label="Refresh data">
+                    <i class="fas fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="va-table-wrapper">
+            <table class="va-table table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 50px; text-align: center;"><input type="checkbox"
+                                class="va-checkbox form-check-input"></th>
+                        <th>INCOME ID <i class="fas fa-sort" style="color: #ccc; margin-left:5px;"></i></th>
+                        <th>PATIENT NAME <i class="fas fa-sort" style="color: #ccc; margin-left:5px;"></i></th>
+                        <th>SERVICE TYPE <i class="fas fa-sort" style="color: #ccc; margin-left:5px;"></i></th>
+                        <th>BILLED <i class="fas fa-sort" style="color: #ccc; margin-left:5px;"></i></th>
+                        <th>PAID <i class="fas fa-sort" style="color: #ccc; margin-left:5px;"></i></th>
+                        <th>METHOD <i class="fas fa-sort" style="color: #ccc; margin-left:5px;"></i></th>
+                        <th>DATE <i class="fas fa-sort" style="color: #ccc; margin-left:5px;"></i></th>
+                        <th>INVOICE # <i class="fas fa-sort" style="color: #ccc; margin-left:5px;"></i></th>
+                        <th>STATUS <i class="fas fa-sort" style="color: #ccc; margin-left:5px;"></i></th>
+                        <th>ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                    global $wpdb;
+                    $inv_table = $wpdb->prefix . 'dior_invoices';
+                    $inc_rows = [];
+                    $doctor_id = get_current_user_id();
+                    if (user_can($doctor_id, 'manage_options')) { $accounts = get_users(['role'=>'doctor','number'=>1,'fields'=>'ID']); if ($accounts) $doctor_id = (int)$accounts[0]; }
+                    $scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
+                    $scope = array_values(array_unique(array_filter(array_map('absint',(array)$scope))));
+                    if ($scope && $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s',$inv_table)) === $inv_table) {
+                        $ph = implode(',',array_fill(0,count($scope),'%d'));
+                        $sql = "SELECT i.*, p.first_name, p.last_name, u.display_name AS patient_display FROM $inv_table i LEFT JOIN {$wpdb->prefix}dior_patients p ON (p.user_id=i.patient_id OR p.id=i.patient_id) LEFT JOIN {$wpdb->users} u ON u.ID=i.patient_id WHERE i.doctor_id IN ($ph) ORDER BY i.created_at DESC,i.id DESC LIMIT 100";
+                        $inc_rows = $wpdb->get_results($wpdb->prepare($sql,...$scope),ARRAY_A);
+                    }
+                    // Fallback for historical Stripe receipts stored in patient user-meta.
+                    if (empty($inc_rows)) {
+                        $doctor_id = get_current_user_id();
+                        if (user_can($doctor_id, 'manage_options')) {
+                            $accounts = get_users(['role' => 'doctor', 'number' => 1, 'fields' => 'ID']);
+                            if ($accounts) $doctor_id = (int) $accounts[0];
+                        }
+                        $scope = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_accessible_doctor_ids($doctor_id) : [$doctor_id];
+                        $meta_rows = $wpdb->get_results($wpdb->prepare("SELECT user_id, meta_value FROM {$wpdb->usermeta} WHERE meta_key = %s", 'dior_payments'), ARRAY_A);
+                        foreach ($meta_rows as $mr) {
+                            $items = maybe_unserialize($mr['meta_value']); if (!is_array($items)) continue;
+                            foreach ($items as $item) {
+                                if (!in_array(absint($item['doctor_id'] ?? 0), array_map('absint', (array) $scope), true)) continue;
+                                $uid = $item['invoice_uid'] ?? $item['id'] ?? ''; if (!$uid) continue;
+                                $patient = get_userdata((int) $mr['user_id']);
+                                $inc_rows[] = ['id'=>$uid,'invoice_uid'=>$uid,'patient_display'=>$patient ? $patient->display_name : 'Patient','description'=>$item['description'] ?? 'Appointment Payment','amount'=>(float) preg_replace('/[^0-9.\\-]/','',(string)($item['total'] ?? $item['amount'] ?? 0)),'status'=>$item['status'] ?? 'Paid','payment_method'=>$item['method'] ?? 'Stripe','created_at'=>$item['date'] ?? current_time('mysql')];
+                            }
+                        }
+                    }                    if (empty($inc_rows)): ?>
+                        <tr>
+                            <td colspan="11" class="dior-empty-state text-center text-muted py-5">
+                                <i class="fas fa-arrow-trend-up fs-3 d-block mb-2 text-secondary opacity-50"></i>
+                                <span class="small fw-semibold">No income records found.</span>
+                            </td>
+                        </tr>
+                    <?php else:
+                        foreach ($inc_rows as $ir):
+                            $p_name  = trim((string) (($ir['first_name'] ?? '') . ' ' . ($ir['last_name'] ?? ''))) ?: ($ir['patient_display'] ?? 'Patient');
+                            $billed  = number_format((float) ($ir['total_amount'] ?? $ir['amount'] ?? 0), 2);
+                            $paid    = strtolower((string) ($ir['status'] ?? '')) === 'paid' ? $billed : '0.00';
+                            $st_raw  = ucfirst(strtolower((string) ($ir['status'] ?? 'Pending')));
+                            $st_cls  = strtolower($st_raw) === 'paid' || strtolower($st_raw) === 'completed' ? 'va-badge-completed' : 'va-badge-pending';
+                            $i_date  = !empty($ir['created_at']) ? wp_date('M j, Y', strtotime($ir['created_at'])) : '—';
+                    ?>
+                        <tr>
+                            <td style="text-align: center;"><input type="checkbox" class="va-checkbox form-check-input"></td>
+                            <td><?php echo esc_html($ir['id'] ?? '—'); ?></td>
+                                                        <td class="va-income-patient-cell">
+                                <span class="va-income-patient-avatar"><?php $parts = preg_split('/\\s+/', trim($p_name)); $initials = strtoupper(substr($parts[0] ?? 'P', 0, 1) . (isset($parts[1]) ? substr($parts[1], 0, 1) : '')); echo esc_html($initials); ?></span>
+                                <span class="va-income-patient-name"><?php echo esc_html($p_name); ?></span>
+                            </td>
+                            <td><?php echo esc_html($ir['service_type'] ?? ($ir['description'] ?? 'Consultation')); ?></td>
+                            <td>$<?php echo esc_html($billed); ?></td>
+                            <td>$<?php echo esc_html($paid); ?></td>
+                            <td><?php echo esc_html($ir['payment_method'] ?? 'Card'); ?></td>
+                            <td><i class="far fa-calendar va-icon-blue"></i> <?php echo esc_html($i_date); ?></td>
+                            <td><?php echo esc_html($ir['invoice_uid'] ?? '—'); ?></td>
+                            <td><span class="va-badge <?php echo esc_attr($st_cls); ?>"><?php echo esc_html($st_raw); ?></span></td>
+                            <td>
+                                <div class="va-row-actions" style="justify-content: center;">
+                                    <button class="va-action-btn-sm va-btn-edit btn"><i class="fas fa-pen"></i></button>
+                                    <button class="va-action-btn-sm va-btn-delete btn"><i class="fas fa-trash"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</section>
+<style id="dior-accounts-mobile-income">
+/* Mobile income records use the same clean patient-card pattern as Patient Records. */
+@media (max-width: 767.98px) {
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income,
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income * { box-sizing: border-box !important; }
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income { width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:14px 0 24px!important;overflow-x:clip!important; }
+    #tab-doc-accounts-income>.mb-4:first-child{align-items:flex-start!important}
+    #tab-doc-accounts-income>.mb-4:first-child .va-breadcrumb-list{display:none!important}
+    #tab-doc-accounts-income .dior-subtab-nav-bar{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;padding:0!important;margin:0 0 16px!important}
+    #tab-doc-accounts-income .dior-subtab-pill{width:100%!important;min-width:0!important;min-height:40px!important;margin:0!important;padding:8px 5px!important;font-size:12px!important;white-space:normal!important}
+    #tab-doc-accounts-income .view-appointment-card{width:100%!important;max-width:100%!important;margin:0!important;padding:0!important;overflow:hidden!important}
+    #tab-doc-accounts-income .va-header-container{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px!important;padding:12px!important}
+    #tab-doc-accounts-income .va-header-actions{width:100%!important}
+    #tab-doc-accounts-income .va-actions-group{display:flex!important;gap:8px!important}
+    #tab-doc-accounts-income .va-actions-group .va-icon-btn{flex:1!important}
+    #tab-doc-accounts-income .va-table-wrapper{width:100%!important;max-width:100%!important;overflow:hidden!important;padding:0 10px 12px!important}
+    #tab-doc-accounts-income .va-table{display:block!important;width:100%!important;min-width:0!important;table-layout:fixed!important}
+    #tab-doc-accounts-income .va-table thead{display:none!important}
+    #tab-doc-accounts-income .va-table tbody{display:grid!important;gap:10px!important;width:100%!important}
+    #tab-doc-accounts-income .va-table tbody tr{position:relative!important;display:flex!important;flex-direction:column!important;gap:0!important;width:100%!important;min-width:0!important;margin:0!important;padding:12px 13px!important;border:1px solid #E2E8F0!important;border-radius:14px!important;background:#fff!important;box-shadow:0 1px 3px rgba(15,23,42,.06)!important;}
+    #tab-doc-accounts-income .va-table tbody td{display:flex!important;flex-direction:row!important;align-items:flex-start!important;justify-content:space-between!important;gap:12px!important;width:100%!important;min-width:0!important;padding:8px 0!important;border:0!important;border-bottom:1px solid #EDF1F6!important;background:transparent!important;white-space:normal!important;overflow-wrap:anywhere!important;text-align:right!important;font-size:12px!important;line-height:1.4!important;color:#12345A!important;}
+    #tab-doc-accounts-income .va-table tbody td:before{flex:0 0 34%!important;max-width:34%!important;text-align:left!important;font-size:9px!important;font-weight:700!important;letter-spacing:.04em!important;text-transform:uppercase!important;color:#8493A7!important;line-height:1.35!important;}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(1){position:absolute!important;top:12px!important;right:12px!important;display:block!important;width:auto!important;padding:0!important;border:0!important;z-index:2!important;}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(2):before{content:"Income ID"}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(3):before{content:none!important}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(3){order:-1!important;justify-content:flex-start!important;align-items:center!important;min-height:42px!important;padding:0 42px 10px 0!important;margin-bottom:2px!important;border-bottom:1px solid #EDF1F6!important;text-align:left!important;font-size:14px!important;font-weight:700!important;color:#12345A!important;}
+    #tab-doc-accounts-income .va-income-patient-avatar{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 38px!important;width:38px!important;height:38px!important;margin-right:10px!important;border-radius:50%!important;background:#1A528E!important;color:#fff!important;font-size:14px!important;font-weight:700!important;}
+    #tab-doc-accounts-income .va-income-patient-name{min-width:0!important;overflow-wrap:anywhere!important;}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(4):before{content:"Service"}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(5):before{content:"Billed"}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(6):before{content:"Paid"}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(7):before{content:"Method"}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(8):before{content:"Date"}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(9):before{content:"Invoice"}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(10):before{content:"Status"}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(10){align-items:center!important;}
+    #tab-doc-accounts-income .va-table tbody td:nth-child(11){justify-content:flex-end!important;align-items:center!important;padding:10px 0 0!important;margin-top:2px!important;border-top:1px solid #EDF1F6!important;border-bottom:0!important;}
+    #tab-doc-accounts-income .va-row-actions{display:flex!important;justify-content:flex-end!important;gap:8px!important;}
+    #tab-doc-accounts-income .va-action-btn-sm{width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;border-radius:9px!important;}
+    #tab-doc-accounts-income .va-badge{padding:4px 11px!important;border-radius:20px!important;font-size:11px!important;white-space:nowrap!important;}
+}
+</style>
+
+<style id="dior-accounts-income-exact-1280">
+/* Accounts > Income: compact desktop proportions at 1280px only. */
+@media (min-width: 1279px) and (max-width: 1281px) {
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income > .mb-4:first-child {
+        margin: 0 0 14px !important;
+        padding: 0 2px !important;
+        align-items: center !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income > .mb-4:first-child h4 {
+        font-size: 17px !important;
+        line-height: 1.3 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-breadcrumb-list {
+        gap: 6px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-breadcrumb-list li,
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-breadcrumb-list li a,
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-breadcrumb-list li span {
+        font-size: 11px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .dior-subtab-nav-bar {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+        margin: 0 0 14px !important;
+        padding: 0 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .dior-subtab-pill {
+        min-height: 34px !important;
+        padding: 7px 12px !important;
+        margin: 0 !important;
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .dior-subtab-pill i {
+        font-size: 11px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .view-appointment-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-header-container {
+        min-height: 58px !important;
+        padding: 10px 14px !important;
+        gap: 10px !important;
+        flex-wrap: nowrap !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-title-box h2 {
+        font-size: 16px !important;
+        line-height: 1.3 !important;
+        white-space: nowrap !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-title-line {
+        width: 28px !important;
+        height: 2px !important;
+        margin-top: 4px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-actions-box {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 7px !important;
+        min-width: 0 !important;
+        flex: 0 1 auto !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-actions-box .dior-bs-search-group {
+        width: 190px !important;
+        min-width: 150px !important;
+        flex: 0 1 190px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-search-input {
+        height: 32px !important;
+        min-height: 32px !important;
+        padding: 5px 9px !important;
+        font-size: 11px !important;
+        line-height: 1.2 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-action-btn {
+        width: 32px !important;
+        min-width: 32px !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        padding: 0 !important;
+        font-size: 12px !important;
+        line-height: 1 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        padding: 0 8px 8px !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        box-sizing: border-box !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table {
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: fixed !important;
+        border-collapse: separate !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table thead th {
+        padding: 9px 5px !important;
+        font-size: 9px !important;
+        line-height: 1.25 !important;
+        letter-spacing: .025em !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table thead th i {
+        margin-left: 2px !important;
+        font-size: 8px !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table tbody td {
+        padding: 9px 5px !important;
+        font-size: 10px !important;
+        line-height: 1.35 !important;
+        vertical-align: middle !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table th:first-child,
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table td:first-child {
+        width: 30px !important;
+        min-width: 30px !important;
+        text-align: center !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table th:nth-child(2),
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table td:nth-child(2) { width: 9% !important; }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table th:nth-child(3),
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table td:nth-child(3) { width: 12% !important; }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table th:nth-child(4),
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table td:nth-child(4) { width: 11% !important; }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table th:nth-child(5),
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table td:nth-child(5),
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table th:nth-child(6),
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table td:nth-child(6) { width: 7% !important; }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table th:nth-child(7),
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table td:nth-child(7) { width: 9% !important; }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table th:nth-child(8),
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table td:nth-child(8) { width: 9% !important; }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table th:nth-child(9),
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table td:nth-child(9) { width: 11% !important; }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table th:nth-child(10),
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table td:nth-child(10) { width: 8% !important; }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table th:nth-child(11),
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-table td:nth-child(11) { width: 9% !important; }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-checkbox {
+        width: 13px !important;
+        height: 13px !important;
+        margin: 0 !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-badge {
+        padding: 4px 6px !important;
+        font-size: 9px !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-row-actions {
+        display: flex !important;
+        gap: 4px !important;
+        justify-content: center !important;
+        flex-wrap: nowrap !important;
+    }
+
+    #dior-doctor-app #dior-doc-content #tab-doc-accounts-income .va-action-btn-sm {
+        width: 25px !important;
+        min-width: 25px !important;
+        height: 25px !important;
+        min-height: 25px !important;
+        padding: 0 !important;
+        font-size: 10px !important;
+    }
+}
+</style>

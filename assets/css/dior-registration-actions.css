@@ -1,0 +1,93 @@
+/**
+ * Dior Medical — Registration action buttons
+ * Brand palette: Deep Ocean Navy #002F6C, Electric Cyan #007EB1.
+ */
+
+/* Scope styles to the signed-in state on the registration page only. */
+.dior-auth-wrap .dior-reg-action-btn {
+    min-height: 48px;
+    padding: 13px 22px !important;
+    border: 1px solid #002F6C !important;
+    border-radius: 999px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600 !important;
+    line-height: 1.35;
+    text-align: center;
+    text-decoration: none !important;
+    white-space: normal;
+    box-shadow: 0 4px 12px rgba(0, 47, 108, 0.12);
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+/* Main action — keep the Dior Medical navy and white text on hover. */
+.dior-auth-wrap .dior-reg-action-primary,
+.dior-auth-wrap .dior-reg-action-primary:hover,
+.dior-auth-wrap .dior-reg-action-primary:focus,
+.dior-auth-wrap .dior-reg-action-primary:active {
+    color: #fff !important;
+    background: #002F6C !important;
+    border-color: #002F6C !important;
+}
+
+.dior-auth-wrap .dior-reg-action-primary:hover {
+    box-shadow: 0 4px 12px rgba(0, 47, 108, 0.12);
+    transform: none;
+}
+
+/* Force the label itself to stay white against theme and Bootstrap link rules. */
+.dior-auth-wrap .dior-reg-action-primary span,
+.dior-auth-wrap .dior-reg-action-primary:hover span,
+.dior-auth-wrap .dior-reg-action-primary:focus span,
+.dior-auth-wrap .dior-reg-action-primary:active span {
+    color: #FFFFFF !important;
+}
+
+/* Secondary action — outlined brand button. */
+.dior-auth-wrap .dior-reg-action-secondary {
+    color: #002F6C !important;
+    background: #fff !important;
+    border-color: #002F6C !important;
+    box-shadow: none;
+}
+
+.dior-auth-wrap .dior-reg-action-secondary:hover {
+    color: #fff !important;
+    background: #002F6C !important;
+    border-color: #002F6C !important;
+    box-shadow: 0 5px 14px rgba(0, 47, 108, 0.16);
+    transform: translateY(-1px);
+}
+
+.dior-auth-wrap .dior-reg-action-btn:focus-visible {
+    outline: 3px solid rgba(0, 126, 177, 0.35);
+    outline-offset: 3px;
+}
+
+.dior-auth-wrap .dior-reg-action-btn i {
+    font-size: 13px;
+    flex: 0 0 auto;
+}
+
+@media (max-width: 575.98px) {
+    .dior-auth-wrap .dior-reg-card-container .d-flex:has(.dior-reg-action-btn) {
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+    .dior-auth-wrap .dior-reg-action-btn {
+        width: 100%;
+        min-height: 48px;
+        padding: 13px 16px !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dior-auth-wrap .dior-reg-action-btn {
+        transition: none;
+    }
+}

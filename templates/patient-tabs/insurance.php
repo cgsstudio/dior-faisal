@@ -1,0 +1,241 @@
+<section class="dior-tab-panel dior-ic-44a70a0420" id="tab-insurance">
+    <!-- Breadcrumb Header -->
+    <div class="mb-4" style="display:flex;justify-content:space-between;align-items:center;padding:0;">
+        <div>
+            <h4 class="mb-0 text-dark" style="font-size:20px;font-weight:700;">Insurance & Claims</h4>
+        </div>
+
+    </div>
+
+    <div class="master-table-wrapper">
+        <div class="master-table-container">
+            <div class="master-table-card">
+                <div class="master-table-header">
+                    <div class="header-content">
+                        <div class="table-title-section">
+                            <h2 class="table-title">Insurance & Claims</h2>
+                            <div class="title-accent"></div>
+                        </div>
+                        <div class="header-actions-group">
+                            <div class="input-group input-group-sm dior-bs-search-group" style="width: 240px;">
+
+                                <input type="text" id="dior-bill-search-input" class="form-control border-start-0 ps-0"
+                                    placeholder="Search records..." aria-label="Search box" onkeyup="diorFilterBill()">
+                            </div>
+                            <div class="action-buttons">
+                                <button type="button" aria-label="Delete selected items"
+                                    class="docs-icon-btn docs-btn-danger btn" title="Delete Selected">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button type="button" aria-label="Add new record"
+                                    class="docs-icon-btn docs-btn-primary btn" title="Add Insurance Policy">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button type="button" aria-label="Export to CSV"
+                                    class="docs-icon-btn docs-btn-success btn" title="Export to CSV"
+                                    onclick="diorDownloadInsuranceCSV()">
+                                    <i class="fas fa-file-arrow-down"></i>
+                                </button>
+                                <button type="button" aria-label="Refresh data" class="docs-icon-btn docs-btn-info btn"
+                                    title="Refresh Page" onclick="window.location.reload()">
+                                    <i class="fas fa-rotate-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-content">
+                    <table class="va-table table table-hover" id="dior-insurance-table">
+                        <thead>
+                            <tr>
+                                <th class="dior-ic-3fa4d8d717">
+                                    <input type="checkbox" class="dior-ic-52ff4d551f form-check-input">
+                                </th>
+                                <th>CLAIM ID <i class="fas fa-sort"></i></th>
+                                <th>POLICY ID <i class="fas fa-sort"></i></th>
+                                <th>CLAIM DATE <i class="fas fa-sort"></i></th>
+                                <th>CLAIM TYPE <i class="fas fa-sort"></i></th>
+                                <th>CLAIM AMOUNT ($) <i class="fas fa-sort"></i></th>
+                                <th>APPROVED ($) <i class="fas fa-sort"></i></th>
+                                <th>SUBMITTED <i class="fas fa-sort"></i></th>
+                                <th>STATUS <i class="fas fa-sort"></i></th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dior-insurance-tbody">
+                            <?php
+                            $insurance_claims = get_user_meta($user_id, 'dior_insurance_claims', true);
+                            $insurance_claims = is_array($insurance_claims) ? $insurance_claims : [];
+                            ?>
+                            <?php if (!empty($insurance_claims)): ?>
+                                <?php foreach ($insurance_claims as $claim): ?>
+                                    <?php
+                                    /* Carry the claim on the row so the eye button has real
+                                       data to show. It previously had no handler at all. */
+                                    $claim_args = sprintf(
+                                        "'%s','%s','%s','%s','%s','%s','%s','%s'",
+                                        esc_js($claim['claim_id'] ?? ''),
+                                        esc_js($claim['policy_id'] ?? ''),
+                                        esc_js($claim['claim_date'] ?? ''),
+                                        esc_js($claim['claim_type'] ?? ''),
+                                        esc_js($claim['claim_amount'] ?? ''),
+                                        esc_js($claim['approved_amount'] ?? ''),
+                                        esc_js($claim['submitted'] ?? ''),
+                                        esc_js($claim['status'] ?? 'Under Review')
+                                    );
+                                    ?>
+                                    <tr data-record-id="<?php echo esc_attr($claim['claim_id'] ?? ''); ?>">
+                                        <td><input type="checkbox" class="dior-ic-52ff4d551f form-check-input"></td>
+                                        <td><span class="cell-text"><?php echo esc_html($claim['claim_id'] ?? '—'); ?></span>
+                                        </td>
+                                        <td><span class="cell-text"><?php echo esc_html($claim['policy_id'] ?? '—'); ?></span>
+                                        </td>
+                                        <td><span class="cell-text"><?php echo esc_html($claim['claim_date'] ?? '—'); ?></span>
+                                        </td>
+                                        <td><span class="cell-text"><?php echo esc_html($claim['claim_type'] ?? '—'); ?></span>
+                                        </td>
+                                        <td><span
+                                                class="cell-text"><?php echo esc_html($claim['claim_amount'] ?? '0'); ?></span>
+                                        </td>
+                                        <td><span
+                                                class="cell-text"><?php echo esc_html($claim['approved_amount'] ?? '0'); ?></span>
+                                        </td>
+                                        <td><span class="cell-text"><?php echo esc_html($claim['submitted'] ?? '—'); ?></span>
+                                        </td>
+                                        <td>
+                                            <div class="cell-content">
+                                                <div class="badge-solid col-indigo">
+                                                    <?php echo esc_html($claim['status'] ?? 'Under Review'); ?>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="cell-actions"><button type="button" class="action-icon-btn edit-btn btn"
+                                                    title="View Claim"
+                                                    onclick="diorOpenInsuranceModal(<?php echo $claim_args; ?>)">
+                                                    <i class="fas fa-eye text-primary"></i></button></div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="10" class="dior-empty-state">No insurance claims available.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="master-table-footer">
+                    <span class="page-count" id="dior-insurance-page-count">0 selected /
+                        <?php echo count($insurance_claims); ?> total</span>
+
+                    <div class="master-pagination" id="dior-insurance-pagination">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<div class="dior-billing-modal-backdrop dior-insurance-modal-backdrop" id="diorInsuranceModal" role="dialog"
+    aria-modal="true" aria-labelledby="diorInsuranceModalTitle">
+    <div class="modal-content dior-ic-7903a9dded">
+        <div class="modal-header details-modal-header dior-ic-feb0429751">
+            <div class="header-left dior-ic-fbd29a13bb">
+                <div class="header-icon-wrapper dior-ic-01e9887431"><i class="fas fa-shield-halved"></i></div>
+                <div class="header-title-wrapper">
+                    <h4 class="modal-title dior-ic-515659bf18" id="diorInsuranceModalTitle">Claim Details</h4>
+                </div>
+            </div>
+            <button type="button" class="btn dior-ic-7a752f6c0e" onclick="diorCloseInsuranceModal()"
+                aria-label="Close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body details-modal-body dior-ic-602bae732d">
+            <div class="details-grid-container">
+                <div class="row g-3 dior-ic-bd41a014a7">
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="detail-field-card dior-ic-57d219ccba">
+                            <div class="field-label-group dior-ic-b85bb26d7d"><span class="field-label">Claim
+                                    ID</span></div>
+                            <div class="field-value-wrapper"><span class="field-value dior-ic-3b2d8e2576"
+                                    id="insModalClaimId"></span></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="detail-field-card dior-ic-57d219ccba">
+                            <div class="field-label-group dior-ic-b85bb26d7d"><span class="field-label">Policy
+                                    ID</span></div>
+                            <div class="field-value-wrapper"><span class="field-value dior-ic-3b2d8e2576"
+                                    id="insModalPolicyId"></span></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="detail-field-card dior-ic-57d219ccba">
+                            <div class="field-label-group dior-ic-b85bb26d7d"><span class="field-label">Claim
+                                    Date</span></div>
+                            <div class="field-value-wrapper"><span class="field-value dior-ic-3b2d8e2576"
+                                    id="insModalDate"></span></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="detail-field-card dior-ic-57d219ccba">
+                            <div class="field-label-group dior-ic-b85bb26d7d"><span class="field-label">Claim
+                                    Type</span></div>
+                            <div class="field-value-wrapper"><span class="field-value dior-ic-3b2d8e2576"
+                                    id="insModalType"></span></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="detail-field-card dior-ic-57d219ccba">
+                            <div class="field-label-group dior-ic-b85bb26d7d"><span class="field-label">Claim
+                                    Amount</span></div>
+                            <div class="field-value-wrapper"><span class="field-value dior-ic-3b2d8e2576"
+                                    id="insModalAmount"></span></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="detail-field-card dior-ic-57d219ccba">
+                            <div class="field-label-group dior-ic-b85bb26d7d"><span class="field-label">Approved
+                                    Amount</span></div>
+                            <div class="field-value-wrapper"><span class="field-value dior-ic-3b2d8e2576"
+                                    id="insModalApproved"></span></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="detail-field-card dior-ic-57d219ccba">
+                            <div class="field-label-group dior-ic-b85bb26d7d"><span class="field-label">Submitted</span>
+                            </div>
+                            <div class="field-value-wrapper"><span class="field-value dior-ic-3b2d8e2576"
+                                    id="insModalSubmitted"></span></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="detail-field-card dior-ic-57d219ccba">
+                            <div class="field-label-group dior-ic-b85bb26d7d"><span class="field-label">Status</span>
+                            </div>
+                            <div class="field-value-wrapper"><span class="field-value dior-ic-3b2d8e2576"
+                                    id="insModalStatus"></span></div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="detail-field-card dior-ic-57d219ccba">
+                            <div class="field-label-group dior-ic-b85bb26d7d"><span class="field-label">Out of
+                                    Pocket</span></div>
+                            <div class="field-value-wrapper"><span class="field-value dior-ic-e304798bad"
+                                    id="insModalOop">--</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer details-modal-footer dior-ic-a11f69ed01">
+            <button type="button" class="btn btn-light dior-ic-ce5cec6499"
+                onclick="diorCloseInsuranceModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- 4. DOCS & MEDS (Documents + Prescriptions) TAB -->
+<!-- ============================================================== -->

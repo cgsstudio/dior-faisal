@@ -1,0 +1,333 @@
+<section class="dior-tab-panel dior-ic-44a70a0420" id="tab-medical_record">
+    <!-- Breadcrumb Header -->
+    <div class="mb-4" style="display:flex;justify-content:space-between;align-items:center;padding:0;">
+        <div>
+            <h4 class="mb-0 text-dark" style="font-size:20px;font-weight:700;">Medical Record</h4>
+        </div>
+
+    </div>
+
+    <!-- Subtab Navigation Bar -->
+    <div class="dior-subtab-nav-bar px-0 mb-4">
+        <button type="button" class="dior-subtab-pill btn active" data-patient-tab="medical_record" onclick="if(typeof diorSwitchTab==='function') diorSwitchTab('medical_record');">
+            <i class="fas fa-notes-medical"></i> Medical Record
+        </button>
+        <button type="button" class="dior-subtab-pill btn" data-patient-tab="questionnaire" onclick="if(typeof diorSwitchTab==='function') diorSwitchTab('questionnaire');">
+            <i class="fas fa-clipboard-question"></i> Clinical Intake & Questionnaire
+        </button>
+    </div>
+
+    <div class="section-body" style="padding-left: 0 !important; padding-right: 0 !important;">
+                        <div class="row g-3 mb-4 no-print dior-ic-57fbdcec40">
+                            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 dior-ic-0fcdb8259f">
+                                <div class="card kpi-mini-card border-0 shadow-sm p-3 h-100 dior-ic-702f6c09ec">
+                                    <div class="d-flex align-items-center gap-3 dior-ic-b7f55b7e4a">
+                                        <div class="kpi-icon-box bg-blue-gradient text-white rounded-14 flex-shrink-0 shadow-sm dior-ic-7e3bf34afe">
+                                            <i class="fas fa-stream"></i>
+                                        </div>
+                                        <div class="flex-grow-1 overflow-hidden dior-ic-aea598fd73">
+                                            <div class="d-flex align-items-center justify-content-between mb-1 dior-ic-bce91fe330">
+                                                <span class="text-xs text-muted font-weight-600 text-uppercase text-truncate dior-ic-d48d9220c2">Milestones</span>
+                                                <span class="badge bg-primary-subtle text-primary rounded-pill text-2xs dior-ic-b9bd20e3e0">Active</span>
+                                            </div>
+                                            <h5 class="mb-0 font-weight-bold text-dark text-truncate dior-ic-c4e98ce9b3"><?php echo esc_html(count($appointments) + count($documents) + count($questionnaires)); ?> Care Events</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 dior-ic-0fcdb8259f">
+                                <div class="card kpi-mini-card border-0 shadow-sm p-3 h-100 dior-ic-702f6c09ec">
+                                    <div class="d-flex align-items-center gap-3 dior-ic-b7f55b7e4a">
+                                        <div class="kpi-icon-box bg-cyan-gradient text-white rounded-14 flex-shrink-0 shadow-sm dior-ic-95ecf5b0d8">
+                                            <i class="fas fa-heartbeat"></i>
+                                        </div>
+                                        <div class="flex-grow-1 overflow-hidden dior-ic-aea598fd73">
+                                            <div class="d-flex align-items-center justify-content-between mb-1 dior-ic-bce91fe330">
+                                                <span class="text-xs text-muted font-weight-600 text-uppercase text-truncate dior-ic-d48d9220c2">Care Phase</span>
+                                                <span class="badge bg-info-subtle text-info rounded-pill text-2xs dior-ic-c37f987d84"><?php echo !empty($appointments[0]['condition']) ? 'Live Care' : 'None'; ?></span>
+                                            </div>
+                                            <h5 class="mb-0 font-weight-bold text-dark text-truncate dior-ic-c4e98ce9b3"><?php echo esc_html(!empty($appointments[0]['condition']) ? $appointments[0]['condition'] : '—'); ?></h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 dior-ic-0fcdb8259f">
+                                <div class="card kpi-mini-card border-0 shadow-sm p-3 h-100 dior-ic-702f6c09ec">
+                                    <div class="d-flex align-items-center gap-3 dior-ic-b7f55b7e4a">
+                                        <div class="kpi-icon-box bg-purple-gradient text-white rounded-14 flex-shrink-0 shadow-sm dior-ic-2a23691ffa">
+                                            <i class="fas fa-user-md"></i>
+                                        </div>
+                                        <div class="flex-grow-1 overflow-hidden dior-ic-aea598fd73">
+                                            <div class="d-flex align-items-center justify-content-between mb-1 dior-ic-bce91fe330">
+                                                <span class="text-xs text-muted font-weight-600 text-uppercase text-truncate dior-ic-d48d9220c2">Lead Physician</span>
+                                                <span class="badge bg-purple-subtle text-purple rounded-pill text-2xs dior-ic-f6785667b0"><?php echo esc_html(!empty($appointments[0]['specialty']) ? $appointments[0]['specialty'] : (!empty($appointments[0]['provider']) ? 'Assigned' : 'None')); ?></span>
+                                            </div>
+                                            <h5 class="mb-0 font-weight-bold text-dark text-truncate dior-ic-c4e98ce9b3"><?php echo esc_html(!empty($appointments[0]['provider']) ? $appointments[0]['provider'] : 'Not Assigned'); ?></h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12 dior-ic-0fcdb8259f">
+                                <div class="card kpi-mini-card border-0 shadow-sm p-3 h-100 dior-ic-702f6c09ec">
+                                    <div class="d-flex align-items-center gap-3 dior-ic-b7f55b7e4a">
+                                        <div class="kpi-icon-box bg-emerald-gradient text-white rounded-14 flex-shrink-0 shadow-sm dior-ic-f20b23555a">
+                                            <i class="fas fa-shield-alt"></i>
+                                        </div>
+                                        <div class="flex-grow-1 overflow-hidden dior-ic-aea598fd73">
+                                            <div class="d-flex align-items-center justify-content-between mb-1 dior-ic-bce91fe330">
+                                                <span class="text-xs text-muted font-weight-600 text-uppercase text-truncate dior-ic-d48d9220c2">EMR Security</span>
+                                                <span class="badge bg-success-subtle text-success rounded-pill text-2xs dior-ic-4db3afa214">HIPAA</span>
+                                            </div>
+                                            <h5 class="mb-0 font-weight-bold text-success text-truncate dior-ic-c2f54c19e7"><i class="fas fa-lock me-1 text-xs"></i> Encrypted</h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm rounded-16 mb-4 no-print dior-ic-18f15f6b14">
+                            <div class="card-body p-3 dior-ic-30853ea1b7">
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                                    <div class="d-flex flex-wrap gap-2 flex-grow-1">
+                                        <button type="button" class="btn btn-sm rounded-pill btn-primary dior-medical-record-filter is-active px-3 shadow-sm text-white" data-filter="ALL"><i class="fas fa-th-large me-1"></i> All Events (<?php echo esc_html(count($appointments) + count($documents) + count($questionnaires) + count($prescriptions)); ?>)</button>
+                                        <button type="button" class="btn btn-sm rounded-pill btn-outline-primary dior-medical-record-filter px-3" data-filter="CONSULTATION"><i class="fas fa-stethoscope me-1"></i> Consultations</button>
+                                        <button type="button" class="btn btn-sm rounded-pill btn-outline-primary dior-medical-record-filter px-3" data-filter="PRESCRIPTION"><i class="fas fa-pills me-1"></i> Prescriptions</button>
+                                        <button type="button" class="btn btn-sm rounded-pill btn-outline-primary dior-medical-record-filter px-3" data-filter="DIAGNOSTIC"><i class="fas fa-file-medical-alt me-1"></i> Diagnostics &amp; Scans</button>
+                                        <button type="button" class="btn btn-sm rounded-pill btn-outline-primary dior-medical-record-filter px-3" data-filter="PROCEDURE"><i class="fas fa-user-md me-1"></i> Procedures</button>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-start justify-content-md-end">
+                                        <div class="input-group search-input-group dior-bs-search-group shadow-sm" style="border-radius: 20px; overflow: hidden; width: 220px;">
+                                        
+                                            <input type="text" placeholder="Search history..." class="form-control border-start-0 ps-0 dior-ic-c87dae7386" style="box-shadow: none;">
+                                        </div>
+                                        <?php
+                                        /* The plus used to call diorDocOpenUploadModal(), which opens the
+                                           provider upload modal (modal-doc-upload). That markup only exists on
+                                           the doctor dashboard, so on the patient portal the click found no
+                                           modal and silently did nothing. Patients upload through their own
+                                           document modal instead, the same one the Documents tab uses. */
+                                        ?>
+                                        <button type="button" title="Add Medical Record" class="btn btn-sm btn-primary px-3 rounded-pill shadow-sm" onclick="if (typeof diorOpenDocumentUploadModal === 'function') { diorOpenDocumentUploadModal(); }"><i class="fas fa-plus"></i></button>
+                                        <button type="button" title="Print Care History" class="btn btn-sm btn-outline-secondary px-3 rounded-pill bg-white shadow-sm dior-ic-30bc658af7" onclick="if (typeof diorPrintMedicalRecord === 'function') { diorPrintMedicalRecord(); } else { window.print(); }"><i class="fas fa-print"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm rounded-16 dior-ic-18f15f6b14">
+                            <div class="card-header bg-transparent py-3 px-4 d-flex align-items-center justify-content-between dior-ic-a6b4a26983">
+                                <h5 class="card-title-text mb-0 dior-ic-e6680bba01"><i class="fas fa-history me-2 text-primary dior-ic-9e5c8d5e64"></i>Patient Treatment &amp; Clinical Timeline Log</h5>
+                                <span class="patient-id-badge text-xs px-3 py-1 font-weight-bold dior-ic-90ce95a680">Patient: <?php echo esc_html($profile['full_name']); ?> (#<?php echo esc_html($profile['patient_id'] ?? ''); ?>)</span>
+                            </div>
+                            <div class="card-body p-4 p-md-5 dior-ic-4315250082">
+                                <div class="modern-treatment-timeline position-relative dior-ic-3bc278421b">
+                                    
+                                    <?php
+                                    $timeline_events = [];
+                                    foreach (($encounters ?? []) as $encounter) {
+                                        $timeline_events[] = [
+                                            'date' => $encounter['created_at'] ?? current_time('mysql'),
+                                            'type' => 'CONSULTATION',
+                                            'title' => $encounter['encounter_type'] ?? 'Clinical Consultation',
+                                            'doctor' => $encounter['attestation_author'] ?? 'Attending Physician',
+                                            'description' => $encounter['assessment'] ?? ($encounter['subjective'] ?? 'Clinical encounter recorded in the medical record.'),
+                                            'icon' => 'fa-stethoscope',
+                                        ];
+                                    }
+                                    foreach (($documents ?? []) as $document) {
+                                        $timeline_events[] = [
+                                            'date' => $document['created_at'] ?? ($document['date'] ?? current_time('mysql')),
+                                            'type' => 'DOCUMENT',
+                                            'title' => $document['title'] ?? 'Medical Document',
+                                            'doctor' => $document['author'] ?? 'Clinical Staff',
+                                            'description' => $document['category'] ?? 'Medical document added to the secure record.',
+                                            'icon' => 'fa-file-medical-alt',
+                                        ];
+                                    }
+                                    foreach (($appointments ?? []) as $appointment) {
+                                        $timeline_events[] = [
+                                            'date' => $appointment['appt_date'] ?? ($appointment['date'] ?? current_time('mysql')),
+                                            'type' => 'APPOINTMENT',
+                                            'title' => $appointment['condition'] ?? ($appointment['condition_name'] ?? 'Telehealth Consultation'),
+                                            'doctor' => $appointment['provider'] ?? ($appointment['doctor_name'] ?? 'Attending Physician'),
+                                            'description' => 'Appointment status: ' . ($appointment['status'] ?? 'Confirmed') . '.',
+                                            'icon' => 'fa-calendar-check',
+                                        ];
+                                    }
+                                    foreach (($prescriptions ?? []) as $prescription) {
+                                        $timeline_events[] = [
+                                            'date' => $prescription['date_prescribed'] ?? ($prescription['date'] ?? current_time('mysql')),
+                                            'type' => 'PRESCRIPTION',
+                                            'title' => $prescription['name'] ?? ($prescription['medication'] ?? 'Prescription'),
+                                            'doctor' => $prescription['prescribed_by'] ?? 'Attending Physician',
+                                            'description' => $prescription['condition'] ?? ($prescription['diagnosis'] ?? 'Prescription recorded in the medical record.'),
+                                            'icon' => 'fa-pills',
+                                        ];
+                                    }
+                                    foreach (($questionnaires ?? []) as $questionnaire) {
+                                        $q_status = strtolower(trim((string) ($questionnaire['status'] ?? '')));
+                                        if (!in_array($q_status, ['submitted', 'completed'], true)) {
+                                            continue;
+                                        }
+                                        if (empty($questionnaire['type']) && empty($questionnaire['submitted_at']) && empty($questionnaire['symptoms']) && empty($questionnaire['consent_signed'])) {
+                                            continue;
+                                        }
+                                        $timeline_events[] = [
+                                            'date' => $questionnaire['updated_at'] ?? ($questionnaire['submitted_at'] ?? current_time('mysql')),
+                                            'type' => 'QUESTIONNAIRE',
+                                            'title' => $questionnaire['title'] ?? ($questionnaire['name'] ?? 'Clinical Intake Form'),
+                                            'doctor' => 'Patient / Clinical Intake',
+                                            'description' => 'Status: ' . ($questionnaire['status'] ?? 'Submitted') . ' — Clinical information on file.',
+                                            'icon' => 'fa-clipboard-check',
+                                        ];
+                                    }
+                                    usort($timeline_events, static function ($a, $b) {
+                                        return strtotime((string)$b['date']) <=> strtotime((string)$a['date']);
+                                    });
+                                    if (!function_exists('dior_clinical_avatar_fallback')) {
+                                        /**
+                                         * Local initials avatar, inlined as an SVG data URI.
+                                         *
+                                         * The old fallback pointed at a hardcoded upload path
+                                         * that does not exist on every install, so the timeline
+                                         * rendered a broken-image icon. A data URI cannot 404
+                                         * and costs no extra request.
+                                         */
+                                        function dior_clinical_avatar_fallback($name = '', $size = 64)
+                                        {
+                                            $name = trim((string) $name);
+                                            if ($name === '') {
+                                                $name = 'Care Team';
+                                            }
+                                            $parts = preg_split('/\s+/', preg_replace('/^(?:dr\.?\s*)+/i', '', $name));
+                                            $initials = '';
+                                            foreach ($parts as $part) {
+                                                if ($part === '') {
+                                                    continue;
+                                                }
+                                                $initials .= strtoupper(function_exists('mb_substr') ? mb_substr($part, 0, 1) : substr($part, 0, 1));
+                                                if (strlen($initials) >= 2) {
+                                                    break;
+                                                }
+                                            }
+                                            if ($initials === '') {
+                                                $initials = 'DR';
+                                            }
+                                            $initials = esc_html($initials);
+                                            $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' . (int) $size . '" height="' . (int) $size . '" viewBox="0 0 64 64">'
+                                                . '<rect width="64" height="64" rx="32" fill="#F0F6FC"/>'
+                                                . '<text x="32" y="41" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" '
+                                                . 'font-size="24" font-weight="700" fill="#1A528E">' . $initials . '</text>'
+                                                . '</svg>';
+                                            return 'data:image/svg+xml;charset=utf-8,' . rawurlencode($svg);
+                                        }
+                                    }
+
+                                    if (!function_exists('dior_get_clinical_doctor_avatar')) {
+                                        function dior_get_clinical_doctor_avatar($doctor_name = '') {
+                                            static $avatar_cache = [];
+                                            $key = trim((string)$doctor_name);
+                                            if (isset($avatar_cache[$key])) {
+                                                return $avatar_cache[$key];
+                                            }
+                                            $default_avatar = dior_clinical_avatar_fallback($key);
+                                            if (empty($key)) {
+                                                return $default_avatar;
+                                            }
+                                            $clean_name = trim(preg_replace('/^(?:dr\.?\s*)+/i', '', $key));
+                                            $clean_name = trim(preg_replace('/,\s*(?:DO|MD|MBBS|PhD|FACP).*$/i', '', $clean_name));
+                                            $matched_users = get_users([
+                                                'role__in' => ['doctor', 'administrator'],
+                                                'search'   => '*' . $clean_name . '*',
+                                                'number'   => 1,
+                                            ]);
+                                            if (!empty($matched_users)) {
+                                                $user_id = $matched_users[0]->ID;
+                                                $saved = get_user_meta($user_id, 'dior_profile_image', true)
+                                                    ?: get_user_meta($user_id, 'doctor_avatar', true)
+                                                    ?: get_user_meta($user_id, 'profile_picture', true)
+                                                    ?: get_user_meta($user_id, 'profile_image', true);
+                                                if (!empty($saved)) {
+                                                    $avatar_cache[$key] = $saved;
+                                                    return $saved;
+                                                }
+                                            }
+                                            $avatar_cache[$key] = $default_avatar;
+                                            return $default_avatar;
+                                        }
+                                    }
+
+                                    foreach (array_slice($timeline_events, 0, 20) as $event):
+                                        $event_ts = strtotime((string)$event['date']) ?: current_time('timestamp');
+                                        $event_type = strtoupper((string)($event['type'] ?? 'APPOINTMENT'));
+                                        $doc_avatar = dior_get_clinical_doctor_avatar($event['doctor'] ?? '');
+
+                                        // One palette for every event type. Each kind used to
+                                        // paint its own blue/teal/amber; the label text already
+                                        // says which kind it is, so the colour comes from CSS
+                                        // tokens now and stays on the portal palette.
+                                        $node_class = 'node-appointment';
+                                        $badge_style = '';
+                                        if ($event_type === 'CONSULTATION') {
+                                            $node_class = 'node-consultation';
+                                        } elseif ($event_type === 'PRESCRIPTION') {
+                                            $node_class = 'node-prescription';
+                                        } elseif ($event_type === 'DOCUMENT') {
+                                            $node_class = 'node-document';
+                                        }
+                                    ?>
+                                    <div class="mr-timeline-item" data-record-type="<?php echo esc_attr($event['type']); ?>">
+                                        <div class="mr-timeline-time-col">
+                                            <span class="dior-ic-14731f6c49"><?php echo esc_html(wp_date('d M Y', $event_ts)); ?></span>
+                                            <span class="dior-ic-07e1c2794e"><i class="far fa-clock me-1"></i><?php echo esc_html(wp_date('g:i A', $event_ts)); ?></span>
+                                            <span class="dior-ic-81a2aacd66"><?php echo esc_html(human_time_diff($event_ts, current_time('timestamp'))); ?> ago</span>
+                                        </div>
+                                        <div class="dior-ic-f69dfb2b50">
+                                            <div class="mr-timeline-vertical-line"></div>
+                                            <div class="mr-timeline-icon-node <?php echo esc_attr($node_class); ?>">
+                                                <i class="fas text-white <?php echo esc_attr($event['icon']); ?>"></i>
+                                            </div>
+                                        </div>
+                                        <div class="mr-timeline-content-card">
+                                            <div class="dior-ic-eba8b27042">
+                                                <div class="dior-ic-33aac0e461">
+                                                    <span class="dior-ic-b382a6228c" style="<?php echo esc_attr($badge_style); ?>"> <?php echo esc_html($event['type']); ?> </span>
+                                                    <h5 class="dior-ic-fceca4a64a"><?php echo esc_html($event['title']); ?></h5>
+                                                </div>
+                                                <div class="dior-ic-b1d844752a">
+                                                    <?php $avatar_fallback = dior_clinical_avatar_fallback($event['doctor'] ?? ''); ?>
+                                                    <img src="<?php echo esc_url($doc_avatar); ?>"
+                                                         alt="<?php echo esc_attr($event['doctor'] ?? 'Attending Physician'); ?>"
+                                                         class="mr-timeline-doc-avatar"
+                                                         width="32" height="32"
+                                                         loading="lazy" decoding="async"
+                                                         <?php
+                                                         /* esc_url() is wrong for a data: URI: it decodes %22 back to a
+                                                            raw quote and rewrites ':' as &#58;, so the attribute ended at
+                                                            xmlns=" and the fallback never loaded. esc_attr() keeps the
+                                                            percent-encoded SVG intact and safe inside the attribute. */
+                                                         ?>
+                                                         data-fallback="<?php echo esc_attr($avatar_fallback); ?>"
+                                                         onerror="this.onerror=null;this.src=this.getAttribute('data-fallback');">
+                                                    <div>
+                                                        <span class="dior-ic-9bbdb950cc"><?php echo esc_html($event['doctor']); ?></span>
+                                                        <small class="dior-ic-3a4133fe41">Clinical Record</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <p class="dior-ic-972dc92ce3"><?php echo nl2br(esc_html($event['description'])); ?></p>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                    <?php if (empty($timeline_events)): ?>
+                                        <div class="mr-timeline-item"><div class="mr-timeline-content-card"><p class="dior-ic-972dc92ce3">No clinical events are available yet.</p></div></div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ============================================================== -->
+                <!-- 6. BILLING & PAYMENT TAB -->

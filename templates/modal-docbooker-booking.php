@@ -1,0 +1,270 @@
+<?php
+/**
+ * Dior Medical - DocBooker Interactive Appointment Booking Modal
+ * Clean, modern registration-style UI matching Dior Patient Portal design standards.
+ * Supports Telehealth Video Visit & Phone Consultation scheduling
+ * with live doctor availability and real-time dashboard updates.
+ */
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+$current_user_id = get_current_user_id();
+$user_obj = $current_user_id ? get_userdata($current_user_id) : null;
+$profile = ($current_user_id && class_exists('Dior_Patient_Portal_Data')) ? Dior_Patient_Portal_Data::get_patient_profile($current_user_id) : [];
+$intake = $current_user_id ? get_user_meta($current_user_id, 'dior_hipaa_intake', true) : [];
+
+$patient_name = !empty($profile['full_name']) ? $profile['full_name'] : ($user_obj ? $user_obj->display_name : '');
+$patient_email = !empty($profile['email']) ? $profile['email'] : ($user_obj ? $user_obj->user_email : '');
+$patient_phone = !empty($profile['phone']) ? $profile['phone'] : (!empty($intake['phone']) ? $intake['phone'] : '');
+$patient_reason = !empty($intake['service_condition']) ? $intake['service_condition'] : (!empty($intake['symptoms']) ? $intake['symptoms'] : 'Telehealth Consultation');
+
+// Doctor details (Primary attending doctor: dynamic lookup for live compatibility)
+$doctor_user_id = class_exists('Dior_Doctor_Resolver') ? Dior_Doctor_Resolver::get_default_doctor_id() : 4;
+$doctor_id = 1957; // Default CPT ID
+$doctor_post = get_post($doctor_id);
+if (!$doctor_post || $doctor_post->post_type !== 'wpddb_doctor') {
+    $published_docs = get_posts([
+        'post_type' => 'wpddb_doctor',
+        'post_status' => 'publish',
+        'posts_per_page' => 1,
+    ]);
+    if (!empty($published_docs)) {
+        $doctor_post = $published_docs[0];
+        $doctor_id = $doctor_post->ID;
+    }
+}
+$doctor_name = $doctor_post ? $doctor_post->post_title : 'Dr. Marcus Sterling, DO';
+$doctor_spec = $doctor_post ? (get_post_meta($doctor_id, 'wpddb_doctor_speciality', true) ?: 'General Practice & Internal Medicine') : 'General Practice & Internal Medicine';
+$doctor_avatar = get_avatar_url($doctor_user_id, ['size' => 120]) ?: (DIOR_PORTAL_URL . 'assets/images/doctor-placeholder.jpg');
+
+$today_ymd = current_time('Y-m-d');
+$consultation_fee = class_exists('Dior_Stripe_Booking') ? Dior_Stripe_Booking::get_docbooker_doctor_price($doctor_id) : 0.0;
+?>
+
+<!-- ── DIOR MEDICAL CLEAN REGISTRATION-STYLE APPOINTMENT MODAL ── -->
+<div id="dior-docbooker-modal" class="dior-db-modal" aria-hidden="true" style="display: none;">
+    <div class="dior-db-modal-overlay" onclick="diorCloseDocBookerModal()"></div>
+    
+    <div class="dior-db-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="dior-db-modal-title">
+        
+        <!-- Modal Header (Clean Registration Header) -->
+        <div class="dior-db-modal-header">
+            <div class="dior-db-header-left">
+                <h3 id="dior-db-modal-title" class="dior-db-title">Schedule Telehealth Appointment</h3>
+                <p class="dior-db-subtitle">Complete your booking details below to schedule your consultation.</p>
+            </div>
+            <button type="button" class="dior-db-close-btn btn" onclick="diorCloseDocBookerModal()" aria-label="Close dialog">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Attending Physician Bar (Compact & Clean) -->
+        <div class="dior-db-doctor-banner">
+            <div class="dior-db-doc-avatar-wrap">
+                <img src="<?php echo esc_url($doctor_avatar); ?>" alt="<?php echo esc_attr($doctor_name); ?>" class="dior-db-doc-img">
+                <span class="dior-db-status-dot" title="Available"></span>
+            </div>
+            <div class="dior-db-doc-details">
+                <span class="dior-db-doc-label">Attending Physician</span>
+                <h4 class="dior-db-doc-name"><?php echo esc_html($doctor_name); ?></h4>
+                <span class="dior-db-doc-spec"><?php echo esc_html($doctor_spec); ?> &bull; Beverly Hills Care</span>
+            </div>
+        </div>
+
+        <!-- Modal Body / Form -->
+        <div class="dior-db-modal-body" id="dior-db-modal-body">
+            <form id="dior-docbooker-form" class="dior-clean-db-form" onsubmit="diorSubmitDocBookerBooking(event)">
+                <input type="hidden" name="action" value="dior_patient_book_appointment">
+                <input type="hidden" name="nonce" value="<?php echo esc_attr(wp_create_nonce('dior_portal_nonce')); ?>">
+                <input type="hidden" name="require_stripe_checkout" value="1">
+                <input type="hidden" name="payment_method" value="stripe">
+                <input type="hidden" name="return_url" value="<?php echo esc_url(home_url('/patient-dashboard/')); ?>">
+                <input type="hidden" name="doctor_id" id="dior-db-doctor-id" value="<?php echo esc_attr($doctor_id); ?>">
+                <input type="hidden" name="doctorId" value="<?php echo esc_attr($doctor_id); ?>">
+                <input type="hidden" name="doctor_name" id="dior-db-doctor-name" value="<?php echo esc_attr($doctor_name); ?>">
+                <input type="hidden" name="provider" value="<?php echo esc_attr($doctor_name); ?>">
+                <input type="hidden" name="service_type" id="dior-db-service-type" value="Video Visit (HD)">
+                <input type="hidden" name="type" id="dior-db-final-type" value="Video Visit (HD)">
+                <input type="hidden" name="condition" id="dior-db-final-condition" value="<?php echo esc_attr($patient_reason); ?>">
+
+                <!-- 1. CONSULTATION FORMAT (Clean registration style) -->
+                <div class="dior-db-section">
+                    <div class="dior-reg-section-title">1. Consultation Format</div>
+                    <div class="dior-db-service-grid">
+                        <!-- Video Option -->
+                        <div class="dior-db-service-card active" data-service="Video Visit (HD)" onclick="diorSelectServiceType('Video Visit (HD)', this)">
+                            <div class="dior-db-service-left">
+                                <div class="dior-db-service-icon video-icon">
+                                    <i class="fa-solid fa-video"></i>
+                                </div>
+                                <div class="dior-db-service-info">
+                                    <h4 class="dior-db-service-title">Telehealth Video Visit (HD)</h4>
+                                    <p class="dior-db-service-desc">Encrypted video consultation with physician</p>
+                                </div>
+                            </div>
+                            <div class="dior-db-service-radio">
+                                <span class="dior-db-radio-dot"></span>
+                            </div>
+                        </div>
+
+                        <!-- Phone Option -->
+                        <div class="dior-db-service-card" data-service="Phone Consultation" onclick="diorSelectServiceType('Phone Consultation', this)">
+                            <div class="dior-db-service-left">
+                                <div class="dior-db-service-icon phone-icon">
+                                    <i class="fa-solid fa-phone"></i>
+                                </div>
+                                <div class="dior-db-service-info">
+                                    <h4 class="dior-db-service-title">Phone Consultation</h4>
+                                    <p class="dior-db-service-desc">Direct call to your registered phone number</p>
+                                </div>
+                            </div>
+                            <div class="dior-db-service-radio">
+                                <span class="dior-db-radio-dot"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. DATE & TIME SELECTION -->
+                <div class="dior-db-section">
+                    <div class="dior-reg-section-title">2. Date &amp; Time Selection</div>
+                    
+                    <div class="dior-form-group">
+                        <label for="dior-db-date-input">Consultation Date *</label>
+                        <input type="date" id="dior-db-date-input" name="date" class="dior-db-input form-control"
+                               min="<?php echo esc_attr($today_ymd); ?>"
+                               value="<?php echo esc_attr($today_ymd); ?>"
+                               onchange="diorOnDateChanged(this.value)" required>
+                    </div>
+
+                    <!-- Available Slots Grid -->
+                    <div class="dior-db-slots-wrapper">
+                        <div class="dior-db-slots-header">
+                            <label class="dior-db-slots-title">Available Time Slots *</label>
+                            <span id="dior-db-slots-loading" class="dior-db-slots-spinner" style="display: none;">
+                                <i class="fa-solid fa-circle-notch fa-spin"></i> Checking availability...
+                            </span>
+                        </div>
+                        <div id="dior-db-slots-grid" class="dior-db-slots-grid">
+                            <!-- Slots populated via JS / server defaults -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. PATIENT DETAILS (Registration style 2-column fields) -->
+                <div class="dior-db-section">
+                    <div class="dior-reg-section-title">3. Patient Information</div>
+
+                    <div class="dior-form-row-2">
+                        <div class="dior-form-group">
+                            <label for="dior-db-patient-name">Full Name *</label>
+                            <input type="text" name="name" id="dior-db-patient-name" class="dior-db-input form-control" value="<?php echo esc_attr($patient_name); ?>" placeholder="Your Full Name" required>
+                        </div>
+                        <div class="dior-form-group">
+                            <label for="dior-db-patient-email">Email Address *</label>
+                            <input type="email" name="email" id="dior-db-patient-email" class="dior-db-input form-control" value="<?php echo esc_attr($patient_email); ?>" placeholder="you@example.com" required>
+                        </div>
+                    </div>
+
+                    <div class="dior-form-row-2">
+                        <div class="dior-form-group">
+                            <label for="dior-db-patient-phone">Phone Number *</label>
+                            <input type="tel" name="phone" id="dior-db-patient-phone" class="dior-db-input form-control" value="<?php echo esc_attr($patient_phone); ?>" placeholder="(555) 000-0000" required>
+                        </div>
+                        <div class="dior-form-group">
+                            <label for="dior-db-patient-notes">Reason / Symptoms</label>
+                            <input type="text" name="notes" id="dior-db-patient-notes" class="dior-db-input form-control" value="<?php echo esc_attr($patient_reason); ?>" placeholder="e.g. Follow-up consultation">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. PAYMENT METHOD (STRIPE) -->
+                <div class="dior-db-section">
+                    <div class="dior-reg-section-title">4. Payment Method</div>
+                    <div class="card border rounded-3 p-3 bg-light">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="d-inline-flex align-items-center justify-content-center rounded-3 bg-primary-subtle text-primary p-2">
+                                    <i class="fa-brands fa-stripe fa-lg"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">Stripe Secure Payment</div>
+                                    <div class="small text-secondary">Credit / Debit Card, Apple Pay &bull; Redirects to Stripe Checkout</div>
+                                    <div class="small text-dark fw-semibold mt-1">Note: Payment is non-refundable once completed.</div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-dark fs-5">
+                                    <?php echo $consultation_fee > 0 ? esc_html('$' . number_format($consultation_fee, 2)) : 'Free'; ?>
+                                </div>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small">
+                                    <i class="fa-solid fa-lock me-1"></i> Pay Before Booking
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Feedback Message -->
+                <div id="dior-db-status-box" class="dior-db-alert" style="display: none;"></div>
+
+                <!-- Modal Actions (Clean Registration Action Button) -->
+                <div class="dior-reg-submit-wrap">
+                    <button type="submit" id="dior-db-submit-btn" class="dior-btn-reg-submit btn">
+                        <span class="dior-db-btn-text">
+                            <?php if ($consultation_fee > 0): ?>
+                                <i class="fa-solid fa-lock me-2"></i> Proceed to Stripe Payment (<?php echo esc_html('$' . number_format($consultation_fee, 2)); ?>)
+                            <?php else: ?>
+                                <i class="fa-solid fa-calendar-check me-2"></i> Confirm &amp; Book Appointment
+                            <?php endif; ?>
+                        </span>
+                        <span class="dior-db-btn-spinner" style="display: none;"><i class="fa-solid fa-circle-notch fa-spin me-2"></i> Redirecting to Stripe...</span>
+                    </button>
+                    <button type="button" class="dior-db-cancel-link btn" onclick="diorCloseDocBookerModal()">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Screen (Shown after booking completes) -->
+        <div class="dior-db-modal-success" id="dior-db-modal-success" style="display: none;">
+            <div class="dior-db-success-icon-wrap">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h3 class="dior-db-success-title">Appointment Confirmed!</h3>
+            <p class="dior-db-success-subtitle">Your appointment has been successfully scheduled and synced with your patient portal.</p>
+
+            <div class="dior-db-success-card">
+                <div class="dior-db-success-row">
+                    <span>Physician:</span>
+                    <strong id="dior-success-doc-name"><?php echo esc_html($doctor_name); ?></strong>
+                </div>
+                <div class="dior-db-success-row">
+                    <span>Format:</span>
+                    <strong id="dior-success-service-type">Video Visit (HD)</strong>
+                </div>
+                <div class="dior-db-success-row">
+                    <span>Date &amp; Time:</span>
+                    <strong id="dior-success-datetime">Oct 14, 2026 at 09:00 AM</strong>
+                </div>
+                <div class="dior-db-success-row">
+                    <span>Confirmation ID:</span>
+                    <strong id="dior-success-uid" style="color:#1b4f8a;">APT-0000</strong>
+                </div>
+                <div class="dior-db-success-row">
+                    <span>Status:</span>
+                    <span class="dior-db-badge-confirmed">Confirmed</span>
+                </div>
+            </div>
+
+            <div class="dior-reg-submit-wrap" style="margin-top: 20px;">
+                <button type="button" class="dior-btn-reg-submit btn" onclick="diorOnBookingSuccessDone()">
+                    <i class="fa-solid fa-arrow-right me-2"></i> View in Appointments Tab
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>

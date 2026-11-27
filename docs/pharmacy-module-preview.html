@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pharmacy — Medicine List / Add Medicine (Task 4)</title>
+    <style>
+        :root {
+            --ink: #0F172A;
+            --muted: #64748B;
+            --line: #E2E8F0;
+            --navy: #00346C;
+            --bg: #F8FAFC;
+            --ok: #0F7B47;
+            --bad: #B91C1C;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 32px 20px 64px;
+            background: var(--bg);
+            color: var(--ink);
+            font: 15px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .wrap { max-width: 1080px; margin: 0 auto; }
+
+        h1 { font-size: 26px; line-height: 1.25; margin: 0 0 6px; color: var(--navy); }
+        h2 { font-size: 18px; margin: 38px 0 12px; color: var(--navy); }
+        h3 { font-size: 15px; margin: 22px 0 10px; color: var(--navy); }
+        .sub { color: var(--muted); margin: 0 0 26px; }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin: 0 0 18px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+        }
+
+        .shot { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); }
+
+        ul { margin: 8px 0 0; padding-left: 20px; }
+        li { margin: 0 0 8px; }
+
+        code {
+            background: #F1F5F9;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            padding: 1px 5px;
+            font-size: 12.5px;
+            word-break: break-word;
+        }
+
+        .pill {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            padding: 3px 9px;
+            border-radius: 999px;
+        }
+
+        .pill.bad { background: #FEE2E2; color: var(--bad); }
+        .pill.ok { background: #DCFCE7; color: var(--ok); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+        th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+        td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+        .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+        .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 8px; }
+        .label.bad { color: var(--bad); }
+        .label.ok { color: var(--ok); }
+
+        .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+        .toc a {
+            font-size: 13px; font-weight: 600; color: var(--navy); text-decoration: none;
+            border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px;
+        }
+        .toc a:hover { border-color: var(--navy); }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <h1>Pharmacy — Medicine List &amp; Add Medicine</h1>
+        <p class="sub">Task 4: toolbar actions ko real banaya, "Add Medicine" ka matlab clear kiya, aur dono pages mobile
+            par responsive kiye. Sab kuch existing dashboard tokens par — koi naya theme nahi.</p>
+
+        <div class="toc">
+            <a href="#before">Pehle kya toota tha</a>
+            <a href="#fix">Ab kya badla</a>
+            <a href="#screens">Screens</a>
+            <a href="#mobile">Mobile</a>
+            <a href="#files">Files / deploy</a>
+        </div>
+
+        <h2 id="before">1. Root cause (browser me verify kiya)</h2>
+        <div class="card">
+            <table>
+                <tr>
+                    <th>Control</th>
+                    <th>Pehle</th>
+                    <th>Ab</th>
+                </tr>
+                <tr>
+                    <td><strong>Trash</strong> (toolbar)</td>
+                    <td><span class="pill bad">dead for data</span> Checkbox select karke confirm bhi hota tha, par sirf
+                        DOM row hatti thi — reload par wapas. Koi bhi medicine DB me save hi nahi hoti thi.</td>
+                    <td><span class="pill ok">working</span> Selected IDs <code>dior_doc_medicine_bulk_delete</code> par
+                        jaate hain, success ke baad row + pagination refresh.</td>
+                </tr>
+                <tr>
+                    <td><strong>Export</strong></td>
+                    <td><span class="pill bad">dead</span> Koi handler nahi tha — click par kuch nahi.</td>
+                    <td><span class="pill ok">working</span> CSV download (Excel-friendly BOM), file name
+                        <code>medicine-list-YYYY-MM-DD.csv</code>.</td>
+                </tr>
+                <tr>
+                    <td><strong>Refresh</strong></td>
+                    <td><span class="pill bad">dead</span> Koi handler nahi tha.</td>
+                    <td><span class="pill ok">working</span> Table server se dobara padhta hai, icon spin karta hai,
+                        spinner ke saath button disabled.</td>
+                </tr>
+                <tr>
+                    <td><strong>Edit / Delete</strong> (row)</td>
+                    <td><span class="pill bad">wrong modal</span> Generic static-table layer ne sirf text inputs wala
+                        modal khola (Category/Dates/Price/Stock edit hi nahi ho sakte the) aur delete sirf DOM se row
+                        hatata tha.</td>
+                    <td><span class="pill ok">working</span> Pharmacy ka apna field-accurate modal (select + date + number
+                        inputs) aur AJAX delete.</td>
+                </tr>
+                <tr>
+                    <td><strong>"Add Medicine"</strong> subtab</td>
+                    <td><span class="pill bad">confusing</span> Dono pills bilkul same solid blue
+                        (<code>.dior-subtab-pill</code> aur <code>.active</code> — same background), isliye current page
+                        pata hi nahi chalta tha. Neeche form ka button disabled (<code>#94a3b8</code>,
+                        <code>not-allowed</code>) tha, inputs me na <code>name</code> na <code>id</code>, koi submit
+                        handler nahi, Cancel bhi dead.</td>
+                    <td><span class="pill ok">working</span> Outline vs. filled pills + active dot; form me labels,
+                        <code>name</code>, <code>required</code>, inline errors, Save/Cancel dono kaam karte hain aur
+                        save hone par list me row add hoti hai.</td>
+                </tr>
+            </table>
+        </div>
+
+        <h2 id="fix">2. "Add Medicine" ka matlab — design decision</h2>
+        <div class="card">
+            <ul>
+                <li><strong>Pill ab current page batata hai:</strong> inactive pill white + navy text + grey border,
+                    active pill filled navy. Active pill par chhota white dot, taaki greyscale me bhi farq dikhe.</li>
+                <li><strong>Form ab "Add Medicine" card ke andar</strong> ek hi kaam karta hai, aur
+                    <strong>Save Medicine</strong> se record seedha <em>Medicine List</em> me aata hai (page bhi wahi
+                    khul jaata hai). Disabled Save hataya, kyunki button ka koi matlab nahi tha.</li>
+                <li><strong>Cancel</strong> ab form reset karta hai (values clear + pehla field focus).</li>
+                <li><strong>Empty list</strong> par ek CTA milta hai jo seedha Add Medicine tab kholta hai.</li>
+                <li>Naming same rakhi — sidebar aur subtab dono me "Add Medicine" — taaki navigation me mismatch na ho.</li>
+            </ul>
+        </div>
+
+        <h2 id="screens">3. Screens</h2>
+        <div class="grid">
+            <div>
+                <p class="label ok">Medicine List — desktop</p>
+                <img class="shot" src="screenshots/pharmacy-list-desktop.png" alt="Medicine list desktop">
+            </div>
+            <div>
+                <p class="label ok">Add Medicine — desktop</p>
+                <img class="shot" src="screenshots/pharmacy-add-medicine-desktop.png" alt="Add medicine desktop">
+            </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+            <p class="label">Empty state (naya)</p>
+            <img class="shot" src="screenshots/pharmacy-empty-state-desktop.png" alt="Empty medicine list">
+        </div>
+
+        <h2 id="mobile">4. Mobile (390px, iPhone 12 class)</h2>
+        <div class="grid">
+            <div>
+                <p class="label ok">Medicine List — rows become cards</p>
+                <img class="shot" src="screenshots/pharmacy-list-mobile-390.png" alt="Medicine list mobile">
+            </div>
+            <div>
+                <p class="label ok">Add Medicine — single column</p>
+                <img class="shot" src="screenshots/pharmacy-add-medicine-mobile-390.png" alt="Add medicine mobile">
+            </div>
+            <div>
+                <p class="label ok">Edit — bottom sheet</p>
+                <img class="shot" src="screenshots/pharmacy-edit-sheet-mobile-390.png" alt="Edit sheet mobile">
+            </div>
+            <div>
+                <p class="label ok">Empty state — mobile</p>
+                <img class="shot" src="screenshots/pharmacy-empty-state-mobile-390.png" alt="Empty mobile">
+            </div>
+        </div>
+        <div class="card">
+            <ul>
+                <li>Tablet/desktop par table normal rehti hai; <strong>991px se neeche</strong> har row ek labelled card
+                    ban jaati hai (wahi treatment jo Prescriptions aur Consultation Notes par hai) — koi side-scroll
+                    nahi.</li>
+                <li>Pills 2-column grid me, search + action buttons ek row me, inputs full width, date/number inputs
+                    <code>16px</code> font se (iOS focus-zoom nahi hota).</li>
+                <li>Save/Cancel mobile par full-width (primary upar), aur edit modal bottom-sheet banta hai with
+                    <code>96vh</code> max height + scroll.</li>
+                <li>390px par <code>documentElement.scrollWidth === 390</code> — koi horizontal overflow nahi; 768px
+                    aur 1440px par bhi verified.</li>
+            </ul>
+        </div>
+
+        <h2 id="files">5. Files aur data</h2>
+        <div class="card">
+            <table>
+                <tr>
+                    <th>File</th>
+                    <th>Role</th>
+                </tr>
+                <tr>
+                    <td><code>templates/doctor-tabs/pharmacy.php</code></td>
+                    <td>Ab PHP-driven: list <code>Dior_Doctor_Dynamic::render_medicines()</code> se aati hai, form me
+                        proper labels/names, empty state, nonce field.</td>
+                </tr>
+                <tr>
+                    <td><code>assets/js/dior-pharmacy.js</code> (naya)</td>
+                    <td>Add/edit/delete/bulk-delete/export/refresh. Nonce + <code>credentials:'same-origin'</code>;
+                        backend na ho to clear error toast (silent fake save nahi).</td>
+                </tr>
+                <tr>
+                    <td><code>includes/class-dior-doctor-dynamic.php</code></td>
+                    <td>Naya table <code>wp_dior_medicines</code> + <code>dior_doc_medicine_save / _delete /
+                            _bulk_delete</code> handlers (doctor-scoped, nonce-checked).</td>
+                </tr>
+                <tr>
+                    <td><code>assets/js/dior-static-table-interactions.js</code></td>
+                    <td>Sirf <code>#tab-doc-pharmacy-list</code> ke delete ko AJAX par route karta hai
+                        (bridge: <code>window.DiorPharmacy</code>). Baaki saari tables ka behaviour bilkul same.</td>
+                </tr>
+                <tr>
+                    <td><code>assets/css/dior-custom.css</code></td>
+                    <td>End me scoped TASK 4 block: pills, table columns, form, overlay, aur 991px/575px responsive
+                        rules.</td>
+                </tr>
+            </table>
+            <p style="margin:14px 0 0"><strong>Note:</strong> table pehli page load par
+                <code>dbDelta</code> se ban jaata hai (existing <code>plugins_loaded</code> hook). Purani 8 demo rows
+                ab hardcoded nahi hain — inventory khaali se shuru hoti hai, aur empty state Add Medicine par le jaata
+                hai.</p>
+        </div>
+
+        <h2>6. Test kaise karein</h2>
+        <div class="card">
+            <ul>
+                <li>Pharmacy → Medicine List: ek row select karke trash — confirm par row hatni chahiye, reload ke baad
+                    bhi nahi aani chahiye.</li>
+                <li>Export icon — CSV download khule.</li>
+                <li>Refresh icon — icon ghoomta hai, list server se refresh hoti hai.</li>
+                <li>Row ka pen icon — modal me Category/Dates/Price/Stock sahi prefill hote hain; save par row update
+                    hoti hai.</li>
+                <li>Add Medicine → Save (khaali) — inline error; bharke Save — list me naya row + success toast.</li>
+                <li>Phone par: list cards me, form single column, edit modal bottom sheet, koi horizontal scroll nahi.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>

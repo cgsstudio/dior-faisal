@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Doctor Dashboard — Collapsed Sidebar + Rx Modal fixes</title>
+    <style>
+        :root {
+            --ink: #0F172A;
+            --muted: #64748B;
+            --line: #E2E8F0;
+            --navy: #00346C;
+            --bg: #F8FAFC;
+            --ok: #0F7B47;
+            --bad: #B91C1C;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 32px 20px 64px;
+            background: var(--bg);
+            color: var(--ink);
+            font: 15px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .wrap { max-width: 1080px; margin: 0 auto; }
+
+        h1 { font-size: 26px; line-height: 1.25; margin: 0 0 6px; color: var(--navy); }
+        h2 { font-size: 18px; margin: 38px 0 12px; color: var(--navy); }
+        h3 { font-size: 15px; margin: 22px 0 10px; color: var(--navy); }
+        .sub { color: var(--muted); margin: 0 0 26px; }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin: 0 0 18px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+        }
+
+        .shot { width: 100%; height: auto; display: block; border-radius: 10px; border: 1px solid var(--line); }
+
+        ul { margin: 8px 0 0; padding-left: 20px; }
+        li { margin: 0 0 8px; }
+
+        code {
+            background: #F1F5F9;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            padding: 1px 5px;
+            font-size: 12.5px;
+            word-break: break-word;
+        }
+
+        .pill {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            padding: 3px 9px;
+            border-radius: 999px;
+        }
+
+        .pill.bad { background: #FEE2E2; color: var(--bad); }
+        .pill.ok { background: #DCFCE7; color: var(--ok); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+        th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+        td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+        .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+        .label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 8px; }
+        .label.bad { color: var(--bad); }
+        .label.ok { color: var(--ok); }
+
+        .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+        .toc a {
+            font-size: 13px; font-weight: 600; color: var(--navy); text-decoration: none;
+            border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 14px;
+        }
+        .toc a:hover { border-color: var(--navy); }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <h1>Doctor Dashboard — visual fixes</h1>
+        <p class="sub">
+            Do cheezein: (1) collapsed sidebar ka 72px rail, (2) e-Prescription ke dono popup ka colour/style.
+            Scope sirf doctor dashboard — koi naya design invent nahi kiya, project ke hi tokens use kiye hain.
+        </p>
+        <div class="toc">
+            <a href="#sidebar">1 · Collapsed sidebar</a>
+            <a href="#rxmodal">2 · Prescription popups</a>
+            <a href="#upload">FTP upload list</a>
+        </div>
+
+        <!-- ================================================================ -->
+        <h2 id="sidebar">1. Collapsed sidebar (72px rail)</h2>
+
+        <div class="card">
+            <img class="shot" src="screenshots/collapsed-sidebar-before-after.png"
+                alt="Collapsed sidebar before and after comparison">
+            <p style="margin:12px 0 0;color:#64748B;font-size:13px">
+                Left = pehle, right = ab. 1440px desktop, collapsed state, Digital Prescriptions tab.
+            </p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Bug</th>
+                    <th>Root cause</th>
+                    <th>Fix</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="pill bad">Icon shift</span><br>Appointments / Patients / Accounts /
+                        Consultations / Pharmacy / Documents / Telemedicine — in 7 rows ka icon rail ke centre se
+                        <strong>~18px baayein</strong> chipka hua tha. Baaki 6 theek the.</td>
+                    <td>Jin buttons ka submenu hai unke andar teesra child hota hai —
+                        <code>&lt;i class="fas fa-minus submenu-icon"&gt;</code>. Collapsed CSS me
+                        <code>.nav-label</code> aur <code>.grp-title</code> hide the par <code>.submenu-icon</code> ki
+                        width <code>0</code> karne wali rule
+                        <code>.dior-side-nav .dior-nav-btn i { width: 24px }</code> se <em>haar</em> gayi. Chevron
+                        invisible tha par <strong>24px + 12px gap</strong> jagah kha raha tha.</td>
+                    <td>Collapsed mode me <code>.submenu-icon</code> ko <code>display:none</code> + zero
+                        width/margin/flex-basis. Saath hi <code>.grp</code> ko 56px inner width, buttons ko
+                        <code>gap:0</code>, aur visible icon ko <code>margin: 0 auto</code> — ab har glyph rail ke
+                        exact centre (x=36) par.</td>
+                </tr>
+                <tr>
+                    <td><span class="pill bad">Table cut</span><br>Wide registries ka right side (Status, Actions)
+                        screen se bahar kat raha tha.</td>
+                    <td><code>.dior-main-content { overflow-x: clip }</code> — clip me scrollbar banta nahi, isliye
+                        overflow hone par content <em>silently</em> kaat diya jaata tha. Table ~1396px, wrapper
+                        ~1218px.</td>
+                    <td>Wrapper (<code>.pr-table-wrapper</code>, <code>.va-table-wrapper</code>) me
+                        <code>overflow-x:auto</code> + patla scrollbar. Page par sideways scroll nahi aata.</td>
+                </tr>
+                <tr>
+                    <td><span class="pill bad">Active row</span><br>Selected item solid white block tha, white icon
+                        nearly invisible.</td>
+                    <td>Base rule <code>.dior-nav-btn.active { background:#FFFFFF }</code> collapsed rail me bhi lagu
+                        tha.</td>
+                    <td>Translucent white pill (<code>rgba(255,255,255,.16)</code> + hairline ring), icon
+                        <code>#FFFFFF</code>; hover bhi same treatment.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Measured (Chromium, collapsed)</h3>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Check</th>
+                        <th>Before</th>
+                        <th>After</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Icon centre in rail</td>
+                        <td class="num">17.5px / 35.5px (mixed)</td>
+                        <td class="num">36px on all 13 rows</td>
+                    </tr>
+                    <tr>
+                        <td>Chevron reserved space</td>
+                        <td class="num">24px + 12px gap</td>
+                        <td class="num">0px</td>
+                    </tr>
+                    <tr>
+                        <td>Table wrapper overflow</td>
+                        <td class="num"><code>clip</code></td>
+                        <td class="num"><code>auto</code> (scrollable)</td>
+                    </tr>
+                    <tr>
+                        <td>Page horizontal scroll</td>
+                        <td class="num">none</td>
+                        <td class="num">none</td>
+                    </tr>
+                    <tr>
+                        <td>Sidebar 72px / content offset (1025→1920px)</td>
+                        <td class="num">correct</td>
+                        <td class="num">unchanged</td>
+                    </tr>
+                    <tr>
+                        <td>Mobile (&lt;1025px) drawer</td>
+                        <td class="num">off-canvas</td>
+                        <td class="num">unchanged</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <p class="label">Submenu flyout (hover) still works</p>
+                <img class="shot" src="screenshots/collapsed-sidebar-flyout.png" alt="Collapsed submenu flyout">
+            </div>
+            <div class="card">
+                <p class="label">390px phone — drawer off-canvas</p>
+                <img class="shot" src="screenshots/mobile-390-check.png" alt="Mobile 390px check">
+            </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <h2 id="rxmodal">2. e-Prescription popups — colour &amp; style</h2>
+
+        <p class="sub" style="margin-bottom:16px">
+            Popup pehle legacy "black gradient + gold keyline" auth styling par tha, jo dashboard me kahin aur nahi
+            milta. Ab wahi tokens jo Appointments / Consultation Notes aur baaki dashboard modals use karte hain.
+        </p>
+
+        <div class="card">
+            <img class="shot" src="screenshots/rx-modal-before-after.png"
+                alt="New Clinical Prescription modal before and after">
+            <p style="margin:12px 0 0;color:#64748B;font-size:13px">
+                <strong>New Clinical Prescription</strong> — left pehle, right ab.
+            </p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Element</th>
+                    <th>Before</th>
+                    <th>After (project token)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Header background</td>
+                    <td class="num">black→navy gradient + 2px gold keyline</td>
+                    <td class="num">white, 1px <code>#E2E8F0</code> border (dashboard modal pattern)</td>
+                </tr>
+                <tr>
+                    <td>Title / subtitle</td>
+                    <td class="num">white text on dark</td>
+                    <td class="num"><code>#00346C</code> title, <code>#64748B</code> subtitle</td>
+                </tr>
+                <tr>
+                    <td>Brand icon tile</td>
+                    <td class="num">gold icon on gold-tinted box</td>
+                    <td class="num">navy icon on <code>#F0F6FC</code> tile</td>
+                </tr>
+                <tr>
+                    <td>Inputs</td>
+                    <td class="num">38px, <code>#CBD5E1</code>, 7px radius</td>
+                    <td class="num">42px, <code>#CBD5E1</code>, 8px radius, navy focus ring</td>
+                </tr>
+                <tr>
+                    <td>Primary CTA</td>
+                    <td class="num">gradient + gold border; gold fill on hover</td>
+                    <td class="num">flat <code>#1A528E</code> → <code>#00346C</code> hover</td>
+                </tr>
+                <tr>
+                    <td>Secondary (Cancel / Print)</td>
+                    <td class="num">mixed borders, inline styles</td>
+                    <td class="num">white + <code>#CBD5E1</code>, navy on hover</td>
+                </tr>
+                <tr>
+                    <td>Close (×)</td>
+                    <td class="num">pitch black, no state</td>
+                    <td class="num"><code>#64748B</code> → <code>#0F172A</code> with soft bg</td>
+                </tr>
+                <tr>
+                    <td>Section headings</td>
+                    <td class="num">navy + gold hairlines</td>
+                    <td class="num">navy, 1px <code>#E2E8F0</code> underline</td>
+                </tr>
+                <tr>
+                    <td>View-Rx gold icon accents</td>
+                    <td class="num">inline <code>#d4af37</code></td>
+                    <td class="num"><code>var(--dior-color-primary)</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="grid" style="margin-top:16px">
+            <div class="card">
+                <p class="label ok">View Prescription — after</p>
+                <img class="shot" src="screenshots/view-rx-modal-after.png" alt="View prescription modal after">
+            </div>
+            <div class="card">
+                <p class="label ok">390px phone — stacked footer, 44px targets</p>
+                <img class="shot" src="screenshots/rx-modal-mobile-390.png" alt="Modal at 390px">
+            </div>
+        </div>
+
+        <!-- ================================================================ -->
+        <h2 id="upload">3. FTP par kya upload karna hai</h2>
+        <div class="card">
+            <ul>
+                <li><strong>1.</strong>
+                    <code>wp-content/plugins/dior-medical/assets/css/dior-custom.css</code> — file ke end me do naye
+                    blocks hain: <code>COLLAPSED SIDEBAR POLISH (TASK 2)</code> aur
+                    <code>PRESCRIPTION BUILDER + VIEW-Rx MODALS (TASK 3)</code>. Koi purana rule chheda nahi gaya,
+                    sirf end me append hua hai.</li>
+                <li><strong>2.</strong>
+                    <code>wp-content/plugins/dior-medical/templates/doctor-tabs/digital-prescriptions.php</code> — sirf
+                    <strong>2 lines</strong> badli hain: View-Rx modal ke do icons ka inline gold colour
+                    (<code>#d4af37</code>) → <code>var(--dior-color-primary, #1A528E)</code>. Markup/JS same.</li>
+                <li>Baaki kuch nahi — <code>dior-doctor-navigation.js</code>, <code>doctor-dashboard.php</code> ya
+                    <code>dior-fda-prescription-modal.js</code> ko is baar chhune ki zarurat nahi.</li>
+                <li>CSS <code>filemtime()</code> se version hoti hai → upload ke baad cache auto-bust, phir bhi ek
+                    hard refresh (Ctrl/Cmd + Shift + R).</li>
+                <li>Sab CSS sirf <code>#dior-doctor-app</code> ke andar scoped hai, isliye patient portal aur admin
+                    dashboard par koi asar nahi.</li>
+            </ul>
+        </div>
+
+        <h2>4. Verify kaise karein</h2>
+        <div class="card">
+            <ul>
+                <li>Sidebar collapse karein — har icon rail ke beech me. Submenu items par hover — flyout 64px par
+                    pehle jaisa.</li>
+                <li>Digital Prescriptions → <strong>+</strong> — popup ka header white, title navy, CTA flat navy.</li>
+                <li>Kisi row ka eye icon — View Prescription modal bhi wahi white/navy treatment.</li>
+                <li>Phone par: modal ke buttons full width, 44px tap targets, koi horizontal scroll nahi.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>
